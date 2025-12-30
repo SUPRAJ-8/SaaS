@@ -14,7 +14,12 @@ router.get('/google', passport.authenticate('google', {
 // @access  Public
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login-error' }), (req, res) => {
   // Successful authentication, redirect to the client's dashboard.
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+  let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+  if (clientUrl.includes('nepostore.xyz')) {
+    clientUrl = 'https://app.nepostore.xyz';
+  }
+
   res.redirect(`${clientUrl}/dashboard`);
 });
 

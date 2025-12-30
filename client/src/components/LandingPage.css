@@ -1,0 +1,115 @@
+.landing-container {
+    font-family: 'Outfit', sans-serif;
+    color: #1a1a1a;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.landing-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 5%;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #7c3aed;
+}
+
+.nav-links a {
+    text-decoration: none;
+    margin-left: 2rem;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.btn-primary-landing {
+    background: #7c3aed;
+    color: white !important;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.hero-landing {
+    text-align: center;
+    padding: 100px 5%;
+    background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%);
+}
+
+.hero-landing h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(90deg, #1a1a1a, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-landing p {
+    font-size: 1.25rem;
+    color: #64748b;
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+}
+
+.btn-main {
+    background: #7c3aed;
+    color: white;
+    text-decoration: none;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin: 0.5rem;
+    box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+}
+
+.btn-secondary-landing {
+    background: white;
+    border: 2px solid #e2e8f0;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin: 0.5rem;
+}
+
+.features-landing {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 80px 5%;
+}
+
+.feature-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+}
+
+.feature-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #7c3aed;
+}
+
+.landing-footer {
+    text-align: center;
+    padding: 3rem;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+}

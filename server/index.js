@@ -41,7 +41,7 @@ const subdomainHandler = (req, res, next) => {
 };
 
 // Use the subdomain handler for all incoming requests
-// app.use(subdomainHandler);
+app.use(subdomainHandler);
 
 app.get('/', (req, res) => {
   res.send('API for Nepali CMS is running...');
