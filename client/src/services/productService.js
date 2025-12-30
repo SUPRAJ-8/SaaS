@@ -1,6 +1,8 @@
+import API_URL from '../apiConfig';
+
 const getProducts = async (queryParams = {}) => {
   try {
-    const url = new URL('http://localhost:5002/api/products');
+    const url = new URL(`${API_URL}/api/products`);
     Object.keys(queryParams).forEach(key => url.searchParams.append(key, queryParams[key]));
 
     const response = await fetch(url);
@@ -17,7 +19,7 @@ const getProducts = async (queryParams = {}) => {
 
 const getProductById = async (id) => {
   try {
-    const response = await fetch(`http://localhost:5002/api/products/${id}`);
+    const response = await fetch(`${API_URL}/api/products/${id}`);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

@@ -4,6 +4,7 @@ import { useDispatchCart } from './CartProvider';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { FaRegHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight } from 'react-icons/fa';
+import API_URL from '../../apiConfig';
 
 // Import Templates
 import ProductGridTemplate from '../Dashboard/templates/ProductGridTemplate';
@@ -47,7 +48,7 @@ const ProductCard = ({ product }) => {
       id: product._id,
       name: product.name,
       price: product.sellingPrice,
-      image: product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300',
+      image: product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : 'https://via.placeholder.com/300',
       quantity: 1
     };
     dispatch({ type: 'ADD_ITEM', payload: cartItem });
@@ -230,7 +231,7 @@ const ProductList = () => {
           getProducts({ section: 'Popular' }),
           getProducts({ section: 'Featured' }),
           getProducts(),
-          fetch('/api/categories').then(res => res.json())
+          fetch(`${API_URL}/api/categories`).then(res => res.json())
         ]);
         setPopularProducts(popular);
         setFeaturedProducts(featured);

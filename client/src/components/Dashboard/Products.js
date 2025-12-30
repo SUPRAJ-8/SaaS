@@ -6,6 +6,7 @@ import './Customers.css'; // Reusing customer styles for now
 import { ProductModal } from './ProductModal.js';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { getProducts } from '../../services/productService';
+import API_URL from '../../apiConfig';
 
 const Products = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,7 +66,7 @@ const Products = () => {
     if (!productToDelete) return;
 
     try {
-      const response = await fetch(`/api/products/${productToDelete._id}`, {
+      const response = await fetch(`${API_URL}/api/products/${productToDelete._id}`, {
         method: 'DELETE',
       });
 
@@ -90,7 +91,7 @@ const Products = () => {
 
   const handleConfirmBulkDelete = async () => {
     try {
-      const response = await fetch('/api/products/bulk-delete', {
+      const response = await fetch(`${API_URL}/api/products/bulk-delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +115,7 @@ const Products = () => {
 
   const handleBulkUpdateStatus = async (status) => {
     try {
-      const response = await fetch('/api/products/bulk-update-status', {
+      const response = await fetch(`${API_URL}/api/products/bulk-update-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +147,7 @@ const Products = () => {
 
   const handleProductUpdate = async (productId, field, value) => {
     try {
-      const response = await fetch(`/api/products/${productId}`,
+      const response = await fetch(`${API_URL}/api/products/${productId}`,
         {
           method: 'PUT',
           headers: {
@@ -190,7 +191,7 @@ const Products = () => {
 
   const handleSaveProduct = async (productData) => {
     const isUpdating = !!productData._id;
-    const url = isUpdating ? `/api/products/${productData._id}` : '/api/products';
+    const url = isUpdating ? `${API_URL}/api/products/${productData._id}` : `${API_URL}/api/products`;
     const method = isUpdating ? 'PUT' : 'POST';
 
     const formData = new FormData();
@@ -327,7 +328,7 @@ const Products = () => {
                   <td>{index + 1}</td>
                   <td>
                     <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-                      <img src={product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : ''} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                      <img src={product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : ''} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
                       {product.images && product.images.length > 1 && (
                         <span style={{
                           position: 'absolute',

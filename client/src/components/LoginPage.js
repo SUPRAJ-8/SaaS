@@ -1,11 +1,13 @@
 import React from 'react';
 import './LoginPage.css';
 
+import API_URL from '../apiConfig';
+
 const LoginPage = () => {
 
   const handleGoogleLogin = () => {
     // Redirect to the backend Google auth route
-    window.location.href = 'http://localhost:5001/auth/google';
+    window.location.href = `${API_URL}/auth/google`;
   };
 
   return (

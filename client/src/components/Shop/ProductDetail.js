@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatchCart } from './CartProvider';
 import { getProductById } from '../../services/productService';
 import './ProductDetail.css';
+import API_URL from '../../apiConfig';
 
 const ProductDetail = () => {
   const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
@@ -154,7 +155,7 @@ const ProductDetail = () => {
       id: product._id,
       name: product.name,
       price: product.sellingPrice,
-      image: `http://localhost:5002${product.images[0]}`,
+      image: `${API_URL}${product.images[0]}`,
       quantity: quantity,
       variant: selectedVariant
         ? `Variant: ${selectedVariant.color.charAt(0).toUpperCase() + selectedVariant.color.slice(1)}/${selectedVariant.size.toUpperCase()}`
@@ -218,7 +219,7 @@ const ProductDetail = () => {
             {product.images && product.images.slice(0, 6).map((image, index) => (
               <img
                 key={index}
-                src={`http://localhost:5002${image}`}
+                src={`${API_URL}${image}`}
                 alt={`${product.name} thumbnail ${index + 1}`}
                 className={`thumbnail-image ${selectedImage === index ? 'active' : ''}`}
                 onClick={() => setSelectedImage(index)}
@@ -229,7 +230,7 @@ const ProductDetail = () => {
           <div className="gallery-main-group">
             <div className="main-image-container">
               <img
-                src={product.images && product.images.length > 0 ? `http://localhost:5002${product.images[selectedImage]}` : 'https://via.placeholder.com/400x400.png?text=No+Image'}
+                src={product.images && product.images.length > 0 ? `${API_URL}${product.images[selectedImage]}` : 'https://via.placeholder.com/400x400.png?text=No+Image'}
                 alt={product.name}
                 className="main-product-image"
               />
@@ -244,7 +245,7 @@ const ProductDetail = () => {
                   return (
                     <img
                       key={absoluteIndex}
-                      src={`http://localhost:5002${image}`}
+                      src={`${API_URL}${image}`}
                       alt={`${product.name} thumbnail ${absoluteIndex + 1}`}
                       className={`thumbnail-image ${selectedImage === absoluteIndex ? 'active' : ''}`}
                       onClick={() => setSelectedImage(absoluteIndex)}
@@ -259,7 +260,7 @@ const ProductDetail = () => {
               {product.images && product.images.map((image, index) => (
                 <img
                   key={index}
-                  src={`http://localhost:5002${image}`}
+                  src={`${API_URL}${image}`}
                   alt={`${product.name} thumbnail ${index + 1}`}
                   className={`thumbnail-image ${selectedImage === index ? 'active' : ''}`}
                   onClick={() => setSelectedImage(index)}

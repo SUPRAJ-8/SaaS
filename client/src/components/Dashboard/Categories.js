@@ -4,6 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Customers.css'; // Reusing customer styles for now
 import { CategoryModal } from './CategoryModal.js';
+import API_URL from '../../apiConfig';
 
 const Categories = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -15,7 +16,7 @@ const Categories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${API_URL}/api/categories`);
         const data = await response.json();
         setCategories(data);
       } catch (error) {
@@ -57,7 +58,7 @@ const Categories = () => {
 
   const handleSaveCategory = async (categoryData) => {
     const isUpdating = !!categoryData._id;
-    const url = isUpdating ? `/api/categories/${categoryData._id}` : '/api/categories';
+    const url = isUpdating ? `${API_URL}/api/categories/${categoryData._id}` : `${API_URL}/api/categories`;
     const method = isUpdating ? 'PUT' : 'POST';
 
     const formData = new FormData();
@@ -104,7 +105,7 @@ const Categories = () => {
   };
 
   return (
-        <div className="customers-page">
+    <div className="customers-page">
       <ToastContainer />
       <CategoryModal
         isOpen={isEditModalOpen}
@@ -123,7 +124,7 @@ const Categories = () => {
           <thead>
             <tr>
               <th><input type="checkbox" onChange={handleSelectAll} checked={selectedCategories.length === categories.length && categories.length > 0} /></th>
-                            <th>#</th>
+              <th>#</th>
               <th>Image</th>
               <th>Name</th>
               <th>Description</th>
@@ -141,11 +142,11 @@ const Categories = () => {
                 <tr key={category._id} className={selectedCategories.includes(category._id) ? 'row-selected' : ''}>
                   <td><input type="checkbox" checked={selectedCategories.includes(category._id)} onChange={(e) => handleSelectOne(e, category._id)} onClick={(e) => e.stopPropagation()} /></td>
                   <td>{index + 1}</td>
-                                    <td>
-                    <img 
-                      src={category.image ? `http://localhost:5001${category.image}` : 'https://i.ibb.co/p3r5F5s/no-image-icon-6.png'}
-                      alt={category.name} 
-                      style={{ width: '50px', height: '50px', objectFit: 'cover' }} 
+                  <td>
+                    <img
+                      src={category.image ? `${API_URL}${category.image}` : 'https://i.ibb.co/p3r5F5s/no-image-icon-6.png'}
+                      alt={category.name}
+                      style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                     />
                   </td>
                   <td>{category.name}</td>
