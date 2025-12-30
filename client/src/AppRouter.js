@@ -8,6 +8,7 @@ import ProductDetail from './components/Shop/ProductDetail';
 import CategoryProducts from './components/Shop/CategoryProducts';
 import Checkout from './components/Shop/Checkout';
 import { useSiteSettings } from './contexts/SiteSettingsContext';
+import LandingPage from './components/LandingPage';
 import './App.css';
 
 // Admin dashboard components
@@ -26,7 +27,6 @@ import PageBuilder from './components/Dashboard/PageBuilder';
 
 const Issue = () => <h2>Issue</h2>;
 
-import LandingPage from './components/LandingPage';
 
 function AppRouter() {
   const { siteSettings } = useSiteSettings();
