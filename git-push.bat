@@ -1,61 +1,72 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM ─── Set Colors (ANSI) ──────────────────────────────────────────────────────
+set "green=[92m"
+set "red=[91m"
+set "yellow=[93m"
+set "reset=[0m"
+
+echo.
+echo %yellow%Git Push Manager starting...%reset%
+
 REM ─── Resolve Commit Message ─────────────────────────────────────────────
 if "%~1"=="" (
-  echo Enter your commit message:
-  set /p commit_message=Commit Message: 
+    echo %yellow%Enter your commit message:%reset%
+    set /p commit_message=Commit Message: 
 ) else (
-  set commit_message=%*
+    set commit_message=%*
 )
 
 REM ─── Use Default Message if None Provided ─────────────────────────────────
 if "!commit_message!"=="" (
-  set commit_message=Auto-commit on %date% at %time%
-  echo No commit message provided. Using default: "!commit_message!"
+    set commit_message=Update on %date% at %time%
+    echo %yellow%No message provided. Using default: "!commit_message!"%reset%
 )
-
-REM ─── Remove large archive files (.zip, .rar, .7z) from tracking ───────────
-echo.
-echo Ensuring large archive files are not committed ...
-echo *.zip>>.gitignore
-echo *.rar>>.gitignore
-echo *.7z>>.gitignore
-
-REM Remove any already-tracked archives
-git rm --cached -r --ignore-unmatch *.zip
-git rm --cached -r --ignore-unmatch *.rar
-git rm --cached -r --ignore-unmatch *.7z
 
 REM ─── Stage All Changes ────────────────────────────────────────────────────
 echo.
-echo Running: git add -A
+echo %yellow%Staging changes...%reset%
 git add -A
 if errorlevel 1 (
-  echo Error occurred while staging files. Aborting.
-  goto :eof
+    echo %red%Error: Failed to stage files.%reset%
+    pause
+    exit /b 1
 )
 
 REM ─── Commit Changes ────────────────────────────────────────────────────────
 echo.
-echo Running: git commit -m "!commit_message!"
+echo %yellow%Committing changes...%reset%
 git commit -m "!commit_message!"
 if errorlevel 1 (
-  echo No changes to commit or commit failed. Skipping push.
-  goto :eof
+    echo %yellow%No changes to commit.%reset%
 )
 
 REM ─── Push Changes to Remote ────────────────────────────────────────────────
 echo.
-echo Running: git push
-git push
+echo %yellow%Pushing to GitHub (main)...%reset%
+git push origin main
 if errorlevel 1 (
-  echo Push failed. Please check your network or authentication settings.
-  goto :eof
+    echo.
+    echo %red%Push failed.%reset%
+    echo %yellow%Checking for remote changes...%reset%
+    git pull origin main --rebase
+    if errorlevel 1 (
+        echo %red%Pull failed. Please resolve conflicts manually.%reset%
+        pause
+        exit /b 1
+    )
+    echo %yellow%Retrying push...%reset%
+    git push origin main
 )
 
-REM ─── Operation Successful ─────────────────────────────────────────────────
+if errorlevel 0 (
+    echo.
+    echo %green%Success! All changes pushed to GitHub.%reset%
+) else (
+    echo %red%Final push attempt failed.%reset%
+)
+
 echo.
-echo All changes have been successfully pushed to GitHub!
 pause
 exit /b 0
