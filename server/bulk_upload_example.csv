@@ -1,0 +1,4 @@
+name,crossedPrice,costPrice,sellingPrice,status,img1,img2,img3,img4,img5,img6,quantity,section
+"Classic T-Shirt",25,10,20,"Active","http://example.com/img1.jpg","http://example.com/img2.jpg","","","","",50,"Popular"
+"Running Shoes",80,35,75,"Active","http://example.com/shoe1.jpg","","","","","",30,"Featured"
+"Winter Jacket",120,50,100,"Draft","http://example.com/jacket1.jpg","http://example.com/jacket2.jpg","http://example.com/jacket3.jpg","","","",20,"None"

@@ -1,0 +1,65 @@
+.under-construction-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 50px;
+  background-color: #fff;
+  height: 100%;
+  font-family: 'Arial', sans-serif;
+}
+
+.content {
+  max-width: 500px;
+}
+
+h1 {
+  font-size: 4rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+p {
+  font-size: 1.5rem;
+  color: #555;
+  margin: 20px 0;
+}
+
+button,
+.contact-button {
+  background-color: #0052cc;
+  color: white;
+  border: none;
+  padding: 20px 25px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 0px;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  transition: background-color 0.3s ease;
+}
+
+button:hover,
+.contact-button:hover {
+  background-color: #0041a8;
+}
+
+button:active,
+.contact-button:active {
+  transform: scale(0.98);
+}
+
+
+
+.image-container {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+}

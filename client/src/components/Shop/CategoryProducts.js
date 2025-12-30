@@ -1,0 +1,331 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { getProducts } from '../../services/productService';
+import { ThemeContext } from '../../contexts/ThemeContext';
+import { FaTh, FaThLarge, FaChevronRight, FaRegHeart, FaFilter, FaStar } from 'react-icons/fa';
+import { useDispatchCart } from './CartProvider';
+
+const ProductCard = ({ product }) => {
+    const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
+
+    useEffect(() => {
+        const settings = localStorage.getItem('storeSettings');
+        if (settings) {
+            const parsedSettings = JSON.parse(settings);
+            setCurrency({
+                symbol: parsedSettings.currencySymbol || 'NPR',
+                position: parsedSettings.currencyPosition || 'before',
+            });
+        }
+    }, []);
+    const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
+    const dispatch = useDispatchCart();
+
+    const handleAddToCart = (e) => {
+        e.preventDefault();
+        const cartItem = {
+            id: product._id,
+            name: product.name,
+            price: product.sellingPrice,
+            image: product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300'
+        };
+        dispatch({ type: 'ADD_ITEM', payload: cartItem });
+    };
+
+    return (
+        <div className="ecommerce-product-card">
+            <Link to={`/shop/product/${product._id}`} className="product-card-link">
+                <div className="product-image-container">
+                    {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
+                    <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
+                        <FaRegHeart />
+                    </button>
+                    <img src={product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300'} alt={product.name} />
+                </div>
+                <div className="product-details">
+                    <h3>{product.name}</h3>
+                    <div className="product-price-actions">
+                        <div className="price-container">
+                            <span className="product-price">
+                                {currency.position === 'before' ? `${currency.symbol} ${Number(product.sellingPrice || 0).toLocaleString()}` : `${Number(product.sellingPrice || 0).toLocaleString()} ${currency.symbol}`}
+                            </span>
+                            {product.crossedPrice > 0 &&
+                                <span className="original-price">
+                                    {currency.position === 'before' ? `${currency.symbol} ${Number(product.crossedPrice).toLocaleString()}` : `${Number(product.crossedPrice).toLocaleString()} ${currency.symbol}`}
+                                </span>
+                            }
+                        </div>
+                        <div className="product-rating">
+                            <FaStar className="star" />
+                            <span className="rating-value">{(product.rating || 4.5).toFixed(1)}</span>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+            <button className="add-to-cart-btn-small" onClick={handleAddToCart}>Add to Cart</button>
+        </div>
+    );
+};
+
+const CategoryProducts = () => {
+    const { id } = useParams();
+    const [products, setProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [category, setCategory] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Filter states (matching ProductList.js)
+    const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+    const [stockStatus, setStockStatus] = useState('all');
+    const [selectedColors, setSelectedColors] = useState([]);
+    const [selectedSizes, setSelectedSizes] = useState([]);
+    const [availableColors, setAvailableColors] = useState([]);
+    const [availableSizes, setAvailableSizes] = useState([]);
+    const [sortBy, setSortBy] = useState('newest');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch categories
+                const catRes = await fetch(`http://localhost:5002/api/categories`);
+                const allCats = await catRes.json();
+                setCategories(allCats);
+                const foundCat = allCats.find(c => c._id === id);
+                setCategory(foundCat);
+
+                // Fetch all products to extract variants and filter
+                const productsData = await getProducts();
+                setAllProducts(productsData);
+
+                // Extract colors and sizes
+                const colors = new Set();
+                const sizes = new Set();
+                productsData.forEach(p => {
+                    if (p.variantColors) p.variantColors.forEach(c => colors.add(c));
+                    if (p.variantSizes) p.variantSizes.forEach(s => sizes.add(s));
+                });
+                setAvailableColors([...colors]);
+                setAvailableSizes([...sizes]);
+
+            } catch (err) {
+                console.error('Error fetching category products:', err);
+                setError('Failed to load products.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [id]);
+
+    const filteredProducts = allProducts.filter(product => {
+        // Category constraint (fixed for this page)
+        if (product.category !== id && (category && product.category !== category._id && product.category !== category.name)) {
+            return false;
+        }
+
+        // Price Filter
+        const price = product.sellingPrice || 0;
+        if (priceRange.min !== '' && price < parseFloat(priceRange.min)) return false;
+        if (priceRange.max !== '' && price > parseFloat(priceRange.max)) return false;
+
+        // Stock Status Filter
+        if (stockStatus !== 'all') {
+            const totalStock = product.hasVariants
+                ? (product.variants || []).reduce((acc, v) => acc + (v.quantity || 0), 0)
+                : (product.quantity || 0);
+
+            if (stockStatus === 'inStock' && totalStock <= 0) return false;
+            if (stockStatus === 'outStock' && totalStock > 0) return false;
+        }
+
+        // Color Filter
+        if (selectedColors.length > 0) {
+            if (!product.variantColors || !product.variantColors.some(c => selectedColors.includes(c))) {
+                return false;
+            }
+        }
+
+        // Size Filter
+        if (selectedSizes.length > 0) {
+            if (!product.variantSizes || !product.variantSizes.some(s => selectedSizes.includes(s))) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    const sortedProducts = [...filteredProducts].sort((a, b) => {
+        if (sortBy === 'price-low') return a.sellingPrice - b.sellingPrice;
+        if (sortBy === 'price-high') return b.sellingPrice - a.sellingPrice;
+        if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+        return 0;
+    });
+
+    const toggleColor = (color) => {
+        setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
+    };
+
+    const toggleSize = (size) => {
+        setSelectedSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
+    };
+
+    return (
+        <div className="product-list-page">
+            <div className="shop-page-wrapper">
+                {/* Centered Header */}
+                <div className="shop-page-header">
+                    <div className="product-section-header centered">
+                        <h2>
+                            <FaThLarge />
+                            <span className="heading-first">Category:</span> <span className="heading-last">{category ? category.name : 'Loading...'}</span>
+                        </h2>
+                    </div>
+                </div>
+
+                <div className="shop-page-content-layout">
+                    {/* Sidebar */}
+                    <div className="shop-sidebar">
+                        <div className="filters-container">
+                            <div className="filter-header">
+                                <h3>FILTER BY:</h3>
+                            </div>
+
+
+                            <div className="sidebar-widget">
+                                <h3>Price</h3>
+                                <div className="price-filter-group">
+                                    <div className="price-input-col">
+                                        <label>From</label>
+                                        <input
+                                            type="number"
+                                            value={priceRange.min}
+                                            placeholder="0"
+                                            onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                                        />
+                                    </div>
+                                    <span className="price-dash">-</span>
+                                    <div className="price-input-col">
+                                        <label>To</label>
+                                        <input
+                                            type="number"
+                                            value={priceRange.max}
+                                            placeholder="Max"
+                                            onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="sidebar-widget">
+                                <h3>Stock Status</h3>
+                                <div className="checkbox-list">
+                                    <label className="checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            checked={stockStatus === 'inStock'}
+                                            onChange={() => setStockStatus(stockStatus === 'inStock' ? 'all' : 'inStock')}
+                                        />
+                                        <span className="checkmark"></span>
+                                        In Stock
+                                    </label>
+                                    <label className="checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            checked={stockStatus === 'outStock'}
+                                            onChange={() => setStockStatus(stockStatus === 'outStock' ? 'all' : 'outStock')}
+                                        />
+                                        <span className="checkmark"></span>
+                                        Out Of Stock
+                                    </label>
+                                </div>
+                            </div>
+
+                            {availableColors.length > 0 && (
+                                <div className="sidebar-widget">
+                                    <h3>Product Colors</h3>
+                                    <div className="checkbox-list">
+                                        {availableColors.map(color => (
+                                            <label key={color} className="checkbox-item">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedColors.includes(color)}
+                                                    onChange={() => toggleColor(color)}
+                                                />
+                                                <span className="checkmark"></span>
+                                                {color}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {availableSizes.length > 0 && (
+                                <div className="sidebar-widget">
+                                    <h3>Product Sizes</h3>
+                                    <div className="checkbox-list">
+                                        {availableSizes.map(size => (
+                                            <label key={size} className="checkbox-item">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedSizes.includes(size)}
+                                                    onChange={() => toggleSize(size)}
+                                                />
+                                                <span className="checkmark"></span>
+                                                {size}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Main Grid */}
+                    <div className="shop-main-content">
+                        <div className="shop-controls-bar">
+                            <div className="results-count">
+                                Showing {sortedProducts.length} {sortedProducts.length === 1 ? 'result' : 'results'}
+                            </div>
+                            <div className="sort-wrapper">
+                                <span className="sort-label">SORT BY</span>
+                                <select
+                                    className="sort-select"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                >
+                                    <option value="newest">Newest</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="product-grid-container">
+                            <div className="ecommerce-product-grid">
+                                {loading ? (
+                                    <p>Loading products...</p>
+                                ) : error ? (
+                                    <p>{error}</p>
+                                ) : sortedProducts.length > 0 ? (
+                                    sortedProducts.map(product => <ProductCard key={product._id} product={product} />)
+                                ) : (
+                                    <div className="no-products">
+                                        <h3>No products found in this category</h3>
+                                        <p>Check back later or browse other categories.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CategoryProducts;

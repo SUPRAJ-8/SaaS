@@ -1,0 +1,116 @@
+.confirm-leave-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirm-leave-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirm-leave-icon {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-leave-modal h2 {
+  margin: 0 0 15px 0;
+  font-size: 24px;
+  color: #333;
+  font-weight: 600;
+}
+
+.confirm-leave-modal p {
+  margin: 0 0 10px 0;
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.warning-text {
+  color: #ff6b6b;
+  font-weight: 500;
+  margin-bottom: 25px !important;
+}
+
+.confirm-leave-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.confirm-leave-actions button {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.btn-cancel {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.btn-cancel:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-confirm {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background-color: #ff5252;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.btn-cancel:active,
+.btn-confirm:active {
+  transform: translateY(0);
+}
+

@@ -1,0 +1,43 @@
+.stat-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  min-width: 200px;
+  text-align: center;
+}
+
+.stat-card-icon {
+  font-size: 2.5rem; /* 40px */
+  margin-bottom: 1rem;
+}
+
+.stat-card-title {
+  font-size: 0.875rem; /* 14px */
+  color: #64748b; /* Slate 500 */
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.stat-card-value {
+  font-size: 2.25rem; /* 36px */
+  font-weight: 700;
+  color: #1e293b; /* Slate 800 */
+  margin: 0;
+}
+
+.stat-card-breakdown {
+  margin-top: 1rem;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem; /* 14px */
+  color: #475569; /* Slate 600 */
+}
+
+.breakdown-item:not(:last-child) {
+  margin-bottom: 0.25rem;
+}

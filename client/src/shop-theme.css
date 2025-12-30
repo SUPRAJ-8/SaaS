@@ -1,0 +1,154 @@
+:root {
+  /* Discord-ish Dark Theme - Global Definitions */
+  --primary: #5866f2;
+  --primary-content: #ffffff;
+  --primary-dark: #293bee;
+  --primary-light: #8791f6;
+
+  --secondary: #f25899;
+  --secondary-content: #460520;
+  --secondary-dark: #ee297c;
+  --secondary-light: #f687b6;
+
+  --background: #131420;
+  --foreground: #1d1e30;
+  --border: #303350;
+
+  --copy: #fafafc;
+  --copy-light: #cfd1e2;
+  --copy-lighter: #8f93bc;
+
+  --success: #58f258;
+  --success-content: #054605;
+  --warning: #f2f258;
+  --warning-content: #464605;
+  --error: #f25858;
+  --error-content: #460505;
+
+  /* Mappings to existing generic Shop Theme variables for backward compatibility */
+  --theme-primary: var(--background);
+  --theme-secondary: var(--foreground);
+  --theme-accent: var(--primary);
+  --theme-text: var(--copy);
+  --theme-text-offset: var(--copy-light);
+  --theme-border: var(--border);
+
+  /* Helper aliases */
+  --background-color: var(--background);
+  --text-color: var(--copy);
+  --primary-color: var(--primary);
+  --secondary-color: var(--secondary);
+  --accent-color: var(--primary);
+  --surface-color: var(--foreground);
+  --border-color: var(--border);
+}
+
+/* Apply these variables to your shop components */
+/* General Body & Layout */
+.shop-layout {
+  background-color: var(--theme-primary);
+  color: var(--theme-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Header */
+.shop-header {
+  background-color: var(--theme-secondary);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.shop-header h1 {
+  color: var(--theme-accent);
+  font-weight: bold;
+  margin: 0;
+}
+
+.shop-header nav a {
+  color: var(--theme-text-offset);
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
+}
+
+.shop-header nav a:hover {
+  color: var(--theme-accent);
+}
+
+/* Product Grid & Cards */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.product-card {
+  background-color: var(--theme-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.product-card .product-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-card .product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1rem 1rem 0.5rem;
+  color: var(--theme-text);
+}
+
+.product-card .product-price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--theme-accent);
+  margin: 0 1rem 1rem;
+}
+
+/* Buttons */
+.add-to-cart-btn {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0 1rem 1rem;
+  padding: 0.75rem;
+  background-color: var(--theme-accent);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #e63e00;
+  /* Darker shade of accent */
+}
+
+/* Footer */
+.shop-footer {
+  background-color: var(--theme-secondary);
+  color: var(--theme-text-offset);
+  text-align: center;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--theme-border);
+}

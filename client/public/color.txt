@@ -1,0 +1,260 @@
+youtube-ish = light 
+--primary: #ff0200;
+--primary-content: #ffffff;
+--primary-dark: #cc0200;
+--primary-light: #ff3533;
+
+--secondary: #0200ff;
+--secondary-content: #ffffff;
+--secondary-dark: #0200cc;
+--secondary-light: #3533ff;
+
+--background: #f0f0f0;
+--foreground: #fbfbfb;
+--border: #e5e7eb;
+
+--copy: #262626;
+--copy-light: #666666;
+--copy-lighter: #8c8c8c;
+
+--success: #15803D;
+--warning: #ffff00;
+--error: #D62626;
+--success-content: #000000;
+--warning-content: #000000;
+--error-content: #ffffff;
+
+
+youtube-ish = dark 
+--primary: #ff0200;
+--primary-content: #ffffff;
+--primary-dark: #cc0200;
+--primary-light: #ff3533;
+
+--secondary: #0200ff;
+--secondary-content: #ffffff;
+--secondary-dark: #0200cc;
+--secondary-light: #3533ff;
+
+--background: #1a1a1a;
+--foreground: #262626;
+--border: #e5e7eb;
+
+--copy: #fbfbfb;
+--copy-light: #d9d9d9;
+--copy-lighter: #a6a6a6;
+
+--success:  #15803D;
+--warning: #ffff00;
+--error: #D62626;
+--success-content: #000000;
+--warning-content: #000000;
+--error-content: #ffffff;
+
+teitch-ish = light
+--primary: #9147ff;
+--primary-content: #ffffff;
+--primary-dark: #7314ff;
+--primary-light: #af7aff;
+
+--secondary: #ff4759;
+--secondary-content: #470007;
+--secondary-dark: #ff142b;
+--secondary-light: #ff7a87;
+
+--background: #f0eff0;
+--foreground: #fbfbfb;
+--border: #e5e7eb;
+
+--copy: #262527;
+--copy-light: #666369;
+--copy-lighter: #8c898f;
+
+--success: #15803D;
+--warning: #ffff47;
+--error: #D62626;
+--success-content: #004700;
+--warning-content: #474700;
+--error-content: #ffffff;
+
+twitch-ish = dark
+--primary: #9147ff;
+--primary-content: #ffffff;
+--primary-dark: #7314ff;
+--primary-light: #af7aff;
+
+--secondary: #ff4759;
+--secondary-content: #470007;
+--secondary-dark: #ff142b;
+--secondary-light: #ff7a87;
+
+--background: #19191a;
+--foreground: #262527;
+--border: #e5e7eb;
+
+--copy: #fbfbfb;
+--copy-light: #d9d8da;
+--copy-lighter: #a5a4a8;
+
+--success: #15803D;
+--warning: #ffff47;
+--error: #D62626;
+--success-content: #004700;
+--warning-content: #474700;
+--error-content: #ffffff;
+
+indie hackers-ish = light
+--primary: #4699eb;
+--primary-content: #05192d;
+--primary-dark: #1980e5;
+--primary-light: #74b2f0;
+
+--secondary: #eb9846;
+--secondary-content: #2d1905;
+--secondary-dark: #e57e19;
+--secondary-light: #f0b274;
+
+--background: #eaf0f5;
+--foreground: #fafbfd;
+--border: #e5e7eb;
+
+--copy: #192634;
+--copy-light: #42668a;
+--copy-lighter: #648cb4;
+
+--success: #15803D;
+--warning: #ebeb46;
+--error: #D62626;
+--success-content: #052d05;
+--warning-content: #2d2d05;
+--error-content: #ffffff;
+
+indie hackers-ish = dark
+--primary: #4699eb;
+--primary-content: #05192d;
+--primary-dark: #1980e5;
+--primary-light: #74b2f0;
+
+--secondary: #eb9846;
+--secondary-content: #2d1905;
+--secondary-dark: #e57e19;
+--secondary-light: #f0b274;
+
+--background: #111a22;
+--foreground: #192634;
+--border: #e5e7eb;
+
+--copy: #fafbfd;
+--copy-light: #cbd9e6;
+--copy-lighter: #87a6c5;
+
+--success: #15803D;
+--warning: #ebeb46;
+--error: #D62626;
+--success-content: #052d05;
+--warning-content: #2d2d05;
+--error-content: #ffffff;
+
+unreal engine-ish = light
+--primary: #02abf5;
+--primary-content: #000000;
+--primary-dark: #0288c2;
+--primary-light: #2dbefd;
+
+--secondary: #f50246;
+--secondary-content: #fff7f9;
+--secondary-dark: #c20238;
+--secondary-light: #fd2d67;
+
+--background: #eaf2f5;
+--foreground: #fafcfd;
+--border: #e5e7eb;
+
+--copy: #192b34;
+--copy-light: #42748a;
+--copy-lighter: #649cb4;
+
+--success: #15803D;
+--warning: #f5f502;
+--error: #D62626;
+--success-content: #000000;
+--warning-content: #000000;
+--error-content: #fff7f7;
+
+unreal engine-ish = dark
+--primary: #02abf5;
+--primary-content: #000000;
+--primary-dark: #0288c2;
+--primary-light: #2dbefd;
+
+--secondary: #f50246;
+--secondary-content: #fff7f9;
+--secondary-dark: #c20238;
+--secondary-light: #fd2d67;
+
+--background: #111d22;
+--foreground: #192b34;
+--border: #e5e7eb;
+
+--copy: #fafcfd;
+--copy-light: #cbdee6;
+--copy-lighter: #87b2c5;
+
+--success: #15803D;
+--warning: #f5f502;
+--error: #D62626;
+--success-content: #000000;
+--warning-content: #000000;
+--error-content: #fff7f7;
+
+discord-ish = dark
+--primary: #5866f2;
+--primary-content: #ffffff;
+--primary-dark: #293bee;
+--primary-light: #8791f6;
+
+--secondary: #f25899;
+--secondary-content: #460520;
+--secondary-dark: #ee297c;
+--secondary-light: #f687b6;
+
+--background: #131420;
+--foreground: #1d1e30;
+--border: #e5e7eb;
+
+--copy: #fafafc;
+--copy-light: #cfd1e2;
+--copy-lighter: #8f93bc;
+
+--success: #15803D;
+--warning: #f2f258;
+--error: #D62626;
+--success-content: #054605;
+--warning-content: #464605;
+--error-content: #460505;
+
+discord-ish = light
+--primary: #5866f2;
+--primary-content: #ffffff;
+--primary-dark: #293bee;
+--primary-light: #8791f6;
+
+--secondary: #f25899;
+--secondary-content: #460520;
+--secondary-dark: #ee297c;
+--secondary-light: #f687b6;
+
+--background: #ecedf4;
+--foreground: #fafafc;
+--border: #e5e7eb;
+
+--copy: #1d1e30;
+--copy-light: #4d5180;
+--copy-lighter: #7075a9;
+
+--success: #15803D;
+--warning: #f2f258;
+--error: #D62626;
+--success-content: #054605;
+--warning-content: #464605;
+--error-content: #460505;

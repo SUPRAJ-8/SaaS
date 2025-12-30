@@ -1,0 +1,58 @@
+.stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  font-family: sans-serif;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.step-label {
+  margin-left: 8px;
+  color: #aaa;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.step-connector {
+  flex-grow: 1;
+  height: 2px;
+  background-color: #ccc;
+  margin: 0 10px;
+}
+
+/* --- States --- */
+
+.step-item.active .step-circle,
+.step-item.completed .step-circle {
+  background-color: #4a00e0; /* Purple */
+}
+
+.step-item.active .step-label {
+  color: #000;
+  font-weight: bold;
+}
+
+.step-connector.completed {
+  background-color: #4a00e0; /* Purple */
+}

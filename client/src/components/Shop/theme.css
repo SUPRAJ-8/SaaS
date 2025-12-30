@@ -1,0 +1,58 @@
+/* E-commerce Theme Styles */
+.shop-container,
+.product-detail,
+.product-listing,
+.cart-page,
+.checkout-page {
+  font-family: var(--ecommerce-font, 'Poppins', sans-serif);
+}
+
+/* Apply Poppins to all text elements within the shop */
+.shop-container h1,
+.shop-container h2,
+.shop-container h3,
+.shop-container h4,
+.shop-container h5,
+.shop-container h6,
+.shop-container p,
+.shop-container span,
+.shop-container a,
+.shop-container button,
+.shop-container input,
+.shop-container label,
+.shop-container select,
+.shop-container option,
+.product-detail h1,
+.product-detail h2,
+.product-detail h3,
+.product-detail p,
+.product-detail span,
+.product-detail button,
+.product-detail input,
+.product-detail label,
+.product-card h3,
+.product-card p,
+.product-card span,
+.product-card button {
+  font-family: var(--ecommerce-font, 'Poppins', sans-serif);
+}
+
+/* Ensure form elements inherit the font */
+.shop-container input,
+.shop-container button,
+.shop-container select,
+.shop-container textarea {
+  font-family: inherit;
+}
+
+.shop-container {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-color, #1f2937);
+}
+
+/* Add font smoothing for better rendering */
+.shop-container {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

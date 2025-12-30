@@ -1,0 +1,66 @@
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8fafc; /* Slate 50 */
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.login-container h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b; /* Slate 800 */
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-container p {
+  text-align: center;
+  color: #64748b; /* Slate 500 */
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 500;
+  color: #334155; /* Slate 700 */
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1; /* Slate 300 */
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: #4f46e5; /* Indigo */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.login-btn:hover {
+  background-color: #4338ca;
+}

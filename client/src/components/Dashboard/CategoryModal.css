@@ -1,0 +1,140 @@
+.category-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.category-modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.category-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.category-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+
+.category-modal-content .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.category-modal-content .form-group {
+  margin-bottom: 1rem;
+}
+
+.category-modal-content .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.category-modal-content input,
+.category-modal-content textarea,
+.category-modal-content select {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.category-modal-content textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.category-modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.category-image-preview {
+  margin-top: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.category-image-preview img {
+  display: block;
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+}
+
+.image-upload-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  background-color: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.image-upload-container.dragging {
+  border-color: #3b82f6;
+}
+
+.upload-label {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #64748b;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-label .upload-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 1rem;
+}
+
+.upload-label p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.upload-label span {
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+

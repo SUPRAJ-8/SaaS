@@ -1,0 +1,94 @@
+.dashboard-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.header-company-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 0.05em;
+  margin-right: 12px;
+}
+
+.dashboard-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 6px 12px;
+  width: 300px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.dashboard-search-box:focus-within {
+  background-color: #ffffff;
+  border-color: #5866f2;
+  box-shadow: 0 0 0 4px rgba(88, 102, 242, 0.1);
+}
+
+.dashboard-search-box .search-icon-btn {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #64748b;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.dashboard-search-box .search-icon-btn::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 2px;
+  background-color: #64748b;
+  bottom: -3px;
+  right: -5px;
+  transform: rotate(45deg);
+}
+
+.dashboard-search-box:focus-within .search-icon-btn {
+  border-color: #5866f2;
+}
+
+.dashboard-search-box:focus-within .search-icon-btn::after {
+  background-color: #5866f2;
+}
+
+.dashboard-search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #334155;
+  width: 100%;
+}
+
+.dashboard-search-box input::placeholder {
+  color: #94a3b8;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}

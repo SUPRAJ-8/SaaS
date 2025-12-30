@@ -1,0 +1,85 @@
+.portfolio-layout {
+  color: var(--theme-text);
+  font-family: var(--font-family, 'Helvetica Neue', Arial, sans-serif) !important;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.portfolio-layout *,
+.portfolio-layout *::before,
+.portfolio-layout *::after {
+  font-family: inherit !important;
+}
+
+.portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.portfolio-header h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--theme-accent);
+  order: 2;
+}
+
+.portfolio-logo-img {
+  max-height: 50px;
+  max-width: 200px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+  order: 2;
+}
+
+.portfolio-header nav {
+  order: 1;
+}
+
+.portfolio-header nav a {
+  margin-left: 1.5rem;
+  text-decoration: none;
+  color: var(--theme-text-offset);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.portfolio-header nav a:first-child {
+  margin-left: 0;
+}
+
+.portfolio-header nav a:hover {
+  color: var(--theme-accent);
+}
+
+.portfolio-header nav a::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--theme-accent);
+  transition: width 0.3s ease;
+}
+
+.portfolio-header nav a:hover::after {
+  width: 100%;
+}
+
+.portfolio-content {
+  padding: 2rem 0;
+}
+
+.portfolio-footer {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--theme-border);
+  color: var(--theme-text-offset);
+  font-size: 0.9rem;
+}

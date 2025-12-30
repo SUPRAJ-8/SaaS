@@ -1,0 +1,348 @@
+/* Reset list styles for preview */
+.footer-preview-container {
+    max-height: 300px;
+    overflow: hidden;
+    position: relative;
+}
+
+.footer-preview-container .nexus-theme {
+    transform: scale(0.7);
+    transform-origin: top left;
+    width: 142.857%;
+}
+
+.footer-preview-container ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.footer-preview-container li {
+    list-style: none !important;
+    padding-left: 0 !important;
+}
+
+.footer-preview-container li::before {
+    content: none !important;
+    display: none !important;
+}
+
+.footer-editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.footer-editor-modal {
+    background: white;
+    width: 100%;
+    max-width: 1521px;
+    margin-top: 70px;
+    max-height: 90vh;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #f44336;
+}
+
+.modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #444;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+/* Appearance Section Styles */
+.appearance-section {
+    background: #f1f5f9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.appearance-section>label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 1rem;
+    display: block;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.appearance-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.control-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.control-item label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.control-item select,
+.control-item input[type="text"] {
+    padding: 0.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+}
+
+/* Custom Color Picker Composite */
+.color-picker-composite {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    position: relative;
+    border: 1px solid #cbd5e1;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: white;
+}
+
+.color-input-hidden {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.color-preview-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    background-color: #eee;
+}
+
+.color-preview-circle:hover {
+    transform: scale(1.1);
+}
+
+.color-text-input {
+    flex: 1;
+    border: none !important;
+    font-family: monospace;
+    font-size: 0.9rem;
+    padding: 0 !important;
+    text-transform: uppercase;
+}
+
+.color-text-input:focus {
+    outline: none;
+}
+
+.bg-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem !important;
+    font-weight: normal !important;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: auto !important;
+}
+
+.links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.link-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.link-row input {
+    padding: 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    height: 38px;
+    /* Consistent height */
+    transition: border-color 0.2s;
+}
+
+.link-row input:focus {
+    border-color: #2196f3;
+    outline: none;
+}
+
+.link-row input:first-child {
+    flex: 1;
+    /* Name takes priority */
+}
+
+.link-row input:nth-child(2) {
+    flex: 1.5;
+    /* URL takes slightly more space if needed, or equal */
+}
+
+.delete-link-btn {
+    background: #fff1f2;
+    color: #ef4444;
+    border: 1px solid #fecdd3;
+    border-radius: 6px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    /* Prevent squishing */
+    padding: 0;
+}
+
+.delete-link-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+.delete-link-btn:hover {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    color: #dc2626;
+}
+
+.columns-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.column-editor {
+    flex: 1;
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+/* Compact Add Link Button */
+.add-link-btn {
+    margin-top: 0.5rem;
+    background: none;
+    border: 1px dashed #aaa;
+    color: #666;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: #fcfcfc;
+}
+
+.cancel-btn {
+    padding: 0.8rem 1.5rem;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.save-btn {
+    padding: 0.8rem 1.5rem;
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.save-btn:hover {
+    background: #1976d2;
+}

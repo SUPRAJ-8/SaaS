@@ -1,0 +1,35 @@
+.dashboard-layout {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  /* Reset theme variables for dashboard only */
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  --primary-color: #5866f2;
+  /* Professional Dashboard Blue */
+  --dashboard-bg: #f8fafc;
+  --text-color: #1e293b;
+  color: var(--text-color);
+}
+
+/* This container wraps the content, centering it and setting a max-width */
+.dashboard-content {
+  max-width: 100%;
+  /* A bit more space for the dashboard */
+  margin: 0 auto;
+  display: flex;
+  height: 100vh;
+}
+
+/* Main panel wraps head and content */
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  /* Allow content area to scroll independently */
+  padding: 25px;
+}

@@ -1,0 +1,1118 @@
+/* Nexus Theme Specific Styles - Discord-ish Dark Theme */
+.nexus-theme {
+    /* Core Palette - Dynamic with Discord Dark fallbacks */
+    --primary: var(--primary-color, #5866f2);
+    --primary-content: #ffffff;
+    --primary-dark: color-mix(in srgb, var(--primary), black 20%);
+    --primary-light: color-mix(in srgb, var(--primary), white 20%);
+
+    --secondary: var(--secondary-color, #f25899);
+    --secondary-content: #ffffff;
+    --secondary-dark: color-mix(in srgb, var(--secondary), black 20%);
+    --secondary-light: color-mix(in srgb, var(--secondary), white 20%);
+
+    --background: var(--background-color, #131420);
+    /* Page background */
+    --foreground: var(--surface-color, #1d1e30);
+    /* Cards, sections */
+    --border: var(--theme-border, #303350);
+    /* Dividers */
+
+    --copy: var(--text-color, #fafafc);
+    /* Headings */
+    --copy-light: color-mix(in srgb, var(--copy), transparent 20%);
+    /* Body */
+    --copy-lighter: color-mix(in srgb, var(--copy), transparent 40%);
+    /* Meta */
+
+    --success: #58f258;
+    --success-content: #054605;
+    --warning: #f2f258;
+    --warning-content: #464605;
+    --error: #f25858;
+    --error-content: #460505;
+
+    /* Theme Layout Mappings */
+    --nexus-bg: var(--background);
+    --nexus-surface: var(--foreground);
+    --nexus-text: var(--copy);
+    --nexus-border: var(--border);
+
+    /* Global Resets for Theme */
+    background-color: var(--background);
+    color: var(--copy);
+    font-family: var(--font-family, 'Inter', sans-serif) !important;
+    min-height: 100vh;
+}
+
+/* =========================================
+   HEADER / NAVIGATION
+   ========================================= */
+
+.nexus-theme .nexus-header {
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.nexus-theme .nexus-header-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nexus-theme .nexus-logo {
+    color: var(--copy, #ffffff);
+    font-weight: 800;
+    font-size: 1.5rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Nexus Category Dropdown */
+.nexus-theme .nexus-categories-dropdown {
+    position: relative;
+    margin-left: 2rem;
+}
+
+.nexus-theme .nexus-cat-btn {
+    background-color: var(--foreground);
+    border: 1px solid var(--border);
+    color: var(--copy);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .nexus-cat-btn:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-content);
+}
+
+.nexus-theme .nexus-cat-btn svg {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.nexus-theme .nexus-cat-btn svg.rotate {
+    transform: rotate(180deg);
+}
+
+.nexus-theme .nexus-cat-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background-color: var(--foreground);
+    min-width: 200px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    z-index: 1000;
+    padding: 8px;
+    animation: nexusFadeIn 0.2s ease-out;
+}
+
+.nexus-theme .nexus-cat-item {
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: var(--copy);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.nexus-theme .nexus-cat-item:hover {
+    background-color: var(--primary);
+    color: var(--primary-content);
+}
+
+/* Navigation Links */
+/* Nexus Nav */
+.nexus-theme .nexus-right-group {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    margin-left: auto;
+}
+
+.nexus-theme .nexus-nav {
+    display: flex;
+    gap: 2.5rem;
+}
+
+.nexus-theme .nexus-nav-middle {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+    justify-content: center;
+}
+
+.nexus-theme .nexus-separator {
+    color: var(--border);
+    opacity: 0.5;
+    margin: 0 0.5rem;
+}
+
+.nexus-theme .nexus-nav-link {
+    color: var(--copy, #ffffff);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: opacity 0.2s;
+}
+
+.nexus-theme .nexus-nav-link:hover {
+    opacity: 0.7;
+    color: var(--primary);
+}
+
+/* Nexus Mobile Menu */
+.nexus-theme .nexus-mobile-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--copy);
+    cursor: pointer;
+    z-index: 1002;
+    margin-left: 15px;
+}
+
+.nexus-theme .nexus-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.nexus-theme .nexus-mobile-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
+.nexus-theme .nexus-mobile-nav {
+    position: absolute;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100%;
+    background: var(--background);
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+}
+
+.nexus-theme .nexus-mobile-overlay.open .nexus-mobile-nav {
+    right: 0;
+}
+
+.nexus-theme .nexus-mobile-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+}
+
+.nexus-theme .nexus-mobile-nav-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--primary);
+}
+
+.nexus-theme .nexus-close-mobile {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--copy-lighter);
+    cursor: pointer;
+}
+
+.nexus-theme .nexus-mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.nexus-theme .nexus-mobile-links a {
+    text-decoration: none;
+    color: var(--copy);
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nexus-theme .nexus-mobile-links a:hover {
+    color: var(--primary);
+}
+
+.nexus-theme .nexus-mobile-categories {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.nexus-theme .nexus-mobile-categories h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--copy-lighter);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+.nexus-theme .nexus-mobile-categories a {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+@media (max-width: 992px) {
+    .nexus-theme .nexus-nav-middle {
+        display: none;
+    }
+
+    .nexus-theme .nexus-mobile-toggle {
+        display: block;
+    }
+
+    .nexus-theme .nexus-header {
+        padding: 0 1.5rem;
+    }
+}
+
+/* Search Bar */
+.nexus-theme .nexus-search {
+    background-color: var(--foreground);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .nexus-search:hover {
+    background-color: color-mix(in srgb, var(--foreground), white 5%);
+    /* Slightly lighter */
+}
+
+.nexus-theme .nexus-search input {
+    background: transparent;
+    border: none;
+    color: var(--copy);
+    width: 200px;
+    outline: none;
+}
+
+.nexus-theme .nexus-search input::placeholder {
+    color: var(--copy-lighter);
+}
+
+.nexus-theme .nexus-search svg {
+    color: var(--copy-lighter);
+}
+
+/* Categories Button */
+.nexus-theme .categories-btn {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    font-weight: 600;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .categories-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.nexus-theme .categories-btn:active {
+    background-color: var(--primary-light);
+    transform: translateY(0);
+}
+
+/* Icons: Wishlist / Cart / User */
+.nexus-theme .nexus-icon-btn {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--copy, #ffffff);
+    padding: 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+/* Nexus Actions */
+.nexus-theme .nexus-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.nexus-theme .nexus-search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nexus-theme .nexus-search-input {
+    background: var(--foreground, #1a1b1e);
+    border: 1px solid var(--border, #373a40);
+    color: var(--copy, #ffffff);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    width: 180px;
+    outline: none;
+    font-size: 0.9rem;
+    animation: nexusFadeIn 0.3s ease;
+}
+
+@keyframes nexusFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.nexus-theme .nexus-icon-btn:hover {
+    background-color: var(--foreground);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.nexus-theme .nexus-cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4d4f;
+    color: white;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+
+/* =========================================
+   PRODUCT CARDS
+   ========================================= */
+
+.nexus-theme .ecommerce-product-card {
+    width: 185px;
+    border: none;
+    border-radius: 10px;
+    text-align: left;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--surface-color, #ffffff);
+}
+
+.nexus-theme .dynamic-section-wrapper {
+    margin: 20px 0;
+}
+
+
+
+.nexus-theme .ecommerce-product-card img {
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+
+
+.nexus-theme .discount-badge {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.nexus-theme .product-image-container:hover {
+    transform: scale(1);
+}
+
+/* Text in Cards */
+.nexus-theme .product-details h3 {
+    font-size: .75rem;
+    font-weight: normal;
+    margin: 0;
+    color: var(--text-color, #1f2937);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 2.4em;
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+.nexus-theme .ecommerce-product-card:hover .product-details h3 {
+    color: var(--primary);
+}
+
+.nexus-theme .product-details p {
+    /* Description if any */
+    color: var(--copy-light);
+}
+
+.nexus-theme .product-price {
+    font-weight: bold;
+    color: var(--primary-color, #000);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.nexus-theme .original-price {
+    font-size: 12px;
+    text-decoration: line-through;
+    color: #9ca3af;
+    white-space: nowrap;
+    opacity: 0.7;
+}
+
+/* Ratings */
+.nexus-theme .star {
+    color: #fbbf24;
+}
+
+.nexus-theme .rating-value {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Add to Cart Button (Card) */
+.nexus-theme .add-to-cart-btn-small {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    border: none;
+    border-radius: 0 0 10px 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nexus-theme .add-to-cart-btn-small:hover {
+    background-color: var(--primary-dark);
+    color: var(--primary-content);
+    transform: translateY(-1px);
+}
+
+/* Wishlist Heart Icon (Card) */
+.nexus-theme .wishlist-btn {
+    color: var(--copy-lighter);
+    background: transparent;
+    border: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nexus-theme .wishlist-btn:hover {
+    color: var(--secondary-light);
+    transform: scale(1.1);
+}
+
+.nexus-theme .wishlist-btn.active {
+    color: var(--secondary);
+}
+
+
+/* =========================================
+   PRODUCT DETAIL PAGE
+   ========================================= */
+
+.nexus-theme .product-detail {
+    background-color: var(--background);
+    color: var(--copy);
+}
+
+/* Image Container */
+
+/* Product Info */
+.nexus-theme .product-detail-name {
+    color: var(--copy);
+}
+
+.nexus-theme .product-stats {
+    /* Subtitle/Stats wrapper */
+    color: var(--copy-light);
+}
+
+.nexus-theme .product-selling-price {
+    color: #111827;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nexus-theme .product-original-price {
+    color: var(--copy-lighter);
+    text-decoration: line-through;
+}
+
+.nexus-theme .product-discount {
+    background-color: var(--success);
+    color: var(--success-content);
+}
+
+.nexus-theme .reviews-text,
+.nexus-theme .sku-text {
+    color: var(--copy-lighter);
+}
+
+/* Stock Status */
+.nexus-theme .product-stock {
+    color: var(--success);
+    /* In Stock text */
+}
+
+.nexus-theme .stock-dot {
+    background-color: var(--success);
+}
+
+.nexus-theme .low-stock-warning,
+.nexus-theme .out-of-stock {
+    color: var(--error);
+}
+
+/* Section Headings & Links */
+.nexus-theme .option-group label {
+    color: var(--copy);
+}
+
+.nexus-theme .size-guide {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.nexus-theme .size-guide:hover {
+    color: var(--primary-dark);
+}
+
+/* Color Swatches */
+.nexus-theme .color-swatch {
+    background-color: var(--foreground);
+    /* If transparent image, shows bg */
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .color-swatch:hover {
+    border-color: var(--copy-light);
+    transform: scale(1.1);
+}
+
+.nexus-theme .color-option.active .color-swatch,
+.nexus-theme .color-swatch.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+}
+
+.nexus-theme .color-option span {
+    color: var(--copy-light);
+}
+
+/* Size Buttons */
+.nexus-theme .size-button {
+    background-color: var(--foreground);
+    color: var(--copy);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .size-button:hover {
+    background-color: var(--border);
+    /* Slightly lighter than foreground usually */
+    color: var(--copy);
+}
+
+.nexus-theme .size-button.active {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    border-color: var(--primary);
+}
+
+/* Quantity Selector */
+.nexus-theme .quantity-control {
+    background-color: var(--foreground);
+    border: 1px solid var(--border);
+}
+
+.nexus-theme .quantity-input {
+    background-color: var(--foreground) !important;
+    color: var(--copy);
+    border: none;
+}
+
+.nexus-theme .quantity-control button {
+    background-color: transparent;
+    color: var(--copy-light);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .quantity-control button:hover:not(:disabled) {
+    background-color: var(--border);
+    color: var(--primary);
+}
+
+/* Action Buttons (Detail Page) */
+.nexus-theme .buy-now-btn {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .buy-now-btn:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 102, 242, 0.3);
+    /* Using primary shade logic */
+}
+
+.nexus-theme .add-to-cart-btn-detail {
+    background-color: var(--background);
+    color: var(--copy);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .add-to-cart-btn-detail:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* Shipping Info */
+.nexus-theme .shipping-info svg,
+.nexus-theme .delivery-location svg {
+    color: var(--success);
+}
+
+.nexus-theme .shipping-info {
+    color: var(--copy-light);
+}
+
+.nexus-theme .delivery-location {
+    color: var(--copy-lighter);
+}
+
+
+/* =========================================
+   FOOTER
+   ========================================= */
+
+.nexus-theme .nexus-footer {
+    padding: 1.5rem 2rem;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--footer-bg-color);
+    color: var(--footer-text-color) !important;
+}
+
+.nexus-theme .nexus-footer-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.nexus-theme .nexus-footer-logo {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: inherit;
+}
+
+.nexus-theme .nexus-tagline-col p {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.nexus-theme .nexus-footer-divider {
+    border-top: 1px solid #dee2e6;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.nexus-theme .nexus-footer-content {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.nexus-theme .nexus-footer-columns {
+    flex: 3;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.nexus-theme .nexus-col {
+    flex: 1;
+    min-width: 160px;
+}
+
+.nexus-theme .nexus-col h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.nexus-theme .nexus-links-list,
+.nexus-theme .contact-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nexus-theme .nexus-links-list li,
+.nexus-theme .contact-list li {
+    margin-bottom: 0.6rem;
+    list-style: none;
+}
+
+.nexus-theme .nexus-links-list a,
+.nexus-theme .contact-list span {
+    text-decoration: none;
+    transition: color 0.2s ease;
+    font-size: 0.9rem;
+    color: inherit;
+}
+
+.nexus-theme .nexus-links-list a:hover {
+    filter: brightness(1.2);
+}
+
+.nexus-theme .contact-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    list-style: none !important;
+}
+
+.nexus-theme .contact-list li::before {
+    content: none !important;
+}
+
+.nexus-theme .contact-list svg {
+    color: inherit;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.nexus-theme .nexus-footer-socials {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.nexus-theme .social-icons {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.nexus-theme .social-icons a {
+    border: 1px solid;
+    border-color: inherit;
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: inherit;
+}
+
+.nexus-theme .social-icons a:hover {
+    filter: brightness(1.2);
+}
+
+.nexus-theme .nexus-footer-bottom {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+}
+
+.nexus-theme .nexus-footer-bottom p {
+    font-size: 15px !important;
+}
+
+.nexus-theme .nexus-legal a {
+    text-decoration: none;
+    margin-left: 1.5rem;
+    transition: color 0.2s ease;
+    color: inherit;
+}
+
+.nexus-theme .nexus-legal a:hover {
+    filter: brightness(1.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .nexus-theme .nexus-footer-content {
+        flex-direction: column;
+    }
+
+    .nexus-theme .nexus-footer-socials {
+        justify-content: flex-start;
+        margin-top: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .nexus-theme .nexus-footer-top,
+    .nexus-theme .nexus-footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        text-align: left;
+    }
+
+    .nexus-theme .nexus-legal a {
+        margin-left: 0;
+        margin-right: 1.5rem;
+    }
+}
+
+
+/* =========================================
+   FORMS
+   ========================================= */
+
+.nexus-theme input {
+    background-color: var(--foreground);
+    color: var(--copy);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme input::placeholder {
+    color: var(--copy-lighter);
+}
+
+.nexus-theme input:hover {
+    border-color: var(--copy-lighter);
+}
+
+.nexus-theme input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(88, 102, 242, 0.1);
+}
+
+.nexus-theme input.error {
+    border-color: var(--error);
+}
+
+.nexus-theme label {
+    color: var(--copy);
+}
+
+.nexus-theme .helper-text {
+    color: var(--copy-light);
+}
+
+.nexus-theme .error-text {
+    color: var(--error);
+}
+
+
+/* =========================================
+   ALERTS
+   ========================================= */
+
+.nexus-theme .success-message {
+    background-color: var(--success);
+    color: var(--success-content);
+}
+
+.nexus-theme .warning-message {
+    background-color: var(--warning);
+    color: var(--warning-content);
+}
+
+.nexus-theme .error-message {
+    background-color: var(--error);
+    color: var(--error-content);
+}
+
+
+/* =========================================
+   BUTTONS (General)
+   ========================================= */
+
+.nexus-theme .btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-content);
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.nexus-theme .btn-primary:active {
+    background-color: var(--primary-light);
+    transform: translateY(0);
+}
+
+.nexus-theme .btn-secondary {
+    background-color: var(--background);
+    color: var(--copy);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .btn-secondary:hover {
+    background-color: var(--foreground);
+}
+
+.nexus-theme button:disabled {
+    background-color: var(--foreground);
+    color: var(--copy-lighter);
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 768px) {
+    .nexus-theme .nexus-nav {
+        display: none;
+    }
+
+    .nexus-theme .nexus-mobile-menu,
+    .nexus-theme .nexus-mobile-toggle {
+        display: block;
+        color: var(--copy);
+    }
+
+    /* Force visibility in Page Builder Mobile Preview */
+    .builder-canvas-container.mobile .nexus-mobile-toggle {
+        display: block !important;
+    }
+
+    .nexus-theme .nexus-footer-columns {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .nexus-theme .nexus-footer-content {
+        flex-direction: column;
+    }
+
+    .nexus-theme .nexus-footer-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .nexus-theme .nexus-footer-bottom {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+/* Nexus Mobile Search Responsiveness */
+@media (max-width: 992px) {
+    .nexus-theme .nexus-search-wrapper {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: var(--background);
+        padding: 10px 1.5rem;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        z-index: 1001;
+        display: none;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .nexus-theme .nexus-search-wrapper.open {
+        display: flex;
+    }
+
+    .nexus-theme .nexus-search-input {
+        width: 100% !important;
+        background: var(--foreground) !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    .nexus-theme .nexus-header {
+        height: auto !important;
+        min-height: 70px;
+        padding: 10px 1.5rem !important;
+        flex-wrap: wrap !important;
+    }
+}

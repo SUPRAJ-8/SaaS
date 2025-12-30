@@ -1,0 +1,152 @@
+.cart {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cart h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.cart-item-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 1.5rem;
+}
+
+.cart-item-info {
+  flex: 1;
+}
+
+.cart-item-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cart-item-actions input {
+  width: 50px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.cart-item-actions button {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.cart-summary {
+  margin-top: 2rem;
+  text-align: right;
+}
+
+.checkout-btn {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkout-btn:hover {
+  background-color: #4338ca;
+}
+
+.cart-summary button:hover {
+  background-color: #c0392b;
+}
+
+.apply-coupon {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.coupon-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coupon-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-color: #8e44ad;
+  margin-right: 12px;
+  border-radius: 4px;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9A2 2 0 0011 2H4a2 2 0 00-2 2v7a2 2 0 00.59 1.42l9 9a2 2 0 002.82 0l7-7a2 2 0 000-2.84zM6.5 8.5A1.5 1.5 0 118 7a1.5 1.5 0 01-1.5 1.5z"/></svg>') no-repeat center;
+  mask-size: contain;
+}
+
+.coupon-header h4 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.coupon-body {
+  display: flex;
+}
+
+.coupon-body input {
+  width: 350px;
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.coupon-body button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.coupon-body button:hover {
+  background-color: #c0392b;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.summary-item.total {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-top: 16px;
+}

@@ -1,0 +1,106 @@
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center; /* Vertically center */
+  justify-content: center;
+  z-index: 1000;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.modal-overlay.open {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Modal Content */
+.modal-content {
+    animation: slideUp 0.3s ease-out;
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 12px; /* Slightly more rounded corners */
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  text-align: center; /* Center all text */
+  transform: scale(0.9);
+  opacity: 0;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.modal-overlay.open .modal-content {
+    animation: slideUp 0.3s ease-out;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Modal Icon */
+.modal-icon {
+  margin: 0 auto 1rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #eef2ff; /* Light blue background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6; /* Blue icon color */
+  font-size: 1.5rem;
+}
+
+/* Modal Header */
+.modal-header h2 {
+  font-size: 1.25rem;
+  color: #1e293b;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-text {
+  text-align: center;
+  color: #475569;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn-cancel, .btn-delete {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  flex: none;
+  min-width: 120px;
+}
+
+.btn-cancel {
+  background-color: #ffffff;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.btn-cancel:hover {
+  background-color: #f8fafc;
+}
+
+.btn-delete {
+  background-color: #ef4444; /* Red 500 */
+  color: white;
+  border-color: #ef4444;
+}
+
+.btn-delete:hover {
+  background-color: #dc2626; /* Red 600 */
+}
+

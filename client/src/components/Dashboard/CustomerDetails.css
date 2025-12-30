@@ -1,0 +1,123 @@
+.clickable-path {
+  cursor: pointer;
+}
+
+.clickable-path:hover {
+  text-decoration: underline;
+}
+
+.customer-details-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.orders-table-container {
+  border: calc(.0625rem * var(--mantine-scale)) solid var(--mantine-datatable-border-color);
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th, .orders-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.orders-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: #ffffff;
+}
+
+.orders-table td {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: black;
+}
+
+.orders-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  text-align: center;
+  display: inline-block;
+}
+
+.status-paid, .status-delivered {
+  background-color: #dcfce7;
+}
+
+.status-pending, .status-shipped {
+  background-color: #fef3c7;
+}
+
+.status-select {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-weight: 500;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-13%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2013l128%20127.9c3.6%203.6%207.8%205.4%2013%205.4s9.4-1.8%2013-5.4L287%2095.2c3.6-3.6%205.4-7.8%205.4-13%200-5-1.8-9.4-5.4-13z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 0.7em top 50%;
+  background-size: 0.65em auto;
+  min-width: 110px;
+}
+
+.status-select.status-paid, .status-select.status-delivered {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-select.status-unpaid, .status-select.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sort-icon-group {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.sort-icon {
+  font-size: 0.8rem;
+  height: 8px;
+  color: #cbd5e1;
+}
+
+.sort-icon.active {
+  color: #4f46e5;
+}
+
+.status-select.status-shipping {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.status-select.status-processing {
+  background-color: #fef3c7;
+  color: #92400e;
+}

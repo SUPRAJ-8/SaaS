@@ -1,0 +1,45 @@
+.shop-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.shop-header {
+  background-color: #333;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shop-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.shop-header nav a {
+  color: white;
+  margin-left: 1rem;
+  text-decoration: none;
+}
+
+.shop-header nav a:hover {
+  text-decoration: underline;
+}
+
+.shop-content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.shop-content.home-page {
+  padding: 0;
+}
+
+.shop-footer {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+}

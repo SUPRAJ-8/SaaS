@@ -1,0 +1,259 @@
+.store-users-page .page-header {
+  justify-content: space-between;
+}
+
+.store-users-page .page-header-left {
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.store-users-search {
+  position: relative;
+  flex: 0 1 360px;
+  max-width: 250px;
+}
+
+.store-users-search .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.store-users-search .search-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.store-users-search .search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+
+
+.add-user-btn {
+  background-color: #4f46e5; /* Indigo */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.add-user-btn:hover {
+  background-color: #4338ca;
+}
+
+.users-table-container {
+  border: calc(.0625rem * var(--mantine-scale)) solid var(--mantine-datatable-border-color);
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden; /* Ensures the border radius is respected by the table */
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th, .users-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0; /* Slate 200 */
+}
+
+.users-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: #ffffff; /* White */
+}
+
+.users-table td {
+  font-size: 0.875rem;
+  color: #334155; /* Slate 700 */
+}
+
+.status-select {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-weight: 500;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-13%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2013l128%20127.9c3.6%203.6%207.8%205.4%2013%205.4s9.4-1.8%2013-5.4L287%2095.2c3.6-3.6%205.4-7.8%205.4-13%200-5-1.8-9.4-5.4-13z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 0.7em top 50%;
+  background-size: 0.65em auto;
+  min-width: 110px;
+}
+
+.status-select.status-active {
+  background-color: #dcfce7; /* Green 100 */
+  color: #166534; /* Green 800 */
+}
+
+.status-select.status-inactive {
+  background-color: #fee2e2; /* Red 100 */
+  color: #991b1b; /* Red 800 */
+}
+
+.actions-cell .action-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-right: 1rem;
+}
+
+.edit-btn {
+  color: #4f46e5; /* Indigo */
+}
+
+.delete-btn {
+  color: #dc2626; /* Red 600 */
+}
+
+.role-select {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-weight: 500;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-13%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2013l128%20127.9c3.6%203.6%207.8%205.4%2013%205.4s9.4-1.8%2013-5.4L287%2095.2c3.6-3.6%205.4-7.8%205.4-13%200-5-1.8-9.4-5.4-13z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 0.7em top 50%;
+  background-size: 0.65em auto;
+  min-width: 110px;
+}
+
+.role-select.role-admin {
+  background-color: #e0e7ff; /* Indigo 100 */
+  color: #3730a3; /* Indigo 800 */
+}
+
+.role-select.role-manager {
+  background-color: #fef3c7; /* Amber 100 */
+  color: #92400e; /* Amber 800 */
+}
+
+.role-select.role-staff {
+  background-color: #f3f4f6; /* Gray 100 */
+  color: #374151; /* Gray 700 */
+}
+
+.delete-btn {
+  color: #dc2626; /* Red 600 */
+  font-size: 1rem;
+}
+
+.user-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px; /* For a slightly rounded square shape */
+  object-fit: cover; /* Ensures the image covers the area without distortion */
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: #64748b; /* Slate 500 */
+}
+
+.no-data-cell {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.no-data-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-data-icon {
+  font-size: 5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none; /* Prevents text selection on click */
+  transition: background-color 0.2s;
+}
+
+.sortable-header:hover {
+  background-color: #eef2ff; /* Light indigo for hover */
+}
+
+.sort-icon-group {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.sort-icon-group {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.sort-icon {
+  font-size: 0.8rem;
+  height: 8px;
+  color: black; /* Lighter gray for inactive */
+}
+
+.sort-icon.active {
+  color: #334155; /* Darker color for active */
+}
+
+
+.user-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px; /* For a slightly rounded square shape */
+  object-fit: cover; /* Ensures the image covers the area without distortion */
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: #64748b; /* Slate 500 */
+}

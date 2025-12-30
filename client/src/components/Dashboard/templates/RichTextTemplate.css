@@ -1,0 +1,196 @@
+.rich-text-section {
+    width: 100%;
+    margin: 0 auto;
+    overflow: visible;
+    /* Padding is now controlled dynamically via inline styles */
+}
+
+.rich-text-container {
+    margin: 0 auto;
+    padding: 0 15px;
+    font-family: var(--font-family, inherit);
+    color: var(--text-color, inherit);
+}
+
+/* Ensure ql-editor styles are applied even in read-only mode if we use the same class */
+.rich-text-container .ql-editor {
+    min-height: auto;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+    font-family: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+/* Quill Editor Default Styles - Essential for proper formatting */
+.rich-text-container .ql-editor ul,
+.rich-text-container .ql-editor ol {
+    padding-left: 1.5em;
+}
+
+.rich-text-container .ql-editor ul>li,
+.rich-text-container .ql-editor ol>li {
+    list-style-type: none;
+}
+
+.rich-text-container .ql-editor ul>li::before {
+    content: '\2022';
+    margin-left: -1.5em;
+    margin-right: 0.3em;
+    text-align: right;
+    white-space: nowrap;
+    width: 1.2em;
+    display: inline-block;
+}
+
+.rich-text-container .ql-editor ol {
+    counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+}
+
+.rich-text-container .ql-editor ol>li {
+    counter-increment: list-1;
+}
+
+.rich-text-container .ql-editor ol>li::before {
+    content: counter(list-1, decimal) '. ';
+    margin-left: -1.5em;
+    margin-right: 0.3em;
+    text-align: right;
+    white-space: nowrap;
+    width: 1.2em;
+    display: inline-block;
+}
+
+.rich-text-container .ql-editor li.ql-indent-1 {
+    padding-left: 3em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-2 {
+    padding-left: 4.5em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-3 {
+    padding-left: 6em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-4 {
+    padding-left: 7.5em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-5 {
+    padding-left: 9em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-6 {
+    padding-left: 10.5em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-7 {
+    padding-left: 12em;
+}
+
+.rich-text-container .ql-editor li.ql-indent-8 {
+    padding-left: 13.5em;
+}
+
+/* Preserve other Quill formatting */
+.rich-text-container .ql-editor h1,
+.rich-text-container .ql-editor h2,
+.rich-text-container .ql-editor h3,
+.rich-text-container .ql-editor h4,
+.rich-text-container .ql-editor h5,
+.rich-text-container .ql-editor h6 {
+    margin: 0;
+    padding: 0;
+}
+
+.rich-text-container .ql-editor p {
+    margin: 0;
+    padding: 0;
+}
+
+.rich-text-container .ql-editor strong {
+    font-weight: bold;
+}
+
+.rich-text-container .ql-editor em {
+    font-style: italic;
+}
+
+.rich-text-container .ql-editor u {
+    text-decoration: underline;
+}
+
+.rich-text-container .ql-editor s {
+    text-decoration: line-through;
+}
+
+.rich-text-container .ql-editor a {
+    text-decoration: underline;
+}
+
+.rich-text-container .ql-editor blockquote {
+    border-left: 4px solid #ccc;
+    margin-bottom: 5px;
+    margin-top: 5px;
+    padding-left: 16px;
+}
+
+.rich-text-container .ql-editor code,
+.rich-text-container .ql-editor pre {
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+.rich-text-container .ql-editor pre {
+    white-space: pre-wrap;
+    margin-bottom: 5px;
+    margin-top: 5px;
+    padding: 5px 10px;
+}
+
+.rich-text-container .ql-editor code {
+    font-size: 85%;
+    padding: 2px 4px;
+}
+
+/* Responsiveness for Rich Text Content */
+.rich-text-container .ql-editor .video-container {
+    width: 100%;
+    margin: 15px 0;
+}
+
+.rich-text-container .ql-editor .video-container iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 500px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rich-text-container .ql-editor img,
+.rich-text-container .ql-editor video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px auto;
+}
+
+.rich-text-container .ql-editor iframe,
+.rich-text-container .ql-editor object,
+.rich-text-container .ql-editor embed {
+    max-width: 100%;
+    width: 100%;
+    aspect-ratio: 16/9;
+    min-height: 500px;
+    display: block;
+    margin: 10px auto;
+}
+
+.rich-text-container .ql-editor {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
