@@ -32,7 +32,7 @@ function AppRouter() {
   const { siteSettings } = useSiteSettings();
   const isUnderConstruction = siteSettings?.siteUnderConstruction || false;
 
-  // Subdomain Detection Logic
+  // Subdomain Detection Logic (v1.0.1)
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
 
