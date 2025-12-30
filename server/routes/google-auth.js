@@ -14,8 +14,8 @@ router.get('/google', passport.authenticate('google', {
 // @access  Public
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login-error' }), (req, res) => {
   // Successful authentication, redirect to the client's dashboard.
-  // The client-side will need to handle this redirect.
-  res.redirect('http://localhost:3000/dashboard'); 
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+  res.redirect(`${clientUrl}/dashboard`);
 });
 
 // @route   GET /api/logout
