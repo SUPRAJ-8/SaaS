@@ -5,6 +5,7 @@ import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox } from 'react-icons/
 import CustomerAvatar from './CustomerAvatar';
 import { toast } from 'react-toastify';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import API_URL from '../../apiConfig';
 import './Customers.css';
 import './Switch.css'; // Reuse the same switch styles
 
@@ -22,7 +23,7 @@ const Customers = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await axios.get('/api/customers');
+        const response = await axios.get(`${API_URL}/api/customers`);
         console.log('Customers fetched:', response.data);
         setCustomers(response.data);
         setLoading(false);
@@ -103,7 +104,7 @@ const Customers = () => {
   const confirmDelete = async () => {
     if (customerToDelete) {
       try {
-        const response = await axios.delete(`/api/customers/${customerToDelete._id}`);
+        const response = await axios.delete(`${API_URL}/api/customers/${customerToDelete._id}`);
         setCustomers(customers.filter((customer) => customer._id !== customerToDelete._id));
 
         const deletedOrdersCount = response.data.deletedOrdersCount || 0;

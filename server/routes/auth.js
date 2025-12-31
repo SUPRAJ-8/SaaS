@@ -73,20 +73,9 @@ router.post('/register', async (req, res) => {
             }
 
             // req.login() automatically calls serializeUser and sets req.session.passport
-            // Don't manually overwrite it - let passport handle it
             console.log('💾 Registration session after req.login:', req.session);
-            console.log('💾 Passport data:', req.session.passport);
 
-            // Explicitly save the session before sending response
-            req.session.save((saveErr) => {
-                if (saveErr) {
-                    console.error('Session save error (register):', saveErr);
-                    return res.status(500).json({ msg: 'Session save failed' });
-                }
-
-                console.log('✅ Registration session saved successfully');
-                res.json({ success: true, msg: 'Store created successfully', user: savedUser });
-            });
+            res.json({ success: true, msg: 'Store created successfully', user: savedUser });
         });
 
     } catch (err) {
@@ -120,27 +109,16 @@ router.post('/login', async (req, res) => {
             }
 
             // req.login() automatically calls serializeUser and sets req.session.passport
-            // Don't manually overwrite it - let passport handle it
             console.log('💾 Login session after req.login:', req.session);
-            console.log('💾 Passport data:', req.session.passport);
 
-            // Explicitly save the session before sending response
-            req.session.save((saveErr) => {
-                if (saveErr) {
-                    console.error('Session save error:', saveErr);
-                    return res.status(500).json({ msg: 'Session save failed' });
+            res.json({
+                success: true,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    clientId: user.clientId
                 }
-
-                console.log('✅ Session saved successfully');
-                res.json({
-                    success: true,
-                    user: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        clientId: user.clientId
-                    }
-                });
             });
         });
     } catch (err) {

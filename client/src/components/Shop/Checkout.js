@@ -5,6 +5,7 @@ import './Checkout.css';
 import Stepper from './Stepper';
 import AddressForm from './AddressForm';
 import axios from 'axios';
+import API_URL from '../../apiConfig';
 
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -195,7 +196,7 @@ const Checkout = () => {
     };
 
     try {
-      const response = await axios.post('/api/orders', orderDetails);
+      const response = await axios.post(`${API_URL} /api/orders`, orderDetails);
       console.log('Order placed successfully:', response.data);
       dispatch({ type: 'CLEAR_CART' });
       setCompletedOrderId(response.data.orderId);

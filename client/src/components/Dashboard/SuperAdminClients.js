@@ -21,6 +21,7 @@ import {
     FaArrowUp
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import API_URL from '../../apiConfig';
 import './SuperAdminDashboard.css';
 
 const SuperAdminClients = () => {
@@ -34,7 +35,7 @@ const SuperAdminClients = () => {
 
     const fetchClients = async () => {
         try {
-            const response = await axios.get('/api/super-admin/clients');
+            const response = await axios.get(`${API_URL}/api/super-admin/clients`);
             setClients(response.data);
             setLoading(false);
         } catch (error) {

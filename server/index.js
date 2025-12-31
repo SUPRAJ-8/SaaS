@@ -53,10 +53,17 @@ app.use(
     keys: ['ecommerce_secret_key'], // Simple fixed key for consistency
     // Don't set domain for localhost - let browser handle it
     // When using proxy, cookies will be on same origin
-    // For production, set domain to share across subdomains
-    domain: isProd ? '.nepostore.xyz' : undefined,
-    secure: isProd, // Must be false for localhost HTTP, true for production HTTPS
-    sameSite: 'lax', // Lax works for cross-origin with credentials
+    // For cross-domain cookies (Frontend on Vercel, Backend on Render), 
+    // we MUST use sameSite: 'none' and secure: true.
+    // Also, don't set a specific domain if the backend and frontend 
+    // are on different base domains (e.g., nepostore.xyz vs onrender.com).
+    ...(isProd ? {
+      sameSite: 'none',
+      secure: true
+    } : {
+      sameSite: 'lax',
+      secure: false
+    }),
     httpOnly: true
   })
 );
@@ -89,10 +96,10 @@ const Client = require('./models/Client');
 const subdomainHandler = async (req, res, next) => {
   const host = req.hostname;
   const parts = host.split('.');
-  
+
   // Determine subdomain based on hostname structure
   let subdomain = null;
-  
+
   if (host.endsWith('.localhost')) {
     // e.g., app.localhost, tenant.localhost
     subdomain = parts[0];

@@ -18,7 +18,8 @@ if "%~1"=="" (
     echo %yellow%Enter your commit message:%reset%
     set /p commit_message=Commit Message: 
 ) else (
-    set commit_message=%*
+    REM Use first argument as commit message (use quotes for multi-word messages)
+    set "commit_message=%~1"
 )
 
 REM ─── Use Default Message if None Provided ─────────────────────────────────

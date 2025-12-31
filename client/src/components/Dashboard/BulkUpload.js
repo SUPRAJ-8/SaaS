@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import API_URL from '../../apiConfig';
 import './BulkUpload.css';
 
 const BulkUpload = () => {
@@ -24,7 +25,7 @@ const BulkUpload = () => {
     setMessage('');
 
     try {
-      const response = await axios.post('/api/products/bulk-upload', formData, {
+      const response = await axios.post(`${API_URL}/api/products/bulk-upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
