@@ -23,8 +23,35 @@ const Header = () => {
     fetchUser();
   }, []);
 
-  const handleLogout = () => {
-    window.location.href = `${API_URL}/auth/logout`;
+  const handleLogout = async () => {
+    try {
+      // Call logout endpoint
+      await axios.get(`${API_URL}/auth/logout`, {
+        withCredentials: true
+      });
+      
+      // Determine redirect URL based on current location
+      const hostname = window.location.hostname;
+      let redirectUrl = '/login';
+      
+      if (hostname.includes('nepostore.xyz')) {
+        // Production: stay on app subdomain
+        redirectUrl = 'https://app.nepostore.xyz/login';
+      } else if (hostname.includes('app.localhost')) {
+        // Development with subdomain
+        redirectUrl = 'http://app.localhost:3000/login';
+      } else {
+        // Development: use relative path
+        redirectUrl = '/login';
+      }
+      
+      // Redirect to login page
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails, redirect to login
+      window.location.href = '/login';
+    }
   };
 
   return (

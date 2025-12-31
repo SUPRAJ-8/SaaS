@@ -59,11 +59,30 @@ const DashboardHome = () => {
 
   // Build the shop link
   const getShopLink = () => {
-    if (!client || !client.subdomain) return '/';
-    const protocol = window.location.protocol;
-    const port = window.location.port ? `:${window.location.port}` : '';
-    const baseDomain = window.location.hostname.endsWith('.localhost') ? 'localhost' : 'nepostore.xyz';
-    return `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+    if (!client || !client.subdomain) {
+      console.warn('Client or subdomain not available');
+      return '#';
+    }
+    
+    const hostname = window.location.hostname;
+    let protocol = window.location.protocol;
+    let port = window.location.port ? `:${window.location.port}` : '';
+    let baseDomain = 'localhost';
+    
+    // Determine base domain and protocol based on environment
+    if (hostname.includes('nepostore.xyz')) {
+      // Production
+      baseDomain = 'nepostore.xyz';
+      protocol = 'https:';
+      port = ''; // No port in production
+    } else if (hostname.endsWith('.localhost') || hostname === 'localhost') {
+      // Development
+      baseDomain = 'localhost';
+      protocol = 'http:';
+    }
+    
+    const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+    return shopUrl;
   };
 
   // Real data for the stat cards

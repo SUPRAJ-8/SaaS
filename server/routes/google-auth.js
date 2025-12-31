@@ -33,7 +33,24 @@ router.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) { return next(err); }
     req.session = null; // Clear the session cookie
-    res.redirect('http://localhost:3000'); // Redirect to landing page
+    
+    // Determine redirect URL based on environment
+    let redirectUrl = 'http://localhost:3000'; // Default for development
+    
+    // Check if we're in production
+    const origin = req.get('origin') || req.get('referer') || '';
+    if (origin.includes('nepostore.xyz')) {
+      // Production: redirect to app subdomain login page
+      redirectUrl = 'https://app.nepostore.xyz/login';
+    } else if (origin.includes('app.localhost')) {
+      // Development with subdomain: redirect to app subdomain login
+      redirectUrl = 'http://app.localhost:3000/login';
+    } else if (origin.includes('localhost')) {
+      // Development: redirect to main domain
+      redirectUrl = 'http://localhost:3000';
+    }
+    
+    res.redirect(redirectUrl);
   });
 });
 
