@@ -2,16 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Website = require('../models/Website');
 
-// Placeholder for authentication middleware (same as in customers.js)
-const authMiddleware = (req, res, next) => {
-  req.user = {
-    id: 'someUserId_from_jwt',
-    clientId: '60d5f1b3b3f3b3f3b3f3b3f3' // IMPORTANT: Replace with a REAL clientId from your DB for testing
-  };
-  next();
-};
+const { ensureAuthenticated } = require('../middleware/auth');
 
-router.use(authMiddleware);
+router.use(ensureAuthenticated);
 
 // --- CRUD ROUTES FOR WEBSITES ---
 

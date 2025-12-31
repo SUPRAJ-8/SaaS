@@ -1,24 +1,64 @@
 .dashboard-home-header {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1.5rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-home-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-home-header p {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.customize-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.customize-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
 }
 
 .website-link-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #4f46e5; /* Indigo 600 */
+  background-color: #5c59e8;
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
   text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(92, 89, 232, 0.2);
 }
 
 .website-link-btn:hover {
-  background-color: #4338ca; /* Indigo 700 */
+  background-color: #4b48d6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px -2px rgba(92, 89, 232, 0.3);
 }
 
 .dashboard-home .stats-grid {

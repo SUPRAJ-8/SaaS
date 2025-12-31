@@ -13,6 +13,13 @@ const clientSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  subdomain: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+    lowercase: true
+  },
   subscriptionPlan: {
     type: String,
     enum: ['free', 'basic', 'pro', 'enterprise'],

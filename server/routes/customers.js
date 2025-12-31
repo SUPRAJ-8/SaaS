@@ -4,45 +4,34 @@ const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const mongoose = require('mongoose');
 
-// This is a placeholder for your authentication middleware.
-// In a real application, this middleware would verify a JWT (JSON Web Token)
-// and attach the user's information, including their clientId, to the request object.
-const authMiddleware = (req, res, next) => {
-  // For development, we'll simulate a logged-in user from a specific client.
-  // In production, you would decode a token to get this info.
-  req.user = {
-    id: 'someUserId_from_jwt',
-    clientId: '60d5f1b3b3f3b3f3b3f3b3f3' // IMPORTANT: Replace with a REAL clientId from your DB for testing
-  };
-  next();
-};
+const { ensureAuthenticated } = require('../middleware/auth');
 
 // Apply the authentication middleware to all routes in this file.
-router.use(authMiddleware);
+router.use(ensureAuthenticated);
 
 // --- CRUD ROUTES FOR CUSTOMERS ---
 
 // GET all customers for the logged-in user's client with order statistics
 router.get('/', async (req, res) => {
   try {
-    const clientId = req.user?.clientId || new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3');
-    
+    const clientId = req.user.clientId;
+
     // Fetch all customers
     const customers = await Customer.find({ clientId: clientId }).lean();
-    
+
     // For each customer, get their order statistics
     const customersWithStats = await Promise.all(
       customers.map(async (customer) => {
         // Get all orders for this customer
         const orders = await Order.find({ customer: customer._id }).lean();
-        
+
         // Calculate statistics
         const totalOrders = orders.length;
         const totalSpent = orders.reduce((sum, order) => sum + (order.payment?.total || 0), 0);
-        const lastOrder = orders.length > 0 
-          ? orders.sort((a, b) => new Date(b.placedOn) - new Date(a.placedOn))[0].placedOn 
+        const lastOrder = orders.length > 0
+          ? orders.sort((a, b) => new Date(b.placedOn) - new Date(a.placedOn))[0].placedOn
           : null;
-        
+
         return {
           ...customer,
           totalOrders,
@@ -52,7 +41,7 @@ router.get('/', async (req, res) => {
         };
       })
     );
-    
+
     res.json(customersWithStats);
   } catch (err) {
     console.error('Error fetching customers:', err.message);
@@ -89,9 +78,9 @@ router.get('/:id', async (req, res) => {
     }
 
     // SECURITY CHECK: Ensure the customer belongs to the user's client
-    const clientId = req.user?.clientId || new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3');
+    const clientId = req.user.clientId;
     if (customer.clientId.toString() !== clientId.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ message: 'Access denied: This customer belongs to another store' });
     }
 
     // Get all orders for this customer
@@ -144,9 +133,9 @@ router.delete('/:id', async (req, res) => {
     }
 
     // SECURITY CHECK: Ensure the customer belongs to the user's client
-    const clientId = req.user?.clientId || new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3');
+    const clientId = req.user.clientId;
     if (customer.clientId.toString() !== clientId.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ message: 'Access denied: This customer belongs to another store' });
     }
 
     // Delete all orders associated with this customer
@@ -155,8 +144,8 @@ router.delete('/:id', async (req, res) => {
 
     // Delete the customer
     await customer.deleteOne();
-    
-    res.json({ 
+
+    res.json({
       message: 'Successfully deleted customer and associated orders',
       deletedOrdersCount: deleteResult.deletedCount
     });

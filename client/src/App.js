@@ -8,6 +8,10 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 import { applyStoreSettings } from './themeUtils';
 
+import axios from 'axios';
+
+// Configure Axios to send cookies with every request (essential for sessions/subdomains)
+axios.defaults.withCredentials = true;
 
 function App() {
   React.useEffect(() => {

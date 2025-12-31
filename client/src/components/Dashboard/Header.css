@@ -6,6 +6,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 100;
 }
 
 .header-left {
@@ -66,14 +68,6 @@
   transform: rotate(45deg);
 }
 
-.dashboard-search-box:focus-within .search-icon-btn {
-  border-color: #5866f2;
-}
-
-.dashboard-search-box:focus-within .search-icon-btn::after {
-  background-color: #5866f2;
-}
-
 .dashboard-search-box input {
   background: transparent;
   border: none;
@@ -84,11 +78,109 @@
   width: 100%;
 }
 
-.dashboard-search-box input::placeholder {
-  color: #94a3b8;
-}
-
 .header-right {
   display: flex;
   align-items: center;
+  gap: 20px;
+  position: relative;
+}
+
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.user-profile-header:hover {
+  background-color: #f8fafc;
+}
+
+.user-avatar-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ffe4bc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff7ed;
+}
+
+.header-user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.user-name-display {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.user-role-display {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Logout Dropdown */
+.profile-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.user-profile-header:hover .profile-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #fef2f2;
+}
+
+.logout-icon {
+  font-size: 1.1rem;
 }

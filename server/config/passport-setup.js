@@ -3,10 +3,11 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback'
-  },
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: (process.env.BACKEND_URL || 'http://localhost:5002') + '/auth/google/callback'
+},
+
   async (accessToken, refreshToken, profile, done) => {
     // This function is called when a user successfully authenticates with Google
     try {
@@ -17,14 +18,39 @@ passport.use(new GoogleStrategy({
         // If user exists, pass the user object to the next step
         return done(null, user);
       } else {
-        // If user does not exist, you need to decide how to handle it.
-        // For a premium service, you would typically look up the user's email 
-        // to see if they have an active subscription.
+        // AUTO-REGISTRATION: Create a new Client and User for new signups
+        const Client = require('../models/Client');
 
-        // For now, let's assume we can't find a matching client and return an error.
-        // We will implement the subscription check later.
-        console.log(`User with email ${profile.emails[0].value} tried to log in but has no associated client account.`);
-        return done(null, false, { message: 'This Google account is not associated with a premium plan.' });
+        // Generate subdomain slug
+        const storeName = `${profile.displayName}'s Store`;
+        let subdomain = storeName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+        let existingSubdomain = await Client.findOne({ subdomain });
+        if (existingSubdomain) {
+          subdomain = `${subdomain}-${Date.now().toString().slice(-4)}`;
+        }
+
+        // 1. Create a new Client (The Organization/Tenant)
+        const newClient = new Client({
+          name: storeName,
+          ownerEmail: profile.emails[0].value,
+          subdomain: subdomain,
+          subscriptionPlan: 'free',
+          subscriptionStatus: 'trialing'
+        });
+
+        const savedClient = await newClient.save();
+
+        // 2. Create the User (linked to the new Client)
+        const newUser = new User({
+          clientId: savedClient._id,
+          googleId: profile.id,
+          name: profile.displayName,
+          email: profile.emails[0].value
+        });
+
+        const savedUser = await newUser.save();
+        return done(null, savedUser);
       }
     } catch (err) {
       console.error(err);
@@ -33,16 +59,20 @@ passport.use(new GoogleStrategy({
   }
 ));
 
-// These functions are needed for session management, which we'll set up next
+// These functions are needed for session management
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  console.log('🔐 Serializing user:', user._id);
+  done(null, user._id);
 });
 
 passport.deserializeUser(async (id, done) => {
+  console.log('🔓 Deserializing user ID:', id);
   try {
     const user = await User.findById(id);
+    console.log('✅ User found:', user ? user.email : 'Not found');
     done(null, user);
   } catch (err) {
+    console.error('❌ Deserialize error:', err);
     done(err, null);
   }
 });

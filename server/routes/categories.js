@@ -25,11 +25,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // @route   GET api/categories
-// @desc    Get all categories
+// @desc    Get all categories (Filtered by tenant)
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const categories = await Category.find();
+    const clientId = req.tenantClient?._id || req.query.clientId || (req.user && req.user.clientId);
+    if (!clientId) {
+      return res.json([]);
+    }
+    const categories = await Category.find({ clientId });
     res.json(categories);
   } catch (err) {
     console.error(err.message);
@@ -44,20 +48,27 @@ router.post('/', upload.single('image'), async (req, res) => {
   try {
     const { name, description, status, section } = req.body;
 
+    const clientId = req.user?.clientId || req.body.clientId;
+    if (!clientId) {
+      return res.status(400).json({ msg: 'ClientId is required' });
+    }
+
     if (!name) {
       return res.status(400).json({ msg: 'Category name is required' });
     }
 
     const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
 
-    let category = await Category.findOne({ name });
+    // Name uniqueness check within the same client
+    let category = await Category.findOne({ name, clientId });
 
     if (category) {
-      return res.status(400).json({ msg: 'Category already exists' });
+      return res.status(400).json({ msg: 'Category already exists for this store' });
     }
 
     category = new Category({
       name,
+      clientId,
       image,
       description,
       status,

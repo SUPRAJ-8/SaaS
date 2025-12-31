@@ -97,6 +97,11 @@ const ProductSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client',
+    required: true
+  },
   date: {
     type: Date,
     default: Date.now

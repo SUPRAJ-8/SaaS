@@ -24,8 +24,22 @@ import BulkUpload from './components/Dashboard/BulkUpload';
 import StoreSettings from './components/Dashboard/StoreSettings';
 import Pages from './components/Dashboard/Pages';
 import PageBuilder from './components/Dashboard/PageBuilder';
+import SuperAdminClients from './components/Dashboard/SuperAdminClients';
+import LoginPage from './components/LoginPage';
+import GetStartedPage from './components/GetStartedPage';
+import SignupPage from './components/SignupPage';
+import ProtectedRoute from './components/ProtectedRoute';
+
+
 
 const Issue = () => <h2>Issue</h2>;
+
+const ExternalRedirect = ({ url }) => {
+  React.useEffect(() => {
+    window.location.href = url;
+  }, [url]);
+  return <div className="loading-screen">Redirecting...</div>;
+};
 
 
 function AppRouter() {
@@ -38,28 +52,49 @@ function AppRouter() {
 
   // Logic for production vs localhost
   let subdomain = null;
-  if (parts.length > 2) {
-    // e.g., tenant.nepostore.xyz -> subdomain = parts[0]
+  if (hostname.endsWith('.localhost')) {
+    // e.g., app.localhost, tenant.localhost
     subdomain = parts[0];
   } else if (hostname === 'localhost') {
     // For local testing, use search param: http://localhost:3000?tenant=app
     const params = new URLSearchParams(window.location.search);
     subdomain = params.get('tenant');
+  } else if (hostname === 'nepostore.xyz' || hostname === 'www.nepostore.xyz') {
+    // Main domain - no subdomain (landing page)
+    subdomain = null;
+  } else if (hostname.endsWith('.nepostore.xyz')) {
+    // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
+    subdomain = parts[0];
+  } else if (parts.length > 2) {
+    // Fallback for other domains with subdomains
+    subdomain = parts[0];
   }
 
   const isDashboardSubdomain = subdomain === 'app';
   const isLandingPage = !subdomain || subdomain === 'www';
   const isShopSubdomain = subdomain && !isDashboardSubdomain && !isLandingPage;
 
+  const protocol = window.location.protocol;
+  const port = window.location.port ? `:${window.location.port}` : '';
+  const baseDomain = (hostname.endsWith('.localhost') || hostname === 'localhost') ? 'localhost' : 'nepostore.xyz';
+  const dashboardUrl = `${protocol}//app.${baseDomain}${port}/dashboard`;
+
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {/* CASE 1: Main Domain (nepostore.xyz) -> SHOW LANDING PAGE */}
         {isLandingPage && (
           <>
             <Route path="/" element={<LandingPage />} />
-            {/* If they accidentally try to visit /dashboard or /shop on root domain, redirect to landing or the correct subdomain */}
-            <Route path="/dashboard/*" element={<Navigate to="https://app.nepostore.xyz" replace />} />
+            {/* Redirect auth pages to app subdomain */}
+            <Route path="/login" element={<ExternalRedirect url={`${protocol}//app.${baseDomain}${port}/login`} />} />
+            <Route path="/signup" element={<ExternalRedirect url={`${protocol}//app.${baseDomain}${port}/signup`} />} />
+            <Route path="/get-started" element={<ExternalRedirect url={`${protocol}//app.${baseDomain}${port}/signup`} />} />
+
+            {/* Super Admin Manage Customers (Tenants) */}
+            <Route path="/superadmin/*" element={<SuperAdminClients />} />
+            {/* If they accidentally try to visit /dashboard on root domain, redirect to the correct subdomain */}
+            <Route path="/dashboard/*" element={<ExternalRedirect url={dashboardUrl} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         )}
@@ -67,8 +102,17 @@ function AppRouter() {
         {/* CASE 2: App Subdomain (app.nepostore.xyz) -> SHOW ADMIN DASHBOARD */}
         {isDashboardSubdomain && (
           <>
-            {/* The root of app.nepostore.xyz is the dashboard */}
-            <Route path="/" element={<DashboardLayout />}>
+            {/* Auth routes on dashboard subdomain */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/get-started" element={<SignupPage />} />
+
+            {/* On app subdomain, /dashboard is the entry point */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<DashboardHome />} />
               <Route path="store-user" element={<StoreUsers />} />
               <Route path="customers" element={<Customers />} />
@@ -83,9 +127,9 @@ function AppRouter() {
               <Route path="pages" element={<Pages />} />
               <Route path="page-builder/:id" element={<PageBuilder />} />
             </Route>
-            {/* Handle the /dashboard path by showing the same dashboard or redirecting to root */}
-            <Route path="/dashboard/*" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Redirect root to /dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </>
         )}
 
@@ -108,15 +152,6 @@ function AppRouter() {
           </>
         )}
 
-        {/* Localhost fallback logic (if no tenant param is provided) */}
-        {!subdomain && hostname === 'localhost' && (
-          <Route path="/*" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
-            <Route path="dashboard" element={<DashboardHome />} />
-            <Route path="products" element={<Products />} />
-            {/* ... other standard routes for local dev without subdomain ... */}
-          </Route>
-        )}
       </Routes>
     </Router>
   );

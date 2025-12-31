@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const WebsiteSchema = new mongoose.Schema({
-  client: {
+  clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Client',
     required: true,

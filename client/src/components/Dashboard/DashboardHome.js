@@ -1,48 +1,112 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import StatCard from './StatCard';
-import { FaExternalLinkAlt, FaMoneyBillWave, FaShoppingCart, FaCalendarDay } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaMoneyBillWave, FaShoppingCart, FaCalendarDay, FaPaintBrush } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import API_URL from '../../apiConfig';
 import './DashboardHome.css';
 
 const DashboardHome = () => {
-  // Mock data for the stat cards, inspired by your image
+  const [user, setUser] = useState(null);
+  const [client, setClient] = useState(null);
+  const [productsCount, setProductsCount] = useState(0);
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch current user and their client details
+        const userRes = await axios.get(`${API_URL}/auth/current_user`);
+        
+        if (!userRes.data || !userRes.data.clientId) {
+          console.error('User not authenticated or missing clientId');
+          setLoading(false);
+          return;
+        }
+
+        setUser(userRes.data);
+
+        // Fetch client details
+        const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
+        setClient(clientRes.data);
+
+        // Fetch real counts for this tenant (these will be filtered by clientId on the backend)
+        const productsRes = await axios.get(`${API_URL}/api/products`);
+        setProductsCount(productsRes.data?.length || 0);
+
+        const ordersRes = await axios.get(`${API_URL}/api/orders`);
+        setOrdersCount(ordersRes.data?.length || 0);
+
+        // Calculate revenue
+        const revenue = ordersRes.data?.reduce((acc, order) => acc + (order.payment?.total || 0), 0) || 0;
+        setTotalRevenue(revenue);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Don't redirect here - ProtectedRoute will handle authentication
+        // Just show error state
+        if (error.response?.status === 401) {
+          console.error('User not authenticated');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Build the shop link
+  const getShopLink = () => {
+    if (!client || !client.subdomain) return '/';
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const baseDomain = window.location.hostname.endsWith('.localhost') ? 'localhost' : 'nepostore.xyz';
+    return `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+  };
+
+  // Real data for the stat cards
   const stats = [
     {
-      title: 'Total Sales',
-      value: 'Rs 1,50,000',
+      title: 'Total Revenue',
+      value: `Rs ${totalRevenue.toLocaleString()}`,
       icon: <FaMoneyBillWave />,
-      iconColor: '#22c55e', // Green color
+      iconColor: '#22c55e',
     },
     {
       title: 'Total Orders',
-      value: '15',
+      value: ordersCount.toString(),
       icon: <FaShoppingCart />,
     },
     {
-      title: "Today's Total Order",
-      value: '5',
+      title: "Total Products",
+      value: productsCount.toString(),
       icon: <FaCalendarDay />,
     },
   ];
 
-  // Mock data for the chart
-  const chartData = [
-    { date: '2025-07-25', Order: 4, Revenue: 24000 },
-    { date: '2025-07-26', Order: 3, Revenue: 13980 },
-    { date: '2025-07-27', Order: 2, Revenue: 9800 },
-    { date: '2025-07-28', Order: 2, Revenue: 12468 },
-    { date: '2025-07-29', Order: 1, Revenue: 8300 },
-    { date: '2025-07-30', Order: 2, Revenue: 19800 },
-    { date: '2025-07-31', Order: 1, Revenue: 2250 },
-  ];
+  // Empty chart data for now
+  const chartData = [];
+
+  if (loading) return <div className="loading-fade">Loading Dashboard...</div>;
 
   return (
     <div className="dashboard-home">
       <div className="dashboard-home-header">
-        <a href="/" target="_blank" rel="noopener noreferrer" className="website-link-btn">
-          Go to your website
-          <FaExternalLinkAlt />
-        </a>
+        <div>
+          <h1>Welcome back, {user?.name || 'Store Owner'}!</h1>
+          <p>Your store <strong>{client?.name}</strong> is doing great today.</p>
+        </div>
+        <div className="header-actions">
+          <button className="customize-btn" onClick={() => window.location.href = '/dashboard/themes'}>
+            <FaPaintBrush /> Customize Shop
+          </button>
+          <a href={getShopLink()} target="_blank" rel="noopener noreferrer" className="website-link-btn">
+            View Live Store
+            <FaExternalLinkAlt />
+          </a>
+        </div>
       </div>
       <div className="stats-grid">
         {stats.map((stat, index) => (

@@ -6,7 +6,37 @@ const connectDB = require('./db');
 const app = express();
 
 // Init Middleware
-app.use(cors());
+app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc)
+
+// Configure CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://app.localhost:3000',
+  'https://nepostore.xyz',
+  'https://www.nepostore.xyz',
+  'https://app.nepostore.xyz'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    // Check if the origin matches any of our base domains or localhost
+    const isAllowed = allowedOrigins.includes(origin) ||
+      origin.includes('localhost') ||
+      origin.includes('nepostore.xyz');
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
+
 app.use(express.json({ extended: false }));
 app.use('/uploads', express.static('uploads'));
 
@@ -15,29 +45,88 @@ const passport = require('passport');
 require('./config/passport-setup'); // Executes the passport setup
 
 // Session and Passport Middleware
+const isProd = process.env.NODE_ENV === 'production';
 app.use(
   cookieSession({
+    name: 'session',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    keys: [process.env.COOKIE_KEY], // Secret key for signing the cookie
+    keys: ['ecommerce_secret_key'], // Simple fixed key for consistency
+    // Don't set domain for localhost - let browser handle it
+    // When using proxy, cookies will be on same origin
+    // For production, set domain to share across subdomains
+    domain: isProd ? '.nepostore.xyz' : undefined,
+    secure: isProd, // Must be false for localhost HTTP, true for production HTTPS
+    sameSite: 'lax', // Lax works for cross-origin with credentials
+    httpOnly: true
   })
 );
+
+// Fix for Passport 0.6.0+
+app.use((req, res, next) => {
+  if (req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb) => cb();
+  }
+  if (req.session && !req.session.save) {
+    req.session.save = (cb) => cb();
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Middleware to handle subdomain routing
-const subdomainHandler = (req, res, next) => {
-  const host = req.hostname;
-  const subdomain = host.split('.')[0];
-
-  // Check if it's a client subdomain and not a request for the main app/API
-  if (subdomain && subdomain !== 'localhost' && subdomain !== 'www' && subdomain !== 'api') {
-    // If it's a client subdomain, let the websites router handle it
-    require('./routes/websites')(req, res, next);
-  } else {
-    // Otherwise, continue to the main API routes
-    next();
+// Debug middleware
+app.use((req, res, next) => {
+  if (req.path === '/auth/current_user') {
+    console.log('🔍 Session data:', req.session);
+    console.log('🔍 User data:', req.user ? req.user.email : 'No user');
   }
+  next();
+});
+
+// Middleware to handle subdomain routing
+const Client = require('./models/Client');
+const subdomainHandler = async (req, res, next) => {
+  const host = req.hostname;
+  const parts = host.split('.');
+  
+  // Determine subdomain based on hostname structure
+  let subdomain = null;
+  
+  if (host.endsWith('.localhost')) {
+    // e.g., app.localhost, tenant.localhost
+    subdomain = parts[0];
+  } else if (host === 'localhost') {
+    // Root localhost - no subdomain
+    subdomain = null;
+  } else if (host === 'nepostore.xyz' || host === 'www.nepostore.xyz') {
+    // Main domain - no subdomain (landing page)
+    subdomain = null;
+  } else if (host.endsWith('.nepostore.xyz')) {
+    // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
+    subdomain = parts[0];
+  } else if (parts.length > 2) {
+    // Fallback for other domains with subdomains
+    subdomain = parts[0];
+  }
+
+  // If we are on app subdomain, it's the admin dashboard
+  if (subdomain === 'app') {
+    return next();
+  }
+
+  // Check if it's a client/tenant subdomain (for shop)
+  if (subdomain && subdomain !== 'localhost' && subdomain !== 'www' && subdomain !== 'api') {
+    try {
+      const tenantClient = await Client.findOne({ subdomain });
+      if (tenantClient) {
+        req.tenantClient = tenantClient;
+      }
+    } catch (err) {
+      console.error('Subdomain lookup error:', err);
+    }
+  }
+  next();
 };
 
 // Use the subdomain handler for all incoming requests
@@ -49,6 +138,7 @@ app.get('/', (req, res) => {
 
 // Define API Routes
 app.use('/auth', require('./routes/google-auth'));
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/pages', require('./routes/pages'));
 // We will create the API for managing websites later
@@ -57,6 +147,7 @@ app.use('/api/categories', require('./routes/categories'));
 app.use('/api/seeder', require('./routes/seeder'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/super-admin', require('./routes/super-admin'));
 
 const port = process.env.PORT || 5002;
 

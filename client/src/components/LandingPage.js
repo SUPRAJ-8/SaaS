@@ -8,8 +8,9 @@ const LandingPage = () => {
             <nav className="landing-nav">
                 <div className="logo">WHCH SaaS</div>
                 <div className="nav-links">
-                    <a href="https://app.nepostore.xyz/dashboard" className="login-link">Sign In</a>
-                    <a href="https://app.nepostore.xyz/dashboard" className="btn-primary-landing">Get Started</a>
+                    <Link to="/superadmin" className="login-link" style={{ marginRight: '20px', fontSize: '0.8rem', opacity: 0.7 }}>Admin Manage</Link>
+                    <Link to="/login" className="login-link">Sign In</Link>
+                    <Link to="/get-started" className="btn-primary-landing">Get Started</Link>
                 </div>
             </nav>
 
@@ -17,7 +18,8 @@ const LandingPage = () => {
                 <h1>Create Your Own E-commerce Store in Minutes</h1>
                 <p>The all-in-one CMS designed for Nepal. Simple, fast, and beautiful.</p>
                 <div className="hero-btns">
-                    <a href="https://app.nepostore.xyz/dashboard" className="btn-main">Create Your Store</a>
+                    <Link to="/get-started" className="btn-main">Create Your Store</Link>
+
                     <button className="btn-secondary-landing">Learn More</button>
                 </div>
             </header>

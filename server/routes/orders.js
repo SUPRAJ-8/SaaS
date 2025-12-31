@@ -5,16 +5,11 @@ const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const mongoose = require('mongoose');
 
-// --- AUTH MIDDLEWARE (PLACEHOLDER) ---
-const authMiddleware = (req, res, next) => {
-  req.user = {
-    id: 'someUserId_from_jwt',
-    // This should be a real ObjectId of a client in your database.
-    clientId: new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3') 
-  };
-  next();
-};
-router.use(authMiddleware);
+const { ensureAuthenticated } = require('../middleware/auth');
+
+// Note: POST / for creating orders should be public for shoppers
+// We will apply auth to individual routes instead of the whole router
+// router.use(ensureAuthenticated); 
 
 // --- CLEANUP ROUTE ---
 // Delete all orders with old timestamp-based IDs
@@ -24,11 +19,11 @@ router.delete('/cleanup-old-orders', async (req, res) => {
     const result = await Order.deleteMany({
       orderId: { $regex: /^ORD-\d{13,}$/ }
     });
-    
+
     console.log(`Deleted ${result.deletedCount} orders with old timestamp-based IDs`);
-    res.json({ 
-      msg: 'Old orders cleaned up successfully', 
-      deletedCount: result.deletedCount 
+    res.json({
+      msg: 'Old orders cleaned up successfully',
+      deletedCount: result.deletedCount
     });
   } catch (error) {
     console.error('Cleanup error:', error);
@@ -78,15 +73,16 @@ router.get('/seed', async (req, res) => {
 
 // --- CRUD ROUTES ---
 
-// @route   POST api/orders
-// @desc    Create a new order
-// @access  Public // Should be protected in a real app
 router.post('/', async (req, res) => {
   try {
     const { customerDetails, ...orderDetails } = req.body;
 
-    // Get clientId from user or use a default for development
-    const clientId = req.user?.clientId || new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3');
+    // For public order placement (shoppers), we need to identify the client from the subdomain or a header
+    const clientId = req.tenantClient?._id || req.body.clientId || req.user?.clientId;
+
+    if (!clientId) {
+      return res.status(400).json({ msg: 'Identify your store (clientId or Subdomain required)' });
+    }
 
     let customer;
     // Find or create a customer - ALL THREE fields (name, phone, email) must match exactly
@@ -98,7 +94,7 @@ router.post('/', async (req, res) => {
         phone: customerDetails.phone,
         clientId: clientId
       };
-      
+
       // If email is provided, it must also match. If not provided, only match customers without email
       if (customerDetails.email) {
         searchQuery.email = customerDetails.email;
@@ -110,9 +106,9 @@ router.post('/', async (req, res) => {
           { email: '' }
         ];
       }
-      
+
       customer = await Customer.findOne(searchQuery);
-      
+
       console.log(`Searching for customer with name: ${customerDetails.name}, phone: ${customerDetails.phone}, email: ${customerDetails.email || 'NOT PROVIDED'}`);
       console.log(`Customer found: ${customer ? 'Yes' : 'No'}`);
     }
@@ -152,13 +148,13 @@ router.post('/', async (req, res) => {
 
     // Generate sequential order ID starting from 1000
     let nextOrderNumber = 1000;
-    
+
     // Find the last order to get the highest order number
     const lastOrder = await Order.findOne({})
       .sort({ orderId: -1 })
       .select('orderId')
       .lean();
-    
+
     if (lastOrder && lastOrder.orderId) {
       // Extract number from orderId (e.g., "ORD-1005" -> 1005)
       const match = lastOrder.orderId.match(/ORD-(\d+)/);
@@ -205,59 +201,23 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+// @route   GET api/orders
+// @desc    Get all orders for the current user's client
+// @access  Private
+router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    // Check if mongoose is connected
-    if (mongoose.connection.readyState !== 1) {
-      console.error('MongoDB is not connected. Connection state:', mongoose.connection.readyState);
-      return res.status(503).json({ 
-        msg: 'Database not connected', 
-        error: 'MongoDB connection is not established' 
-      });
-    }
+    const clientId = req.user.clientId;
+    const query = { clientId };
 
-    // For development: if no user/clientId, return all orders
-    // In production, this should require authentication
-    let query = {};
-    
-    if (req.user && req.user.clientId) {
-      // req.user.clientId is already an ObjectId instance from middleware
-      // Convert to string for validation, then use the ObjectId instance
-      const clientIdStr = req.user.clientId.toString();
-      if (mongoose.Types.ObjectId.isValid(clientIdStr)) {
-        query.clientId = req.user.clientId;
-        console.log('Fetching orders for clientId:', clientIdStr);
-      } else {
-        console.warn('Invalid clientId format, returning all orders');
-      }
-    } else {
-      console.log('No clientId provided, returning all orders (development mode)');
-    }
+    const orders = await Order.find(query)
+      .populate('customer', 'name email phone')
+      .sort({ placedOn: -1 })
+      .lean();
 
-    // Try to fetch orders - populate customer if it exists, otherwise just get orders
-    let orders;
-    try {
-      orders = await Order.find(query).populate('customer', 'name email phone').lean();
-    } catch (populateError) {
-      // If populate fails, try without populate
-      console.warn('Populate failed, fetching without populate:', populateError.message);
-      orders = await Order.find(query).lean();
-    }
-    
-    console.log('Orders found:', orders.length);
     res.json(orders || []);
   } catch (err) {
     console.error('Error fetching orders:', err);
-    console.error('Error details:', {
-      message: err.message,
-      name: err.name,
-      stack: err.stack
-    });
-    res.status(500).json({ 
-      msg: 'Server Error', 
-      error: err.message,
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
@@ -266,7 +226,7 @@ const reduceProductInventory = async (items) => {
   for (const item of items) {
     try {
       const product = await Product.findById(item.product || item.id);
-      
+
       if (!product) {
         console.warn(`Product not found for item: ${item.name}`);
         continue;
@@ -279,12 +239,12 @@ const reduceProductInventory = async (items) => {
         if (variantMatch && product.hasVariants) {
           const color = variantMatch[1].toLowerCase();
           const size = variantMatch[2].toLowerCase();
-          
+
           // Find and update the matching variant
           const variantIndex = product.variants.findIndex(
             v => v.color.toLowerCase() === color && v.size.toLowerCase() === size
           );
-          
+
           if (variantIndex !== -1) {
             const currentQuantity = product.variants[variantIndex].quantity || 0;
             product.variants[variantIndex].quantity = Math.max(0, currentQuantity - item.quantity);
@@ -311,7 +271,7 @@ const reduceProductInventory = async (items) => {
 // @route   PUT api/orders/:id
 // @desc    Update an order
 // @access  Private
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -337,7 +297,7 @@ router.put('/:id', async (req, res) => {
     if (customerDetails) order.customerDetails = { ...order.customerDetails, ...customerDetails };
     if (items) order.items = items;
     if (payment) order.payment = { ...order.payment, ...payment };
-    
+
     order.updatedOn = Date.now();
 
     await order.save();
@@ -358,7 +318,7 @@ router.put('/:id', async (req, res) => {
 // @route   DELETE api/orders/:id
 // @desc    Delete an order
 // @access  Private
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -366,10 +326,10 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ msg: 'Order not found' });
     }
 
-    // Ensure the order belongs to the client (flexible for development)
-    const clientId = req.user?.clientId || new mongoose.Types.ObjectId('60d5f1b3b3f3b3f3b3f3b3f3');
+    // Ensure the order belongs to the client
+    const clientId = req.user.clientId;
     if (order.clientId.toString() !== clientId.toString()) {
-      return res.status(401).json({ msg: 'Not authorized' });
+      return res.status(401).json({ msg: 'Not authorized: This order belongs to another store' });
     }
 
     await order.deleteOne();

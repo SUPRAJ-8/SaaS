@@ -20,6 +20,11 @@ const CategorySchema = new mongoose.Schema({
     type: String,
     default: 'shop'
   },
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client',
+    required: true
+  },
   date: {
     type: Date,
     default: Date.now

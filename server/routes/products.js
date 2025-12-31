@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const Product = require('../models/Product');
+const { ensureAuthenticated } = require('../middleware/auth');
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.resolve(__dirname, '..', 'uploads');
@@ -25,18 +26,39 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // @route   GET api/products
-// @desc    Get all products
-// @access  Public
+// @desc    Get all products (Filtered by tenant)
+// @access  Public (for shop) / Private (for dashboard)
 router.get('/', async (req, res) => {
   try {
     const { section, status } = req.query;
     const filter = {};
 
+    // Multi-tenancy isolation
+    // Priority: 1. tenantClient (for shop subdomain), 2. authenticated user's clientId (for dashboard), 3. query param
+    let clientId = req.tenantClient?._id;
+    
+    // If no tenantClient (we're on app subdomain/dashboard), require authentication
+    if (!clientId) {
+      if (req.user && req.user.clientId) {
+        clientId = req.user.clientId;
+      } else if (req.query.clientId) {
+        clientId = req.query.clientId;
+      } else {
+        // If on dashboard subdomain without auth, return empty array
+        return res.json([]);
+      }
+    }
+
+    if (!clientId) {
+      return res.json([]); // Return empty if no client identified
+    }
+
+    filter.clientId = clientId;
+
     if (section && ['Popular', 'Featured', 'None'].includes(section)) {
       filter.section = section;
     }
 
-    // Only filter by status if the status query parameter is provided
     if (status) {
       filter.status = status;
     }
@@ -101,9 +123,16 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       ? req.files.map(file => `/uploads/${file.filename}`)
       : [];
 
+    // Multi-tenancy isolation
+    const clientId = req.user?.clientId || req.body.clientId;
+    if (!clientId) {
+      return res.status(400).json({ msg: 'ClientId is required. Are you logged in?' });
+    }
+
     // Convert numeric strings to numbers
     const productData = {
       name,
+      clientId,
       shortDescription: shortDescription || '',
       longDescription: longDescription || '',
       gender: gender || 'No use',
@@ -281,6 +310,13 @@ router.get('/:id', async (req, res) => {
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
+
+    // Security check
+    const currentClientId = req.tenantClient?._id || req.user?.clientId;
+    if (currentClientId && product.clientId.toString() !== currentClientId.toString()) {
+      return res.status(403).json({ msg: 'Access denied: This product belongs to another store' });
+    }
+
     res.json(product);
   } catch (err) {
     console.error(err.message);
