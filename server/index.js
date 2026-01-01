@@ -24,7 +24,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Log for debugging
     console.log('[CORS] Request from origin:', origin || 'no origin');
-    
+
     // If no origin (same-origin request), the cors library should not set the header
     // But to be safe with credentials, we'll use a default allowed origin
     if (!origin) {
@@ -67,28 +67,28 @@ app.use(cors(corsOptions));
 // This ensures we NEVER set Access-Control-Allow-Origin to '*'
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Only set CORS headers if there's an origin header (cross-origin request)
   if (origin) {
     const normalizedOrigin = origin.replace(/\/$/, '');
     const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
       normalizedOrigin.includes('localhost') ||
       normalizedOrigin.includes('nepostore.xyz');
-    
+
     if (isAllowed) {
       // Explicitly set the specific origin - NEVER use '*'
       res.setHeader('Access-Control-Allow-Origin', normalizedOrigin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
   }
-  
+
   // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
     return res.sendStatus(204);
   }
-  
+
   next();
 });
 
@@ -100,18 +100,15 @@ const passport = require('passport');
 require('./config/passport-setup'); // Executes the passport setup
 
 // Session and Passport Middleware
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+console.log('[Init] Production mode:', isProd, '(Environment:', process.env.NODE_ENV, ')');
+
 app.use(
   cookieSession({
     name: 'session',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    keys: ['ecommerce_secret_key'], // Simple fixed key for consistency
-    // Don't set domain for localhost - let browser handle it
-    // When using proxy, cookies will be on same origin
-    // For cross-domain cookies (Frontend on Vercel, Backend on Render), 
-    // we MUST use sameSite: 'none' and secure: true.
-    // Also, don't set a specific domain if the backend and frontend 
-    // are on different base domains (e.g., nepostore.xyz vs onrender.com).
+    keys: ['ecommerce_secret_key'],
+    // Forces SameSite=None and Secure for cross-domain cookies (Vercel -> Render)
     ...(isProd ? {
       sameSite: 'none',
       secure: true
