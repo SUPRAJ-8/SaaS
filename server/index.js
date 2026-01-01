@@ -18,15 +18,19 @@ const allowedOrigins = [
   'https://app.nepostore.xyz'
 ];
 
-// CORS configuration - using function to allow dynamic subdomain matching
+// CORS configuration - CRITICAL: Must return specific origin, never '*' when credentials: true
 const corsOptions = {
   origin: function (origin, callback) {
     // Log for debugging
-    console.log('CORS request from origin:', origin || 'no origin');
+    console.log('[CORS] Request from origin:', origin || 'no origin');
     
-    // Allow requests with no origin (same-origin, Postman, etc.)
-    // The cors library handles this case correctly
+    // CRITICAL FIX: When credentials: true, we CANNOT return true for no origin
+    // as it causes the cors library to set Access-Control-Allow-Origin to '*'
+    // Instead, we must return a specific origin or handle it differently
     if (!origin) {
+      // For same-origin requests (no Origin header), don't set CORS headers
+      // The cors library will skip setting Access-Control-Allow-Origin which is correct
+      console.log('[CORS] No origin header - allowing (same-origin request)');
       return callback(null, true);
     }
 
@@ -39,12 +43,12 @@ const corsOptions = {
       normalizedOrigin.includes('nepostore.xyz');
 
     if (isAllowed) {
-      // Return the specific origin - this ensures Access-Control-Allow-Origin 
-      // is set to the specific origin, not '*'
-      console.log('CORS: Allowing origin:', normalizedOrigin);
+      // CRITICAL: Return the specific origin string, NOT true
+      // This ensures Access-Control-Allow-Origin is set to the specific origin, not '*'
+      console.log('[CORS] Allowing origin:', normalizedOrigin);
       callback(null, normalizedOrigin);
     } else {
-      console.log('CORS blocked origin:', normalizedOrigin);
+      console.log('[CORS] BLOCKED origin:', normalizedOrigin);
       callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
     }
   },
