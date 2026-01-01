@@ -69,14 +69,14 @@ if errorlevel 1 (
     if errorlevel 0 (
         echo.
         echo %green%Success! All changes pushed to GitHub.%reset%
-        echo %green%View your commits at: https://github.com/SUPRAJ-8/saas-frontend/commits/main%reset%
+        echo %green%View your commits at: https://github.com/SUPRAJ-8/saas/commits/main%reset%
     ) else (
         echo %red%Final push attempt failed.%reset%
     )
 ) else (
     echo.
     echo %green%Success! All changes pushed to GitHub.%reset%
-    echo %green%View your commits at: https://github.com/SUPRAJ-8/saas-frontend/commits/main%reset%
+    echo %green%View your commits at: https://github.com/SUPRAJ-8/saas/commits/main%reset%
 )
 
 echo.
