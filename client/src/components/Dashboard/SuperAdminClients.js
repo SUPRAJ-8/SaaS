@@ -35,7 +35,9 @@ const SuperAdminClients = () => {
 
     const fetchClients = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/super-admin/clients`);
+            const response = await axios.get(`${API_URL}/api/super-admin/clients`, {
+                withCredentials: true
+            });
             // Ensure response.data is always an array
             setClients(Array.isArray(response.data) ? response.data : []);
             setLoading(false);
@@ -49,10 +51,13 @@ const SuperAdminClients = () => {
 
     const updateStatus = async (id, field, value) => {
         try {
-            await axios.patch(`/api/super-admin/clients/${id}`, { [field]: value });
+            await axios.patch(`${API_URL}/api/super-admin/clients/${id}`, { [field]: value }, {
+                withCredentials: true
+            });
             toast.success('Updated successfully');
             fetchClients();
         } catch (error) {
+            console.error('Error updating client:', error);
             toast.error('Failed to update');
         }
     };
@@ -60,10 +65,13 @@ const SuperAdminClients = () => {
     const deleteClient = async (id) => {
         if (window.confirm('Are you sure you want to delete this tenant? This action is irreversible.')) {
             try {
-                await axios.delete(`/api/super-admin/clients/${id}`);
+                await axios.delete(`${API_URL}/api/super-admin/clients/${id}`, {
+                    withCredentials: true
+                });
                 toast.success('Tenant deleted successfully');
                 fetchClients();
             } catch (error) {
+                console.error('Error deleting client:', error);
                 toast.error('Failed to delete tenant');
             }
         }

@@ -19,6 +19,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
     // Check if the origin matches any of our base domains or localhost
@@ -27,7 +28,8 @@ app.use(cors({
       origin.includes('nepostore.xyz');
 
     if (isAllowed) {
-      callback(null, true);
+      // Return the specific origin instead of true to avoid wildcard issues with credentials
+      callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
