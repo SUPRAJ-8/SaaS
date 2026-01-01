@@ -22,7 +22,7 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
       if (response.data.success) {
         toast.success('Successfully logged in! Redirecting...');
 

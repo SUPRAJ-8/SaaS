@@ -30,7 +30,7 @@ const SignupPage = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post(`${API_URL}/api/auth/register`, formData);
+            const response = await axios.post(`${API_URL}/api/auth/register`, formData, { withCredentials: true });
             if (response.data.success) {
                 toast.success('Store created successfully! Redirecting...');
 
