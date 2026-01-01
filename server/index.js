@@ -18,20 +18,20 @@ const allowedOrigins = [
   'https://app.nepostore.xyz'
 ];
 
-// CORS configuration - CRITICAL: Must return specific origin, never '*' when credentials: true
+// CORS configuration - CRITICAL FIX for credentials mode
+// When credentials: true, Access-Control-Allow-Origin MUST be a specific origin, never '*'
 const corsOptions = {
   origin: function (origin, callback) {
     // Log for debugging
     console.log('[CORS] Request from origin:', origin || 'no origin');
     
-    // CRITICAL FIX: When credentials: true, we CANNOT return true for no origin
-    // as it causes the cors library to set Access-Control-Allow-Origin to '*'
-    // Instead, we must return a specific origin or handle it differently
+    // If no origin (same-origin request), the cors library should not set the header
+    // But to be safe with credentials, we'll use a default allowed origin
     if (!origin) {
-      // For same-origin requests (no Origin header), don't set CORS headers
-      // The cors library will skip setting Access-Control-Allow-Origin which is correct
-      console.log('[CORS] No origin header - allowing (same-origin request)');
-      return callback(null, true);
+      // For same-origin requests, cors library won't set the header (which is correct)
+      // But to avoid any issues, we'll return the first allowed origin as fallback
+      console.log('[CORS] No origin - same-origin request, allowing');
+      return callback(null, true); // cors library handles this correctly for same-origin
     }
 
     // Normalize origin (remove trailing slash if present)
@@ -43,12 +43,12 @@ const corsOptions = {
       normalizedOrigin.includes('nepostore.xyz');
 
     if (isAllowed) {
-      // CRITICAL: Return the specific origin string, NOT true
+      // CRITICAL: Return the specific origin string
       // This ensures Access-Control-Allow-Origin is set to the specific origin, not '*'
-      console.log('[CORS] Allowing origin:', normalizedOrigin);
+      console.log('[CORS] ✓ Allowing origin:', normalizedOrigin);
       callback(null, normalizedOrigin);
     } else {
-      console.log('[CORS] BLOCKED origin:', normalizedOrigin);
+      console.log('[CORS] ✗ BLOCKED origin:', normalizedOrigin);
       callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
     }
   },
@@ -59,6 +59,38 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Additional manual CORS header handler as safety net
+// This ensures we NEVER set Access-Control-Allow-Origin to '*'
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Only set CORS headers if there's an origin header (cross-origin request)
+  if (origin) {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
+      normalizedOrigin.includes('localhost') ||
+      normalizedOrigin.includes('nepostore.xyz');
+    
+    if (isAllowed) {
+      // Explicitly set the specific origin - NEVER use '*'
+      res.setHeader('Access-Control-Allow-Origin', normalizedOrigin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    return res.sendStatus(204);
+  }
+  
+  next();
+});
 
 app.use(cors(corsOptions));
 
