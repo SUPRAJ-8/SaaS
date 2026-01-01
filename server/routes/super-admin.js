@@ -28,13 +28,14 @@ router.get('/clients/:id', async (req, res) => {
 });
 // @desc    Update client subscription
 router.patch('/clients/:id', async (req, res) => {
-    const { subscriptionPlan, subscriptionStatus } = req.body;
+    const { subscriptionPlan, subscriptionStatus, subdomain } = req.body;
     try {
         let client = await Client.findById(req.params.id);
         if (!client) return res.status(404).json({ msg: 'Client not found' });
 
         if (subscriptionPlan) client.subscriptionPlan = subscriptionPlan;
         if (subscriptionStatus) client.subscriptionStatus = subscriptionStatus;
+        if (subdomain) client.subdomain = subdomain;
 
         await client.save();
         res.json(client);

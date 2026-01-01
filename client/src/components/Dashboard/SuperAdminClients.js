@@ -36,11 +36,13 @@ const SuperAdminClients = () => {
     const fetchClients = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/super-admin/clients`);
-            setClients(response.data);
+            // Ensure response.data is always an array
+            setClients(Array.isArray(response.data) ? response.data : []);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching clients:', error);
             toast.error('Failed to fetch tenants');
+            setClients([]); // Set to empty array on error
             setLoading(false);
         }
     };
@@ -67,11 +69,11 @@ const SuperAdminClients = () => {
         }
     };
 
-    const filteredClients = clients.filter(client =>
+    const filteredClients = Array.isArray(clients) ? clients.filter(client =>
         client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.ownerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client._id?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ) : [];
 
     if (loading) return (
         <div style={{ background: '#0b0e14', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
@@ -140,7 +142,7 @@ const SuperAdminClients = () => {
                             <div className="stat-icon-bg"><FaStore /></div>
                         </div>
                         <div className="stat-card-value">
-                            {clients.length.toLocaleString()} <span className="stat-trend"><FaArrowUp /> 5%</span>
+                            {Array.isArray(clients) ? clients.length.toLocaleString() : 0} <span className="stat-trend"><FaArrowUp /> 5%</span>
                         </div>
                     </div>
                     <div className="stat-card">
@@ -149,7 +151,7 @@ const SuperAdminClients = () => {
                             <div className="stat-icon-bg"><FaCheckCircle /></div>
                         </div>
                         <div className="stat-card-value">
-                            {clients.filter(c => c.subscriptionStatus === 'active').length} <span className="stat-trend"><FaArrowUp /> 21%</span>
+                            {Array.isArray(clients) ? clients.filter(c => c.subscriptionStatus === 'active').length : 0} <span className="stat-trend"><FaArrowUp /> 21%</span>
                         </div>
                     </div>
                     <div className="stat-card">
@@ -244,7 +246,7 @@ const SuperAdminClients = () => {
 
                     <div className="pagination-row">
                         <div className="pagination-info">
-                            Showing 1-{filteredClients.length} of {clients.length} tenants
+                            Showing 1-{filteredClients.length} of {Array.isArray(clients) ? clients.length : 0} tenants
                         </div>
                         <div className="pagination-btns">
                             <button className="btn-page">Prev</button>

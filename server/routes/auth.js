@@ -3,6 +3,32 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Client = require('../models/Client');
 const User = require('../models/User');
+const { ensureAuthenticated } = require('../middleware/auth');
+
+// Helper function to generate subdomain from store name
+const generateSubdomain = async (storeName) => {
+    // Convert to lowercase, remove spaces and special characters
+    // Keep only alphanumeric characters and hyphens
+    let subdomain = storeName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, '') // Remove all non-alphanumeric except hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+
+    // Ensure subdomain is not empty
+    if (!subdomain) {
+        subdomain = `store-${Date.now().toString().slice(-6)}`;
+    }
+
+    // Check if subdomain exists, if so append unique string
+    let existingSubdomain = await Client.findOne({ subdomain });
+    if (existingSubdomain) {
+        subdomain = `${subdomain}-${Date.now().toString().slice(-4)}`;
+    }
+
+    return subdomain;
+};
 
 // @route   POST api/auth/register
 // @desc    Register a new tenant/client and admin user
@@ -19,19 +45,11 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ msg: 'User with this email already exists' });
         }
 
-        let clientExists = await Client.findOne({ ownerEmail: email.toLowerCase() });
-        if (clientExists) {
-            return res.status(400).json({ msg: 'A store with this email already exists' });
-        }
+        // Allow users to have multiple stores, so we don't check for existing client here
+        // The check is only for existing users (which is handled above)
 
-        // Generate subdomain slug
-        let subdomain = storeName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-        // Check if subdomain exists, if so append unique string
-        let existingSubdomain = await Client.findOne({ subdomain });
-        if (existingSubdomain) {
-            subdomain = `${subdomain}-${Date.now().toString().slice(-4)}`;
-        }
+        // Generate subdomain from store name
+        const subdomain = await generateSubdomain(storeName);
 
         // 1. Create a new Client
         console.log('🏗️ Creating Client with:', {
@@ -124,6 +142,80 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         console.error('Login Route Error:', err);
         res.status(500).send('Server Error: ' + err.message);
+    }
+});
+
+// @route   GET api/auth/my-stores
+// @desc    Get all stores (clients) owned by the authenticated user
+// @access  Private
+router.get('/my-stores', ensureAuthenticated, async (req, res) => {
+    try {
+        // Get user's email
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Find all clients owned by this user's email
+        let clients = await Client.find({ ownerEmail: user.email.toLowerCase() }).sort({ createdAt: -1 });
+        
+        // Auto-generate subdomain for clients that don't have one
+        for (let client of clients) {
+            if (!client.subdomain && client.name) {
+                try {
+                    const subdomain = await generateSubdomain(client.name);
+                    client.subdomain = subdomain;
+                    await client.save();
+                    console.log(`Auto-generated subdomain "${subdomain}" for client "${client.name}"`);
+                } catch (err) {
+                    console.error(`Error generating subdomain for client ${client._id}:`, err);
+                }
+            }
+        }
+        
+        // Re-fetch to get updated clients
+        clients = await Client.find({ ownerEmail: user.email.toLowerCase() }).sort({ createdAt: -1 });
+        res.json(clients);
+    } catch (err) {
+        console.error('Error fetching user stores:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/auth/create-store
+// @desc    Create a new store (client) for the authenticated user
+// @access  Private
+router.post('/create-store', ensureAuthenticated, async (req, res) => {
+    try {
+        const { storeName } = req.body;
+        
+        if (!storeName || !storeName.trim()) {
+            return res.status(400).json({ msg: 'Store name is required' });
+        }
+
+        // Get user's email
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Generate subdomain from store name
+        const subdomain = await generateSubdomain(storeName);
+
+        // Create a new Client (store)
+        const newClient = new Client({
+            name: storeName.trim(),
+            ownerEmail: user.email.toLowerCase(),
+            subdomain: subdomain,
+            subscriptionPlan: 'free',
+            subscriptionStatus: 'trialing'
+        });
+
+        const savedClient = await newClient.save();
+        res.status(201).json(savedClient);
+    } catch (err) {
+        console.error('Error creating store:', err.message);
+        res.status(500).send('Server Error');
     }
 });
 

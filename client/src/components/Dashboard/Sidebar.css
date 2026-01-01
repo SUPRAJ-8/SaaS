@@ -14,6 +14,11 @@
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-header:hover {
+  background-color: #f8fafc;
 }
 
 .logo {

@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt } from 'react-icons/fa';
+import StoresModal from './StoresModal';
 import './Sidebar.css';
 
 const Sidebar = () => {
+  const [isStoresModalOpen, setIsStoresModalOpen] = useState(false);
+
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
+      <div className="sidebar-header" onClick={() => setIsStoresModalOpen(true)} style={{ cursor: 'pointer' }}>
         <div className="logo">N</div>
         <div className="company-details">
           <span className="company-name">NEPO</span>
           <span className="company-role">OWNER</span>
         </div>
       </div>
+      <StoresModal isOpen={isStoresModalOpen} onClose={() => setIsStoresModalOpen(false)} />
       <nav className="sidebar-nav">
         <h3 className="nav-title">Main Links</h3>
         <ul>

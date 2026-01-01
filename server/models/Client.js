@@ -9,7 +9,7 @@ const clientSchema = new mongoose.Schema({
   ownerEmail: {
     type: String,
     required: true,
-    unique: true,
+    // Removed unique constraint to allow users to have multiple stores
     trim: true,
     lowercase: true
   },

@@ -28,9 +28,48 @@ const DashboardHome = () => {
 
         setUser(userRes.data);
 
-        // Fetch client details
-        const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
-        setClient(clientRes.data);
+        // First, try to get client by clientId (the user's current client)
+        let fetchedClient = null;
+        try {
+          const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
+          fetchedClient = clientRes.data;
+          console.log('Fetched client:', fetchedClient);
+        } catch (clientError) {
+          console.error('Error fetching client:', clientError);
+        }
+
+        // If client doesn't have subdomain, try to get stores or generate one
+        if (!fetchedClient || !fetchedClient.subdomain) {
+          try {
+            const storesRes = await axios.get(`${API_URL}/api/auth/my-stores`, { withCredentials: true });
+            const stores = Array.isArray(storesRes.data) ? storesRes.data : [];
+            console.log('Fetched stores:', stores);
+            
+            // Find first store with subdomain
+            const storeWithSubdomain = stores.find(s => s && s.subdomain);
+            if (storeWithSubdomain) {
+              console.log('Using store with subdomain:', storeWithSubdomain.name, storeWithSubdomain.subdomain);
+              setClient(storeWithSubdomain);
+            } else if (fetchedClient) {
+              // Use the fetched client even without subdomain
+              console.log('Using client without subdomain:', fetchedClient.name);
+              setClient(fetchedClient);
+            } else if (stores.length > 0) {
+              // Use first store even without subdomain
+              console.log('Using first store without subdomain:', stores[0].name);
+              setClient(stores[0]);
+            }
+          } catch (storesError) {
+            console.error('Error fetching stores:', storesError);
+            // Use the fetched client if available
+            if (fetchedClient) {
+              setClient(fetchedClient);
+            }
+          }
+        } else {
+          // Client has subdomain, use it
+          setClient(fetchedClient);
+        }
 
         // Fetch real counts for this tenant (these will be filtered by clientId on the backend)
         const productsRes = await axios.get(`${API_URL}/api/products`);
@@ -60,8 +99,7 @@ const DashboardHome = () => {
   // Build the shop link
   const getShopLink = () => {
     if (!client || !client.subdomain) {
-      console.warn('Client or subdomain not available');
-      return '#';
+      return null;
     }
     
     const hostname = window.location.hostname;
@@ -83,6 +121,16 @@ const DashboardHome = () => {
     
     const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
     return shopUrl;
+  };
+
+  const handleVisitStore = (e) => {
+    e.preventDefault();
+    const shopUrl = getShopLink();
+    if (shopUrl) {
+      window.open(shopUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      console.warn('Store URL not available yet');
+    }
   };
 
   // Real data for the stat cards
@@ -110,21 +158,45 @@ const DashboardHome = () => {
 
   if (loading) return <div className="loading-fade">Loading Dashboard...</div>;
 
+  // Debug logging
+  console.log('DashboardHome render - client:', client);
+  console.log('DashboardHome render - client.subdomain:', client?.subdomain);
+
   return (
     <div className="dashboard-home">
       <div className="dashboard-home-header">
         <div>
           <h1>Welcome back, {user?.name || 'Store Owner'}!</h1>
-          <p>Your store <strong>{client?.name}</strong> is doing great today.</p>
+          <p>Your store <strong>{client?.name || 'Loading...'}</strong> is doing great today.</p>
+          {client && !client.subdomain && (
+            <p style={{ fontSize: '0.85rem', color: '#ef4444', marginTop: '0.5rem' }}>
+              ⚠️ No subdomain set. Please create a store with a subdomain to view it live.
+            </p>
+          )}
         </div>
         <div className="header-actions">
           <button className="customize-btn" onClick={() => window.location.href = '/dashboard/themes'}>
             <FaPaintBrush /> Customize Shop
           </button>
-          <a href={getShopLink()} target="_blank" rel="noopener noreferrer" className="website-link-btn">
-            View Live Store
-            <FaExternalLinkAlt />
-          </a>
+          {client && client.subdomain ? (
+            <button 
+              onClick={handleVisitStore}
+              className="website-link-btn"
+              title={`Visit ${client.subdomain}.${window.location.hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost:3000'}`}
+            >
+              View Live Store
+              <FaExternalLinkAlt />
+            </button>
+          ) : (
+            <button 
+              className="website-link-btn"
+              disabled
+              title="No store subdomain available. Click on 'NEPO OWNER' in the sidebar to create a store."
+            >
+              View Live Store
+              <FaExternalLinkAlt />
+            </button>
+          )}
         </div>
       </div>
       <div className="stats-grid">

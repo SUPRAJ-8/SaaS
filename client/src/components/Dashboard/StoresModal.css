@@ -1,0 +1,292 @@
+.stores-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.stores-modal-overlay.open {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.stores-modal-content {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(0.95);
+  opacity: 0;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stores-modal-overlay.open .stores-modal-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.stores-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stores-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.stores-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.stores-close-btn:hover {
+  color: #64748b;
+  background-color: #f1f5f9;
+}
+
+.stores-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.stores-list-container {
+  min-height: 200px;
+}
+
+.stores-loading,
+.stores-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.stores-empty p {
+  margin: 0.5rem 0;
+  color: #94a3b8;
+}
+
+.stores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.store-item:hover {
+  border-color: #5866f2;
+  background-color: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.store-icon {
+  width: 48px;
+  height: 48px;
+  background-color: #eef2ff;
+  color: #5866f2;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.store-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.store-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-url {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visit-store-btn {
+  background-color: #5866f2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.visit-store-btn:hover {
+  background-color: #4f46e5;
+}
+
+.store-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: default;
+  transition: all 0.2s;
+  background-color: #ffffff;
+}
+
+.stores-modal-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 1rem;
+}
+
+.create-store-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #5866f2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.create-store-btn:hover {
+  background-color: #4f46e5;
+}
+
+.create-store-form {
+  padding: 0.5rem 0;
+}
+
+.create-store-form h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.create-store-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.create-store-form .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.create-store-form .form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.create-store-form .form-group input:focus {
+  outline: none;
+  border-color: #5866f2;
+  box-shadow: 0 0 0 3px rgba(88, 102, 242, 0.1);
+}
+
+.create-store-form .form-group small {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.create-store-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.create-store-actions .cancel-btn,
+.create-store-actions .submit-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.create-store-actions .cancel-btn {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.create-store-actions .cancel-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.create-store-actions .submit-btn {
+  background-color: #5866f2;
+  color: white;
+  border: none;
+}
+
+.create-store-actions .submit-btn:hover:not(:disabled) {
+  background-color: #4f46e5;
+}
+
+.create-store-actions .submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+

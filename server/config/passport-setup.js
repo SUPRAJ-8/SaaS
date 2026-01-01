@@ -21,10 +21,21 @@ passport.use(new GoogleStrategy({
         // AUTO-REGISTRATION: Create a new Client and User for new signups
         const Client = require('../models/Client');
 
-        // Generate subdomain slug
+        // Generate subdomain from store name
         const storeName = `${profile.displayName}'s Store`;
-        let subdomain = storeName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        let subdomain = storeName
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9-]/g, '') // Remove all non-alphanumeric except hyphens
+          .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+          .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 
+        // Ensure subdomain is not empty
+        if (!subdomain) {
+          subdomain = `store-${Date.now().toString().slice(-6)}`;
+        }
+
+        // Check if subdomain exists, if so append unique string
         let existingSubdomain = await Client.findOne({ subdomain });
         if (existingSubdomain) {
           subdomain = `${subdomain}-${Date.now().toString().slice(-4)}`;

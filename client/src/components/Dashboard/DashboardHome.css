@@ -49,16 +49,25 @@
   color: white;
   padding: 0.6rem 1.25rem;
   border-radius: 8px;
+  border: none;
   text-decoration: none;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 6px -1px rgba(92, 89, 232, 0.2);
+  font-size: 0.95rem;
 }
 
-.website-link-btn:hover {
+.website-link-btn:hover:not(:disabled) {
   background-color: #4b48d6;
   transform: translateY(-1px);
   box-shadow: 0 6px 12px -2px rgba(92, 89, 232, 0.3);
+}
+
+.website-link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .dashboard-home .stats-grid {
