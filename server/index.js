@@ -9,6 +9,7 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc)
 
 // Configure CORS
+// IMPORTANT: When credentials: true, origin must be a specific origin or array, never '*'
 const allowedOrigins = [
   'http://localhost:3000',
   'http://app.localhost:3000',
@@ -17,27 +18,45 @@ const allowedOrigins = [
   'https://app.nepostore.xyz'
 ];
 
-app.use(cors({
+// CORS configuration - using function to allow dynamic subdomain matching
+const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // Log for debugging
+    console.log('CORS request from origin:', origin || 'no origin');
+    
+    // Allow requests with no origin (same-origin, Postman, etc.)
+    // The cors library handles this case correctly
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Normalize origin (remove trailing slash if present)
+    const normalizedOrigin = origin.replace(/\/$/, '');
 
     // Check if the origin matches any of our base domains or localhost
-    const isAllowed = allowedOrigins.includes(origin) ||
-      origin.includes('localhost') ||
-      origin.includes('nepostore.xyz');
+    const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
+      normalizedOrigin.includes('localhost') ||
+      normalizedOrigin.includes('nepostore.xyz');
 
     if (isAllowed) {
-      // Return the specific origin instead of true to avoid wildcard issues with credentials
-      callback(null, origin);
+      // Return the specific origin - this ensures Access-Control-Allow-Origin 
+      // is set to the specific origin, not '*'
+      console.log('CORS: Allowing origin:', normalizedOrigin);
+      callback(null, normalizedOrigin);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS blocked origin:', normalizedOrigin);
+      callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ extended: false }));
 app.use('/uploads', express.static('uploads'));
