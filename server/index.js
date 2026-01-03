@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const Client = require('./models/Client');
 const cors = require('cors');
 const connectDB = require('./db');
 
@@ -7,6 +8,12 @@ const app = express();
 
 // Init Middleware
 app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc)
+
+// Debug: Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`📥 [${req.method}] ${req.originalUrl} | Host: ${req.hostname} | Origin: ${req.headers.origin}`);
+  next();
+});
 
 // Configure CORS
 // IMPORTANT: When credentials: true, origin must be a specific origin or array, never '*'
@@ -38,9 +45,13 @@ const corsOptions = {
     const normalizedOrigin = origin.replace(/\/$/, '');
 
     // Check if the origin matches any of our base domains or localhost
+    // Also allow local network IPs (192.168.x.x, 10.x.x.x, 172.x.x.x) for development testing
     const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
       normalizedOrigin.includes('localhost') ||
-      normalizedOrigin.includes('nepostore.xyz');
+      normalizedOrigin.includes('nepostore.xyz') ||
+      normalizedOrigin.startsWith('http://192.168.') ||
+      normalizedOrigin.startsWith('http://10.') ||
+      normalizedOrigin.startsWith('http://172.');
 
     if (isAllowed) {
       // CRITICAL: Return the specific origin string
@@ -54,7 +65,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-subdomain'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   preflightContinue: false,
   optionsSuccessStatus: 204
@@ -63,36 +74,11 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Additional manual CORS header handler as safety net
-// This ensures we NEVER set Access-Control-Allow-Origin to '*'
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
+// Manual CORS handler removed to avoid duplicate headers with cors middleware
+// app.use((req, res, next) => { ... });
 
-  // Only set CORS headers if there's an origin header (cross-origin request)
-  if (origin) {
-    const normalizedOrigin = origin.replace(/\/$/, '');
-    const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
-      normalizedOrigin.includes('localhost') ||
-      normalizedOrigin.includes('nepostore.xyz');
-
-    if (isAllowed) {
-      // Explicitly set the specific origin - NEVER use '*'
-      res.setHeader('Access-Control-Allow-Origin', normalizedOrigin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-  }
-
-  // Handle preflight OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
-app.use(express.json({ extended: false }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 const cookieSession = require('cookie-session');
@@ -103,22 +89,29 @@ require('./config/passport-setup'); // Executes the passport setup
 const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 console.log('[Init] Production mode:', isProd, '(Environment:', process.env.NODE_ENV, ')');
 
-app.use(
-  cookieSession({
-    name: 'session',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    keys: ['ecommerce_secret_key'],
-    // Forces SameSite=None and Secure for cross-domain cookies (Vercel -> Render)
-    ...(isProd ? {
-      sameSite: 'none',
-      secure: true
-    } : {
-      sameSite: 'lax',
-      secure: false
-    }),
-    httpOnly: true
-  })
-);
+// Cookie session configuration
+const cookieConfig = {
+  name: 'session',
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  keys: ['ecommerce_secret_key'],
+  httpOnly: true
+};
+
+if (isProd) {
+  // Production: cross-domain cookies for Vercel -> Render
+  cookieConfig.sameSite = 'none';
+  cookieConfig.secure = true;
+  cookieConfig.domain = '.nepostore.xyz'; // Allow cookies across subdomains
+} else {
+  // Development: allow cookies across localhost subdomains
+  cookieConfig.sameSite = 'lax';
+  cookieConfig.secure = false;
+  // Note: Some browsers don't support .localhost, so we'll set domain dynamically
+  // For now, don't set domain in dev to allow cookies on both localhost and app.localhost
+  // cookieConfig.domain = '.localhost';
+}
+
+app.use(cookieSession(cookieConfig));
 
 // Fix for Passport 0.6.0+
 app.use((req, res, next) => {
@@ -144,29 +137,34 @@ app.use((req, res, next) => {
 });
 
 // Middleware to handle subdomain routing
-const Client = require('./models/Client');
 const subdomainHandler = async (req, res, next) => {
   const host = req.hostname;
+
+  // Check for custom header first (useful for local dev or proxy scenarios)
+  const headerSubdomain = req.headers['x-subdomain'];
+
   const parts = host.split('.');
 
   // Determine subdomain based on hostname structure
-  let subdomain = null;
+  let subdomain = headerSubdomain || null;
 
-  if (host.endsWith('.localhost')) {
-    // e.g., app.localhost, tenant.localhost
-    subdomain = parts[0];
-  } else if (host === 'localhost') {
-    // Root localhost - no subdomain
-    subdomain = null;
-  } else if (host === 'nepostore.xyz' || host === 'www.nepostore.xyz') {
-    // Main domain - no subdomain (landing page)
-    subdomain = null;
-  } else if (host.endsWith('.nepostore.xyz')) {
-    // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
-    subdomain = parts[0];
-  } else if (parts.length > 2) {
-    // Fallback for other domains with subdomains
-    subdomain = parts[0];
+  if (!subdomain) {
+    if (host.endsWith('.localhost')) {
+      // e.g., app.localhost, tenant.localhost
+      subdomain = parts[0];
+    } else if (host === 'localhost') {
+      // Root localhost - no subdomain
+      subdomain = null;
+    } else if (host === 'nepostore.xyz' || host === 'www.nepostore.xyz') {
+      // Main domain - no subdomain (landing page)
+      subdomain = null;
+    } else if (host.endsWith('.nepostore.xyz')) {
+      // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
+      subdomain = parts[0];
+    } else if (parts.length > 2) {
+      // Fallback for other domains with subdomains
+      subdomain = parts[0];
+    }
   }
 
   // If we are on app subdomain, it's the admin dashboard
@@ -207,6 +205,8 @@ app.use('/api/seeder', require('./routes/seeder'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/super-admin', require('./routes/super-admin'));
+app.use('/api/store-settings', require('./routes/store-settings'));
+app.use('/api/client-pages', require('./routes/client-pages'));
 
 const port = process.env.PORT || 5002;
 
@@ -214,6 +214,31 @@ const startServer = async () => {
   try {
     // Connect to Database first
     await connectDB();
+
+    // Fix for legacy unique index on ownerEmail
+    try {
+      console.log('🔍 Checking for legacy indexes on clients collection...');
+      const indexes = await Client.collection.indexes();
+      console.log('📊 Existing indexes:', indexes.map(i => i.name).join(', '));
+
+      // Specifically target the "Email_1" or "ownerEmail_1" indices
+      const emailsIndex = indexes.find(idx => idx.name === 'Email_1');
+      const ownerEmailsIndex = indexes.find(idx => idx.name === 'ownerEmail_1');
+
+      if (emailsIndex) {
+        console.log('🗑️ Found legacy unique index "Email_1". Attempting to drop...');
+        await Client.collection.dropIndex('Email_1');
+        console.log('✅ Successfully dropped index: Email_1');
+      }
+
+      if (ownerEmailsIndex) {
+        console.log('🗑️ Found legacy unique index "ownerEmail_1". Attempting to drop...');
+        await Client.collection.dropIndex('ownerEmail_1');
+        console.log('✅ Successfully dropped index: ownerEmail_1');
+      }
+    } catch (indexErr) {
+      console.log('ℹ️ Index cleanup info:', indexErr.message);
+    }
 
     const server = app.listen(port, () => {
       console.log(`Server is running on port: ${port}`);

@@ -35,8 +35,8 @@ const generateSubdomain = async (storeName) => {
 // @access  Public
 router.post('/register', async (req, res) => {
     console.log('📝 Registration request body:', req.body);
-    const { fullName, email, storeName, password } = req.body;
-    console.log('Extracted fields:', { fullName, email, storeName, hasPassword: !!password });
+    const { fullName, email, storeName, password, phoneNumber } = req.body;
+    console.log('Extracted fields:', { fullName, email, storeName, phoneNumber, hasPassword: !!password });
 
     try {
         // Check if user or client already exists
@@ -74,6 +74,7 @@ router.post('/register', async (req, res) => {
             clientId: savedClient._id,
             name: fullName,
             email: email.toLowerCase(),
+            phoneNumber: phoneNumber,
             password: password // Will be hashed below
         });
 
@@ -107,41 +108,64 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    console.log('🔐 Login attempt for email:', email ? email.toLowerCase() : 'no email provided');
 
     try {
+        if (!email || !password) {
+            console.log('❌ Login failed: Missing email or password');
+            return res.status(400).json({ msg: 'Email and password are required' });
+        }
+
         let user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
+            console.log('❌ Login failed: User not found for email:', email.toLowerCase());
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
 
+        console.log('✅ User found:', user.email, 'Checking password...');
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.log('❌ Login failed: Password mismatch for user:', user.email);
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
+
+        console.log('✅ Password match! Creating session for user:', user.email);
 
         // Establish session strictly for this user
         req.login(user, (err) => {
             if (err) {
-                console.error('Passport req.login error (login):', err);
+                console.error('❌ Passport req.login error (login):', err);
                 return res.status(500).json({ msg: 'Login session failed' });
             }
 
             // req.login() automatically calls serializeUser and sets req.session.passport
             console.log('💾 Login session after req.login:', req.session);
+            console.log('🍪 Session passport data:', req.session.passport);
 
-            res.json({
-                success: true,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    clientId: user.clientId
+            // Explicitly save the session to ensure cookie is set before sending response
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('❌ Session save error:', saveErr);
+                    return res.status(500).json({ msg: 'Session save failed' });
                 }
+                
+                console.log('✅ Session saved successfully, passport:', req.session.passport);
+                
+                // Send response after session is saved
+                res.json({
+                    success: true,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        clientId: user.clientId
+                    }
+                });
             });
         });
     } catch (err) {
-        console.error('Login Route Error:', err);
-        res.status(500).send('Server Error: ' + err.message);
+        console.error('❌ Login Route Error:', err);
+        res.status(500).json({ msg: 'Server Error: ' + err.message });
     }
 });
 
@@ -158,7 +182,7 @@ router.get('/my-stores', ensureAuthenticated, async (req, res) => {
 
         // Find all clients owned by this user's email
         let clients = await Client.find({ ownerEmail: user.email.toLowerCase() }).sort({ createdAt: -1 });
-        
+
         // Auto-generate subdomain for clients that don't have one
         for (let client of clients) {
             if (!client.subdomain && client.name) {
@@ -172,7 +196,7 @@ router.get('/my-stores', ensureAuthenticated, async (req, res) => {
                 }
             }
         }
-        
+
         // Re-fetch to get updated clients
         clients = await Client.find({ ownerEmail: user.email.toLowerCase() }).sort({ createdAt: -1 });
         res.json(clients);
@@ -188,14 +212,16 @@ router.get('/my-stores', ensureAuthenticated, async (req, res) => {
 router.post('/create-store', ensureAuthenticated, async (req, res) => {
     try {
         const { storeName } = req.body;
-        
+        console.log('🏗️ Create store request:', { storeName, user: req.user ? req.user.email : 'No user' });
+
         if (!storeName || !storeName.trim()) {
             return res.status(400).json({ msg: 'Store name is required' });
         }
 
-        // Get user's email
-        const user = await User.findById(req.user.id);
+        // Use the authenticated user from the request
+        const user = req.user;
         if (!user) {
+            console.log('❌ Create store failed: User not found in request');
             return res.status(404).json({ msg: 'User not found' });
         }
 
@@ -212,9 +238,77 @@ router.post('/create-store', ensureAuthenticated, async (req, res) => {
         });
 
         const savedClient = await newClient.save();
+        console.log('✅ Store created successfully:', savedClient.subdomain);
         res.status(201).json(savedClient);
     } catch (err) {
-        console.error('Error creating store:', err.message);
+        console.error('❌ Error creating store:', err);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
+    }
+});
+
+// @route   POST api/auth/switch-store/:id
+// @desc    Switch the active store (clientId) for the authenticated user
+// @access  Private
+router.post('/switch-store/:id', ensureAuthenticated, async (req, res) => {
+    try {
+        const client = await Client.findById(req.params.id);
+
+        if (!client) {
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+
+        // Check if user owns this store
+        if (client.ownerEmail !== req.user.email.toLowerCase()) {
+            return res.status(401).json({ msg: 'Unauthorized: You can only switch to your own stores' });
+        }
+
+        // Update the user's active clientId
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { clientId: client._id },
+            { new: true }
+        );
+
+        console.log(`🔄 User "${req.user.email}" switched active store to "${client.name}" (${client._id})`);
+        res.json({ msg: 'Store switched successfully', clientId: client._id });
+    } catch (err) {
+        console.error('Error switching store:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/auth/delete-store/:id
+// @desc    Delete a store (client) and all its data
+// @access  Private
+router.delete('/delete-store/:id', ensureAuthenticated, async (req, res) => {
+    try {
+        const client = await Client.findById(req.params.id);
+
+        if (!client) {
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+
+        // Check if user owns this store
+        // We compare user email (authenticated) with client ownerEmail
+        if (client.ownerEmail !== req.user.email.toLowerCase()) {
+            return res.status(401).json({ msg: 'Unauthorized: You can only delete your own stores' });
+        }
+
+        // 1. Delete all products for this client
+        const Product = require('../models/Product');
+        await Product.deleteMany({ clientId: client._id });
+
+        // 2. Delete all orders for this client
+        const Order = require('../models/Order');
+        await Order.deleteMany({ clientId: client._id });
+
+        // 3. Delete the client itself
+        await Client.findByIdAndDelete(req.params.id);
+
+        console.log(`🗑️ Store "${client.name}" deleted by owner "${req.user.email}"`);
+        res.json({ msg: 'Store deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting store:', err.message);
         res.status(500).send('Server Error');
     }
 });

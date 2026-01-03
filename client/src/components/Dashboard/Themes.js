@@ -1,14 +1,16 @@
 import React, { useContext } from 'react';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { themes } from '../../themes';
+import API_URL from '../../apiConfig';
 import './Themes.css';
 import { FaCheckCircle, FaPalette, FaInfoCircle } from 'react-icons/fa';
 
 const Themes = () => {
   const { theme: activeTheme, setTheme } = useContext(ThemeContext) || {};
 
-  const handleApplyTheme = (themeId) => {
+  const handleApplyTheme = async (themeId) => {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
 
@@ -25,13 +27,27 @@ const Themes = () => {
       selectedThemeId: themeId // ONLY update the ID to switch layout
     };
 
-    localStorage.setItem('storeSettings', JSON.stringify(updatedStoreData));
-    localStorage.setItem('themeId', themeId);
+    try {
+      // 3. Persist to API
+      await axios.put(`${API_URL}/api/store-settings`, updatedStoreData, {
+        withCredentials: true
+      });
 
-    // 3. Notify app of change
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
+      // 4. Update local storage for immediate preview
+      localStorage.setItem('storeSettings', JSON.stringify(updatedStoreData));
+      localStorage.setItem('themeId', themeId);
+      window.dispatchEvent(new Event('storeSettingsUpdated'));
 
-    toast.success(`'${theme.name}' layout applied! Your colors and fonts are preserved.`);
+      toast.success(`'${theme.name}' layout applied!`);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+      toast.error('Failed to save theme setting to server, but applied locally.');
+
+      // Fallback local update
+      localStorage.setItem('storeSettings', JSON.stringify(updatedStoreData));
+      localStorage.setItem('themeId', themeId);
+      window.dispatchEvent(new Event('storeSettingsUpdated'));
+    }
   };
 
   return (

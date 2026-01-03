@@ -48,11 +48,11 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
   };
 
   const [currentStatus, setCurrentStatus] = useState(order ? order.status : '');
-    const [paymentStatus, setPaymentStatus] = useState(order ? getPaymentStatus(order.invoices) : '');
+  const [paymentStatus, setPaymentStatus] = useState(order ? getPaymentStatus(order.invoices) : '');
   const [isEditing, setIsEditing] = useState(false);
   const [editedDetails, setEditedDetails] = useState(null);
 
-    useEffect(() => {
+  useEffect(() => {
     if (order) {
       setCurrentStatus(order.status);
       setPaymentStatus(getPaymentStatus(order.invoices));
@@ -69,17 +69,17 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
     const previousStatus = currentStatus;
     const previousPaymentStatus = paymentStatus;
     setCurrentStatus(newStatus);
-    
+
     // If order status is set to refunded, automatically set payment status to Refunded
     if (newStatus === 'refunded') {
       setPaymentStatus('Refunded');
     }
-    
+
     try {
       const updatedInvoices = newStatus === 'refunded'
-        ? (order.invoices && order.invoices.length > 0 
-            ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
-            : [{ status: 'Refunded' }])
+        ? (order.invoices && order.invoices.length > 0
+          ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
+          : [{ status: 'Refunded' }])
         : order.invoices;
 
       const updatedOrder = {
@@ -87,18 +87,18 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
         status: newStatus,
         invoices: updatedInvoices
       };
-      
+
       await axios.put(`/api/orders/${order._id}`, updatedOrder);
-      
+
       // Update parent component
       if (onOrderUpdate) {
         onOrderUpdate(updatedOrder);
       }
-      
-      const message = newStatus === 'refunded' 
+
+      const message = newStatus === 'refunded'
         ? `Order status updated to "refunded" and payment status set to "Refunded"`
         : `Order status updated to "${newStatus}"`;
-      
+
       toast.success(message, {
         position: 'top-right',
         autoClose: 3000,
@@ -114,14 +114,14 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
     }
   };
 
-    const handleEditClick = () => setIsEditing(true);
+  const handleEditClick = () => setIsEditing(true);
 
   const handleCancelClick = () => {
     setEditedDetails(order.customerDetails);
     setIsEditing(false);
   };
 
-      const handleSaveClick = () => {
+  const handleSaveClick = () => {
     const updatedOrder = { ...order, customerDetails: editedDetails };
     onOrderUpdate(updatedOrder);
     // Manually update the local 'order' object for immediate reflection
@@ -139,34 +139,34 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
     const previousPaymentStatus = paymentStatus;
     const previousStatus = currentStatus;
     setPaymentStatus(newPaymentStatus);
-    
+
     // If payment status is set to Refunded, automatically set order status to refunded
     if (newPaymentStatus === 'Refunded') {
       setCurrentStatus('refunded');
     }
-    
+
     try {
-      const updatedInvoices = order.invoices && order.invoices.length > 0 
+      const updatedInvoices = order.invoices && order.invoices.length > 0
         ? order.invoices.map(inv => ({ ...inv, status: newPaymentStatus }))
         : [{ status: newPaymentStatus }];
-      
+
       const updatedOrder = {
         ...order,
         status: newPaymentStatus === 'Refunded' ? 'refunded' : order.status,
         invoices: updatedInvoices
       };
-      
+
       await axios.put(`/api/orders/${order._id}`, updatedOrder);
-      
+
       // Update parent component
       if (onOrderUpdate) {
         onOrderUpdate(updatedOrder);
       }
-      
+
       const message = newPaymentStatus === 'Refunded'
         ? `Payment status updated to "Refunded" and order status set to "refunded"`
         : `Payment status updated to "${newPaymentStatus}"`;
-      
+
       toast.success(message, {
         position: 'top-right',
         autoClose: 3000,
@@ -198,7 +198,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
           <div className="modal-header-top">
             <button onClick={onClose} className="back-button-modal">←</button>
             <div className="header-title">
-             
+
               <div className="order-title-status">
                 <div className="order-header-top-line">
                   <h2>Order #{getOrderNumber(order.orderId)}</h2>
@@ -210,7 +210,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                     <option value="delivered">DELIVERED</option>
                     <option value="cancelled">CANCELLED</option>
                     <option value="refunded">REFUNDED</option>
-                  </select> & 
+                  </select> &
                   <select id="payment-status" name="payment-status" className={`status-badge ${getStatusClass(paymentStatus)}`} value={paymentStatus} onChange={handlePaymentStatusChange}>
                     <option value="Paid">PAID</option>
                     <option value="Unpaid">UNPAID</option>
@@ -242,7 +242,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
           <div className="details-flex-container">
             <div className="info-cards">
               <div className="card full-width-card">
-                                <div className="card-header">
+                <div className="card-header">
                   <h4>CUSTOMER & SHIPPING DETAILS</h4>
                   {isEditing ? (
                     <div className="edit-actions">
@@ -255,7 +255,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                     </button>
                   )}
                 </div>
-                                <div className="card-body">
+                <div className="card-body">
                   {isEditing && editedDetails ? (
                     <div className="details-grid-edit">
                       <label>Name:</label> <input type="text" name="name" value={editedDetails.name} onChange={handleInputChange} />
@@ -263,7 +263,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                       <label>Phone Number:</label> <input type="text" name="phone" value={editedDetails.phone} onChange={handleInputChange} />
                       <label>Province:</label> <input type="text" name="province" value={editedDetails.province} onChange={handleInputChange} />
                       <label>City:</label> <input type="text" name="city" value={editedDetails.city} onChange={handleInputChange} />
-                      <label>Address:</label> <input type="text" name="address" value={editedDetails.address} onChange={handleInputChange} />
+                      <label>District:</label> <input type="text" name="district" value={editedDetails.district} onChange={handleInputChange} />
                       <label>Landmark:</label> <input type="text" name="landmark" value={editedDetails.landmark} onChange={handleInputChange} />
                       <label>Order Note:</label> <textarea name="orderNotes" value={editedDetails.orderNotes} onChange={handleInputChange}></textarea>
                     </div>
@@ -290,8 +290,8 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                         <span className="detail-value">{order.customerDetails.city || 'N/A'}</span>
                       </div>
                       <div className="detail-item">
-                        <span className="detail-label">Address:</span>
-                        <span className="detail-value">{order.customerDetails.address || 'N/A'}</span>
+                        <span className="detail-label">District:</span>
+                        <span className="detail-value">{order.customerDetails.district || 'N/A'}</span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Landmark:</span>

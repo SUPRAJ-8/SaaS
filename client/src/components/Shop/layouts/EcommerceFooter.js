@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from 'react-icons/fa';
+import { getShopPath } from '../../../themeUtils';
 import './EcommerceLayout.css';
 
 const EcommerceFooter = () => {
@@ -18,16 +19,17 @@ const EcommerceFooter = () => {
 
     const col1Title = footerSettings.col1Title || 'Shop';
     const col1Links = footerSettings.col1Links || [
-        { text: 'All Products', url: '/shop' },
-        { text: 'New Arrivals', url: '/shop' },
-        { text: 'Featured', url: '/shop' },
-        { text: 'Offers', url: '/shop' }
+        { text: 'All Products', url: '/products' },
+        { text: 'New Arrivals', url: '/products' },
+        { text: 'Featured', url: '/products' },
+        { text: 'Offers', url: '/products' }
     ];
 
     const col2Title = footerSettings.col2Title || 'Support';
     const col2Links = footerSettings.col2Links || [
         { text: 'About Us', url: '/about' },
         { text: 'Contact Us', url: '/contact' },
+        { text: 'Track Order', url: '/track-order' },
         { text: 'FAQs', url: '/faq' },
         { text: 'Shipping Info', url: '/shipping' }
     ];
@@ -64,7 +66,7 @@ const EcommerceFooter = () => {
                         <h3 style={textStyle}>{col1Title}</h3>
                         <ul>
                             {col1Links.map((link, i) => (
-                                <li key={i}><a href={link.url} style={{ color: 'var(--theme-text-offset, #9ca3af)' }}>{link.text}</a></li>
+                                <li key={i}><a href={getShopPath(link.url)} style={{ color: 'var(--theme-text-offset, #9ca3af)' }}>{link.text}</a></li>
                             ))}
                         </ul>
                     </div>
@@ -72,7 +74,7 @@ const EcommerceFooter = () => {
                         <h3 style={textStyle}>{col2Title}</h3>
                         <ul>
                             {col2Links.map((link, i) => (
-                                <li key={i}><a href={link.url} style={{ color: 'var(--theme-text-offset, #9ca3af)' }}>{link.text}</a></li>
+                                <li key={i}><a href={getShopPath(link.url)} style={{ color: 'var(--theme-text-offset, #9ca3af)' }}>{link.text}</a></li>
                             ))}
                         </ul>
                     </div>
@@ -92,9 +94,9 @@ const EcommerceFooter = () => {
                     © {new Date().getFullYear()} {storeName}. All rights reserved.
                 </div>
                 <div className="footer-legal-links">
-                    <a href="/terms" style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Terms</a>
-                    <a href="/privacy" style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Privacy</a>
-                    <a href="/cookies" style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Cookies</a>
+                    <a href={getShopPath("/terms")} style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Terms</a>
+                    <a href={getShopPath("/privacy")} style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Privacy</a>
+                    <a href={getShopPath("/cookies")} style={{ color: 'var(--theme-text-offset, #6b7280)' }}>Cookies</a>
                 </div>
             </div>
         </footer>

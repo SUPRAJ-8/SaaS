@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const Client = require('../models/Client');
 const mongoose = require('mongoose');
 
 const { ensureAuthenticated } = require('../middleware/auth');
@@ -77,11 +78,71 @@ router.post('/', async (req, res) => {
   try {
     const { customerDetails, ...orderDetails } = req.body;
 
+    // Validate required fields
+    if (!orderDetails.items || !Array.isArray(orderDetails.items) || orderDetails.items.length === 0) {
+      return res.status(400).json({
+        msg: 'Order must contain at least one item',
+        error: 'Invalid order data'
+      });
+    }
+
+    if (!customerDetails || !customerDetails.name || !customerDetails.phone) {
+      return res.status(400).json({
+        msg: 'Customer name and phone are required',
+        error: 'Missing customer details'
+      });
+    }
+
     // For public order placement (shoppers), we need to identify the client from the subdomain or a header
-    const clientId = req.tenantClient?._id || req.body.clientId || req.user?.clientId;
+    let clientId = req.tenantClient?._id || req.body.clientId || req.user?.clientId;
+
+    // If still no clientId, try to get it from the subdomain header or hostname
+    if (!clientId) {
+      const subdomain = req.headers['x-subdomain'] || req.hostname?.split('.')[0];
+      console.log('Attempting to find client by subdomain:', subdomain);
+
+      if (subdomain && subdomain !== 'app' && subdomain !== 'www' && subdomain !== 'localhost' && subdomain !== 'api') {
+        try {
+          const tenantClient = await Client.findOne({ subdomain });
+          if (tenantClient) {
+            clientId = tenantClient._id;
+            req.tenantClient = tenantClient;
+            console.log('Client found by subdomain:', tenantClient.name, 'ID:', clientId);
+          } else {
+            console.log('No client found with subdomain:', subdomain);
+          }
+        } catch (err) {
+          console.error('Error finding client by subdomain:', err);
+        }
+      } else {
+        // For localhost development, try to get the first available client as fallback
+        if (req.hostname === 'localhost' || req.hostname.includes('localhost')) {
+          try {
+            const firstClient = await Client.findOne({});
+            if (firstClient) {
+              clientId = firstClient._id;
+              console.log('Using first available client for localhost:', firstClient.name, 'ID:', clientId);
+            }
+          } catch (err) {
+            console.error('Error finding fallback client:', err);
+          }
+        }
+      }
+    }
 
     if (!clientId) {
-      return res.status(400).json({ msg: 'Identify your store (clientId or Subdomain required)' });
+      console.error('Order placement failed - No clientId found. Request details:', {
+        hostname: req.hostname,
+        subdomain: req.headers['x-subdomain'],
+        hasTenantClient: !!req.tenantClient,
+        hasBodyClientId: !!req.body.clientId,
+        hasUser: !!req.user,
+        userClientId: req.user?.clientId
+      });
+      return res.status(400).json({
+        msg: 'Failed to identify store. Please ensure you are accessing the store from the correct subdomain or contact support.',
+        error: 'Client identification failed'
+      });
     }
 
     let customer;
@@ -170,6 +231,7 @@ router.post('/', async (req, res) => {
       name: item.name,
       quantity: item.quantity,
       price: item.price,
+      image: item.image,
       variant: item.variant // Keep variant info for inventory reduction
     }));
 
@@ -193,11 +255,28 @@ router.post('/', async (req, res) => {
     });
 
     const order = await newOrder.save();
+    console.log('Order created successfully:', order.orderId);
     res.json(order);
   } catch (err) {
     console.error('Error creating order:', err);
     console.error('Error stack:', err.stack);
-    res.status(500).json({ msg: 'Server Error', error: err.message });
+    console.error('Request body:', JSON.stringify(req.body, null, 2));
+
+    // Provide more specific error messages
+    let errorMsg = 'Server Error';
+    if (err.name === 'ValidationError') {
+      errorMsg = 'Validation error: ' + Object.values(err.errors).map(e => e.message).join(', ');
+    } else if (err.code === 11000) {
+      errorMsg = 'Duplicate order ID. Please try again.';
+    } else if (err.message) {
+      errorMsg = err.message;
+    }
+
+    res.status(500).json({
+      msg: 'Failed to place order. ' + errorMsg,
+      error: err.message || 'Unknown error',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
@@ -339,6 +418,58 @@ router.delete('/:id', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error('Error deleting order:', err.message);
     res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
+});
+
+// @route   GET api/orders/track/:orderId
+// @desc    Track an order (Public)
+// @access  Public
+router.get('/track/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Identify client
+    let clientId = req.tenantClient?._id;
+    if (!clientId) {
+      const subdomain = req.headers['x-subdomain'] || req.hostname?.split('.')[0];
+      if (subdomain && !['app', 'www', 'api', 'localhost'].includes(subdomain)) {
+        const client = await Client.findOne({ subdomain });
+        if (client) clientId = client._id;
+      }
+    }
+
+    // Find order by orderId and clientId
+    const query = { orderId };
+    if (clientId) query.clientId = clientId;
+
+    const order = await Order.findOne(query).lean();
+
+    if (!order) {
+      return res.status(404).json({ msg: 'Order not found' });
+    }
+
+    // Return order status and basic info
+    res.json({
+      orderId: order.orderId,
+      status: order.status,
+      placedOn: order.placedOn,
+      updatedOn: order.updatedOn,
+      payment: order.payment,
+      customerName: order.customerDetails?.name,
+      customerEmail: order.customerDetails?.email,
+      customerPhone: order.customerDetails?.phone,
+      items: (order.items || []).map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.image,
+        variant: item.variant
+      }))
+    });
+
+  } catch (err) {
+    console.error('Error tracking order:', err);
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 

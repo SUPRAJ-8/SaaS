@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaArrowRight } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatchCart } from '../../Shop/CartProvider';
+import API_URL from '../../../apiConfig';
+import { getShopPath, resolveImageUrl } from '../../../themeUtils';
 import './ProductGridTemplate.css';
 
 const ICON_MAP = {
@@ -133,7 +135,7 @@ const ProductGridTemplate = ({ content }) => {
                         </div>
 
                         {showExploreMore && (
-                            <Link to="/shop/products" className="explore-all-btn" onClick={(e) => isBuilder && e.preventDefault()}>
+                            <Link to={getShopPath('/products')} className="explore-all-btn" onClick={(e) => isBuilder && e.preventDefault()}>
                                 Explore All <FaArrowRight />
                             </Link>
                         )}
@@ -144,16 +146,21 @@ const ProductGridTemplate = ({ content }) => {
                     <>
                         <div className="ecommerce-product-grid">
                             {displayedProducts.map(product => {
+                                const totalStock = product.hasVariants
+                                    ? (product.variants || []).reduce((acc, v) => acc + (v.quantity || 0), 0)
+                                    : (product.quantity || 0);
+                                const isOutOfStock = totalStock <= 0;
+
                                 const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
 
                                 const handleAddToCart = (e) => {
                                     e.preventDefault();
-                                    if (isBuilder) return;
+                                    if (isBuilder || isOutOfStock) return;
                                     const cartItem = {
                                         id: product._id,
                                         name: product.name,
                                         price: product.sellingPrice,
-                                        image: product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300',
+                                        image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300',
                                         quantity: 1
                                     };
                                     dispatch({ type: 'ADD_ITEM', payload: cartItem });
@@ -175,18 +182,16 @@ const ProductGridTemplate = ({ content }) => {
                                     : null;
 
                                 return (
-                                    <div key={product._id} className="ecommerce-product-card">
-                                        <Link to={`/shop/product/${product._id}`} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
+                                    <div key={product._id} className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
+                                        <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
                                             <div className="product-image-container">
-                                                {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
+                                                {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
+                                                {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
                                                 <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
                                                     <FaHeart size={14} />
                                                 </button>
                                                 <img
-                                                    src={product.images && product.images.length > 0
-                                                        ? (product.images[0].startsWith('http') ? product.images[0] : `http://localhost:5002${product.images[0]}`)
-                                                        : 'https://via.placeholder.com/300'
-                                                    }
+                                                    src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
                                                     alt={product.name}
                                                 />
                                             </div>
@@ -206,8 +211,13 @@ const ProductGridTemplate = ({ content }) => {
                                                 </div>
                                             </div>
                                         </Link>
-                                        <button className="add-to-cart-btn-small" onClick={handleAddToCart}>
-                                            Add To Cart
+                                        <button
+                                            className="add-to-cart-btn-small"
+                                            onClick={handleAddToCart}
+                                            disabled={isOutOfStock}
+                                            style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+                                        >
+                                            {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
                                         </button>
                                     </div>
                                 );

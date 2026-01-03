@@ -5,6 +5,8 @@ import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { FaRegHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
+import axios from 'axios';
+import { getShopPath, resolveImageUrl } from '../../themeUtils';
 
 // Import Templates
 import ProductGridTemplate from '../Dashboard/templates/ProductGridTemplate';
@@ -13,6 +15,7 @@ import CategoryGridTemplate from '../Dashboard/templates/CategoryGridTemplate';
 import FAQTemplate from '../Dashboard/templates/FAQTemplate';
 import RichTextTemplate from '../Dashboard/templates/RichTextTemplate';
 import ModernHeroTemplate from '../Dashboard/templates/ModernHeroTemplate';
+import NotFound from '../../pages/NotFound';
 
 const SECTION_TEMPLATES = {
   'product-grid': ProductGridTemplate,
@@ -42,13 +45,21 @@ const ProductCard = ({ product }) => {
   const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
   const dispatch = useDispatchCart();
 
+  /* STOCK CALCULATION */
+  const totalStock = product.hasVariants
+    ? (product.variants || []).reduce((acc, v) => acc + (v.quantity || 0), 0)
+    : (product.quantity || 0);
+  const isOutOfStock = totalStock <= 0;
+
   const handleAddToCart = (e) => {
     e.preventDefault();
+    if (isOutOfStock) return; // Prevent adding if out of stock
+
     const cartItem = {
       id: product._id,
       name: product.name,
       price: product.sellingPrice,
-      image: product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : 'https://via.placeholder.com/300',
+      image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300',
       quantity: 1
     };
     dispatch({ type: 'ADD_ITEM', payload: cartItem });
@@ -60,14 +71,18 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="ecommerce-product-card">
-      <Link to={`/shop/product/${product._id}`} className="product-card-link">
+    <div className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
+      <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link">
         <div className="product-image-container">
-          {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
+          {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
+          {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
           <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
             <FaRegHeart />
           </button>
-          <img src={product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300'} alt={product.name} />
+          <img
+            src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
+            alt={product.name}
+          />
         </div>
         <div className="product-details">
           <h3>{product.name}</h3>
@@ -89,12 +104,19 @@ const ProductCard = ({ product }) => {
           </div>
         </div>
       </Link>
-      <button className="add-to-cart-btn-small" onClick={handleAddToCart}>Add to Cart</button>
+      <button
+        className="add-to-cart-btn-small"
+        onClick={handleAddToCart}
+        disabled={isOutOfStock}
+        style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+      >
+        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+      </button>
     </div>
   );
 };
 
-const ProductSection = ({ title, icon, products, loading, error, showExploreAll = false, exploreLink = "/shop", hideHeader = false }) => {
+const ProductSection = ({ title, icon, products, loading, error, showExploreAll = false, exploreLink = "/", hideHeader = false }) => {
   const words = title.split(' ');
   const lastWord = words.pop();
   const firstPart = words.join(' ');
@@ -108,7 +130,7 @@ const ProductSection = ({ title, icon, products, loading, error, showExploreAll 
             <span className="heading-first">{firstPart}</span> <span className="heading-last">{lastWord}</span>
           </h2>
           {showExploreAll && (
-            <Link to="/shop/products" className="explore-all-btn">
+            <Link to={getShopPath('/products')} className="explore-all-btn">
               EXPLORE ALL <FaChevronRight />
             </Link>
           )}
@@ -132,7 +154,7 @@ const RecentlyViewedSection = ({ products }) => (
         <FaClock />
         <span className="heading-first">Recently Viewed</span> <span className="heading-last">Products</span>
       </h2>
-      <Link to="/shop/products" className="explore-all-btn">
+      <Link to={getShopPath('/products')} className="explore-all-btn">
         EXPLORE ALL <FaChevronRight />
       </Link>
     </div>
@@ -178,6 +200,17 @@ const ProductList = () => {
   const [availableColors, setAvailableColors] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
+  const [pageNotFound, setPageNotFound] = useState(false);
+
+  const resetFilters = (e) => {
+    if (e) e.preventDefault();
+    setSelectedCategory('all');
+    setPriceRange({ min: '', max: '' });
+    setStockStatus('all');
+    setSelectedColors([]);
+    setSelectedSizes([]);
+    setSortBy('newest');
+  };
 
   const filteredProducts = allProducts.filter(product => {
     // ... filtering logic ...
@@ -227,16 +260,36 @@ const ProductList = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [popular, featured, all, cats] = await Promise.all([
-          getProducts({ section: 'Popular' }),
-          getProducts({ section: 'Featured' }),
+        // Construct Axios config for categories (similar to productService)
+        const hostname = window.location.hostname;
+        let subdomain = null;
+        if (hostname.endsWith('.localhost')) {
+          subdomain = hostname.split('.')[0];
+        } else if (hostname.endsWith('.nepostore.xyz') && hostname !== 'nepostore.xyz' && hostname !== 'www.nepostore.xyz') {
+          subdomain = hostname.split('.')[0];
+        }
+
+        const categoryConfig = {
+          withCredentials: true
+        };
+
+        if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'localhost') {
+          categoryConfig.headers = { 'x-subdomain': subdomain };
+        }
+
+        const [popular, featured, all, catsResponse] = await Promise.all([
+          getProducts({ section: 'Popular', status: 'Active' }),
+          getProducts({ section: 'Featured', status: 'Active' }),
           getProducts(),
-          fetch(`${API_URL}/api/categories`).then(res => res.json())
+          axios.get(`${API_URL}/api/categories`, categoryConfig)
         ]);
+
+        const cats = catsResponse.data;
+
         setPopularProducts(popular);
         setFeaturedProducts(featured);
         setAllProducts(all);
-        setCategories(cats);
+        setCategories(cats || []);
 
         // Extract available colors and sizes
         const colors = new Set();
@@ -269,26 +322,96 @@ const ProductList = () => {
   }, []);
 
   // Load dynamic sections for Nexus Theme
+  // Load dynamic sections for Nexus Theme
   useEffect(() => {
     if (theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus') {
-      // Find page ID from slug
-      const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
-      const currentSlug = slug || '';
-      const currentPage = savedPages.find(p => p.slug === currentSlug && p.themeId === 'nexus');
+      const fetchDynamicContent = async () => {
+        let currentSlug = slug || 'new-page'; // Default to home/new-page if no slug
 
-      const pageId = currentPage ? currentPage.id : 3; // Fallback to 3 (Home) if not found
-      const pageKey = `page_${pageId}_sections`;
-      const savedSections = localStorage.getItem(pageKey);
+        // 1. Check if we are on a real shop subdomain
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        let subdomain = null;
 
-      if (savedSections) {
-        try {
-          setDynamicSections(JSON.parse(savedSections));
-        } catch (e) {
-          console.error('Failed to load dynamic sections:', e);
-          setDynamicSections([]);
+        if (hostname.endsWith('.localhost')) {
+          subdomain = parts[0];
+        } else if (hostname.endsWith('.nepostore.xyz')) {
+          subdomain = parts[0];
+        } else if (parts.length > 2) {
+          subdomain = parts[0];
         }
+
+        // 2. Fetch from API if on a shop subdomain
+        if (subdomain && subdomain !== 'app' && subdomain !== 'www' && subdomain !== 'localhost') {
+          try {
+            // If slug is empty, we want the home page (slug: "")
+            const targetSlug = slug || '';
+
+            const response = await axios.get(`${API_URL}/api/client-pages/public/${subdomain}?slug=${targetSlug}`);
+            if (response.data && response.data.content) {
+              setDynamicSections(JSON.parse(response.data.content));
+              return;
+            }
+          } catch (error) {
+            // Ignore 404s (page not found) as we fallback to standard view
+            if (!error.response || error.response.status !== 404) {
+              console.error('Failed to fetch dynamic sections from API:', error);
+            }
+          }
+        }
+
+        // 3. Fallback: LocalStorage (for Dashboard Preview or if API fails context)
+        // We need to map the slug (from URL) to the page ID (used for storage keys)
+        currentSlug = slug || ''; // Normalize home slug
+        let pageId = null;
+
+        try {
+          const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
+          const pageEntry = savedPages.find(p => p.slug === currentSlug);
+          if (pageEntry) {
+            pageId = pageEntry.id;
+          }
+        } catch (e) {
+          console.error("Error finding page ID from slug:", e);
+        }
+
+        // Try different keys in priority: 
+        // 1. the specific page ID (e.g. page_3_sections)
+        // 2. the direct slug (e.g. page_vision_sections)
+        // 3. common fallbacks for home page
+        let savedSections = null;
+        if (pageId) savedSections = localStorage.getItem(`page_${pageId}_sections`);
+        if (!savedSections) savedSections = localStorage.getItem(`page_${currentSlug}_sections`);
+        if (!savedSections && !slug) {
+          savedSections = localStorage.getItem('page_new-page_sections');
+        }
+
+        if (savedSections) {
+          try {
+            setDynamicSections(JSON.parse(savedSections));
+            setPageNotFound(false);
+          } catch (e) {
+            console.error('Failed to load dynamic sections from local:', e);
+            setDynamicSections([]);
+            if (slug && slug !== 'products') setPageNotFound(true);
+          }
+        } else {
+          // If no sections found and we have a custom slug, it's a 404
+          if (slug && slug !== 'products') {
+            setPageNotFound(true);
+          } else {
+            setPageNotFound(false);
+          }
+        }
+      };
+
+      fetchDynamicContent();
+    } else {
+      // If not Nexus, behavior depends on slug
+      if (slug && slug !== 'products') {
+        setPageNotFound(true);
       } else {
-        setDynamicSections([]); // Clear if no sections for this page
+        setPageNotFound(false);
       }
     }
   }, [theme.id, slug]);
@@ -302,19 +425,29 @@ const ProductList = () => {
     setSelectedSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
   };
 
-  return (
-    <div className="product-list-page">
-      <div className="ecommerce-layout">
-        {(theme.id === 'ecommerce' && !slug) && (
-          <>
-            <ProductSection title="Popular Products" icon={<FaFire />} products={popularProducts} loading={loading} error={error} showExploreAll={true} exploreLink="/shop/products" />
-            <ProductSection title="Featured Products" icon={<FaStar />} products={featuredProducts} loading={loading} error={error} showExploreAll={true} exploreLink="/shop/products" />
-            <RecentlyViewedSection products={recentlyViewedProducts} />
-            <ProductSection title="All Products" icon={<FaTh />} products={allProducts} loading={loading} error={error} />
-          </>
-        )}
+  const isNexus = theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus';
 
-        {(slug === 'products') && (
+  if (pageNotFound) {
+    return <NotFound />;
+  }
+
+  return (
+    <div className={`product-list-page ${isNexus ? 'nexus-theme' : ''}`}>
+      {(theme.id === 'ecommerce' && !slug) && (
+        <>
+          <ProductSection title="Popular Products" icon={<FaFire />} products={popularProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
+          <ProductSection title="Featured Products" icon={<FaStar />} products={featuredProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
+          <RecentlyViewedSection products={recentlyViewedProducts} />
+          <ProductSection title="All Products" icon={<FaTh />} products={allProducts} loading={loading} error={error} />
+        </>
+      )}
+
+      {/* Standard Products View: Sidebar + Grid */}
+      {/* Shown when: 1. On /products path, OR 2. Non-Nexus theme, OR 3. Nexus theme but NO dynamic sections found */}
+      {(slug === 'products' ||
+        (slug && theme.id !== 'nexus' && localStorage.getItem('themeId') !== 'nexus') ||
+        (theme.id === 'nexus' && dynamicSections.length === 0)
+      ) && (
           <div className="shop-page-wrapper">
             <div className="shop-page-header">
               <div className="product-section-header centered">
@@ -330,11 +463,11 @@ const ProductList = () => {
               <div className="shop-sidebar">
                 <div className="filters-container">
                   <div className="filter-header">
-                    <h3>FILTER BY:</h3>
+                    <h3>Filter By <span onClick={resetFilters} className="reset-filter-link" style={{ cursor: 'pointer' }}>Reset All</span></h3>
                   </div>
 
                   <div className="sidebar-widget">
-                    <h3>Categories</h3>
+                    <h3>CATEGORIES</h3>
                     <ul className="categories-list">
                       <li
                         className={selectedCategory === 'all' ? 'active' : ''}
@@ -355,24 +488,22 @@ const ProductList = () => {
                   <div className="filter-divider"></div>
 
                   <div className="sidebar-widget">
-                    <h3>Price</h3>
+                    <h3>PRICE</h3>
                     <div className="price-filter-group">
                       <div className="price-input-col">
-                        <label>From</label>
                         <input
                           type="number"
                           value={priceRange.min}
-                          placeholder="0"
+                          placeholder="NPR Min"
                           onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
                         />
                       </div>
                       <span className="price-dash">-</span>
                       <div className="price-input-col">
-                        <label>To</label>
                         <input
                           type="number"
                           value={priceRange.max}
-                          placeholder="Max"
+                          placeholder="NPR Max"
                           onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
                         />
                       </div>
@@ -382,9 +513,9 @@ const ProductList = () => {
                   <div className="filter-divider"></div>
 
                   <div className="sidebar-widget">
-                    <h3>Stock Status</h3>
+                    <h3>STOCK STATUS</h3>
                     <div className="checkbox-list">
-                      <label className="checkbox-item">
+                      <label className="checkbox-item round-checkbox">
                         <input
                           type="checkbox"
                           checked={stockStatus === 'inStock'}
@@ -393,7 +524,7 @@ const ProductList = () => {
                         <span className="checkmark"></span>
                         In Stock
                       </label>
-                      <label className="checkbox-item">
+                      <label className="checkbox-item round-checkbox">
                         <input
                           type="checkbox"
                           checked={stockStatus === 'outStock'}
@@ -409,17 +540,17 @@ const ProductList = () => {
                     <>
                       <div className="filter-divider"></div>
                       <div className="sidebar-widget">
-                        <h3>Product Colors</h3>
+                        <h3>PRODUCT COLORS</h3>
                         <div className="checkbox-list">
                           {availableColors.map(color => (
-                            <label key={color} className="checkbox-item">
+                            <label key={color} className="checkbox-item round-checkbox">
                               <input
                                 type="checkbox"
                                 checked={selectedColors.includes(color)}
                                 onChange={() => toggleColor(color)}
                               />
                               <span className="checkmark"></span>
-                              {color}
+                              <span style={{ textTransform: 'capitalize' }}>{color}</span>
                             </label>
                           ))}
                         </div>
@@ -431,17 +562,16 @@ const ProductList = () => {
                     <>
                       <div className="filter-divider"></div>
                       <div className="sidebar-widget">
-                        <h3>Product Sizes</h3>
-                        <div className="checkbox-list">
+                        <h3>PRODUCT SIZES</h3>
+                        <div className="size-box-list">
                           {availableSizes.map(size => (
-                            <label key={size} className="checkbox-item">
+                            <label key={size} className={`size-box-item ${selectedSizes.includes(size) ? 'active' : ''}`}>
                               <input
                                 type="checkbox"
                                 checked={selectedSizes.includes(size)}
                                 onChange={() => toggleSize(size)}
                               />
-                              <span className="checkmark"></span>
-                              {size}
+                              <span className="size-label" style={{ textTransform: 'uppercase' }}>{size}</span>
                             </label>
                           ))}
                         </div>
@@ -455,7 +585,7 @@ const ProductList = () => {
               <div className="shop-main-content">
                 <div className="shop-controls-bar">
                   <div className="results-count">
-                    Showing {sortedProducts.length} {sortedProducts.length === 1 ? 'result' : 'results'}
+                    Showing <span className="count-highlight">{sortedProducts.length}</span> {sortedProducts.length === 1 ? 'result' : 'results'}
                   </div>
                   <div className="sort-wrapper">
                     <span className="sort-label">SORT BY</span>
@@ -476,36 +606,21 @@ const ProductList = () => {
           </div>
         )}
 
-        {((theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus') && slug !== 'products') && (
-          <div className="nexus-dynamic-content">
-            {dynamicSections.length > 0 ? (
-              dynamicSections.map((section, index) => {
-                const TemplateComponent = SECTION_TEMPLATES[section.type];
-                if (!TemplateComponent) return null;
-                return (
-                  <div key={section.id || index} className="dynamic-section-wrapper">
-                    <TemplateComponent content={section.content} />
-                  </div>
-                );
-              })
-            ) : (
-              <div className="default-page-preview">
-                <ModernHeroTemplate content={{
-                  title: ".visual poetry",
-                  highlightedText: "poetry",
-                  subtitle: "Welcome to a visual journey that transcends time and space. Discover the artistry of moments captured in motion",
-                  primaryBtnText: "Start Exploring Now",
-                  secondaryBtnText: "Watch Video",
-                  checklistItems: ["250k+ Videos", "800k+ Hours watched"],
-                  imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-                  paddingTop: 80,
-                  paddingBottom: 80
-                }} />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {((theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus') && slug !== 'products' && dynamicSections.length > 0) && (
+        <div className="nexus-dynamic-content">
+          {dynamicSections.length > 0 && (
+            dynamicSections.map((section, index) => {
+              const TemplateComponent = SECTION_TEMPLATES[section.type];
+              if (!TemplateComponent) return null;
+              return (
+                <div key={section.id || index} className="dynamic-section-wrapper">
+                  <TemplateComponent content={section.content} />
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import API_URL from '../../../apiConfig';
+import { resolveImageUrl } from '../../../themeUtils';
 import './HeroTemplate.css';
 
 const HeroTemplate = ({ content }) => {
@@ -26,12 +28,14 @@ const HeroTemplate = ({ content }) => {
     const useThemeBg = config?.useThemeBg || false;
     const bgColor = config?.bgColor || 'transparent';
 
+    const resolvedBgImage = resolveImageUrl(bgImage, API_URL);
+
     const sectionStyle = {
         paddingTop: `${paddingTop}px`,
         paddingBottom: `${paddingBottom}px`,
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${bgImage})`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${resolvedBgImage})`,
         backgroundColor: useThemeBg ? 'var(--theme-primary, #ffffff)' : bgColor,
     };
 

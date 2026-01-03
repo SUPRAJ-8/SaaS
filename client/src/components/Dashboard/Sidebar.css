@@ -1,4 +1,4 @@
-.sidebar {
+.dashboard-sidebar {
   width: 250px;
   height: 100vh;
   flex-shrink: 0;
@@ -8,16 +8,18 @@
   flex-direction: column;
 }
 
-.sidebar-header {
-  padding: 24px 20px;
+.dashboard-sidebar-header {
+  padding: 11px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid #f1f5f9;
   transition: background-color 0.2s ease;
+  cursor: pointer;
+  user-select: none;
 }
 
-.sidebar-header:hover {
+.dashboard-sidebar-header:hover {
   background-color: #f8fafc;
 }
 
@@ -25,38 +27,59 @@
   width: 42px;
   height: 42px;
   background-color: #5866f2;
+  /* Default blue, can be dynamic later */
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1.4rem;
   font-weight: 800;
   flex-shrink: 0;
+  box-shadow: 0 4px 6px -1px rgba(88, 102, 242, 0.2);
+  overflow: hidden;
+  /* Added to clip image corners if using border-radius on image */
+}
+
+.sidebar-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #ffffff;
+  /* Contrast for logo if it's transparent */
 }
 
 .company-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.company-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .company-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #1e293b;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
-.company-role {
+.header-arrow {
   font-size: 0.7rem;
-  font-weight: 600;
   color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 
-.sidebar-nav {
+.dashboard-sidebar-nav {
   flex: 1;
   padding: 20px 12px;
   overflow-y: auto;
@@ -75,17 +98,17 @@
   margin-top: 0;
 }
 
-.sidebar-nav ul {
+.dashboard-sidebar-nav ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.sidebar-nav li {
+.dashboard-sidebar-nav li {
   margin-bottom: 4px;
 }
 
-.sidebar-nav li a {
+.dashboard-sidebar-nav li a {
   display: flex;
   align-items: center;
   color: #475569;
@@ -98,26 +121,26 @@
   gap: 12px;
 }
 
-.sidebar-nav li a .nav-icon {
+.dashboard-sidebar-nav li a .nav-icon {
   font-size: 1.1rem;
   color: #64748b;
   transition: all 0.2s ease;
 }
 
-.sidebar-nav li a:hover {
+.dashboard-sidebar-nav li a:hover {
   background-color: #f8fafc;
   color: #1e293b;
 }
 
-.sidebar-nav li a:hover .nav-icon {
+.dashboard-sidebar-nav li a:hover .nav-icon {
   color: #1e293b;
 }
 
-.sidebar-nav li a.active {
+.dashboard-sidebar-nav li a.active {
   background-color: #eef2ff;
   color: #5866f2;
 }
 
-.sidebar-nav li a.active .nav-icon {
+.dashboard-sidebar-nav li a.active .nav-icon {
   color: #5866f2;
 }

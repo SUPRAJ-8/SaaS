@@ -2,12 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/Dashboard/DashboardLayout';
 import UnderConstruction from './pages/UnderConstruction';
+import NotFound from './pages/NotFound';
 import ShopLayout from './components/Shop/ShopLayout';
 import ProductList from './components/Shop/ProductList';
 import ProductDetail from './components/Shop/ProductDetail';
 import CategoryProducts from './components/Shop/CategoryProducts';
 import Checkout from './components/Shop/Checkout';
 import { useSiteSettings } from './contexts/SiteSettingsContext';
+import OrderTracking from './components/Shop/OrderTracking';
 import LandingPage from './components/LandingPage';
 import './App.css';
 
@@ -95,7 +97,8 @@ function AppRouter() {
             <Route path="/superadmin/*" element={<SuperAdminClients />} />
             {/* If they accidentally try to visit /dashboard on root domain, redirect to the correct subdomain */}
             <Route path="/dashboard/*" element={<ExternalRedirect url={dashboardUrl} />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Fallback for Landing Page */}
+            <Route path="*" element={<NotFound />} />
           </>
         )}
 
@@ -129,7 +132,7 @@ function AppRouter() {
             </Route>
             {/* Redirect root to /dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFound />} />
           </>
         )}
 
@@ -145,10 +148,14 @@ function AppRouter() {
                 <Route path="product/:id" element={<ProductDetail />} />
                 <Route path="category/:id" element={<CategoryProducts />} />
                 <Route path="checkout" element={<Checkout />} />
+                <Route path="track-order" element={<OrderTracking />} />
+                <Route path="track-order/:orderId" element={<OrderTracking />} />
+                {/* Catch-all for unknown paths within the shop layout */}
+                <Route path="*" element={<NotFound />} />
               </Route>
             )}
-            {/* Any subpath besides the ones above should stay in the shop or home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Catch-all for unknown paths outside of the shop layout (if any) */}
+            <Route path="*" element={<NotFound />} />
           </>
         )}
 

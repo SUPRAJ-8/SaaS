@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { FaTh, FaThLarge, FaChevronRight, FaRegHeart, FaFilter, FaStar } from 'react-icons/fa';
 import { useDispatchCart } from './CartProvider';
+import API_URL from '../../apiConfig';
+import NotFound from '../../pages/NotFound';
+import { getShopPath, resolveImageUrl } from '../../themeUtils';
 
 const ProductCard = ({ product }) => {
     const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
@@ -27,20 +30,23 @@ const ProductCard = ({ product }) => {
             id: product._id,
             name: product.name,
             price: product.sellingPrice,
-            image: product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300'
+            image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'
         };
         dispatch({ type: 'ADD_ITEM', payload: cartItem });
     };
 
     return (
         <div className="ecommerce-product-card">
-            <Link to={`/shop/product/${product._id}`} className="product-card-link">
+            <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link">
                 <div className="product-image-container">
                     {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
                     <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
                         <FaRegHeart />
                     </button>
-                    <img src={product.images && product.images.length > 0 ? `http://localhost:5002${product.images[0]}` : 'https://via.placeholder.com/300'} alt={product.name} />
+                    <img
+                        src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
+                        alt={product.name}
+                    />
                 </div>
                 <div className="product-details">
                     <h3>{product.name}</h3>
@@ -69,6 +75,7 @@ const ProductCard = ({ product }) => {
 
 const CategoryProducts = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -90,7 +97,7 @@ const CategoryProducts = () => {
             setLoading(true);
             try {
                 // Fetch categories
-                const catRes = await fetch(`http://localhost:5002/api/categories`);
+                const catRes = await fetch(`${API_URL}/api/categories`);
                 const allCats = await catRes.json();
                 setCategories(allCats);
                 const foundCat = allCats.find(c => c._id === id);
@@ -180,10 +187,14 @@ const CategoryProducts = () => {
                 {/* Centered Header */}
                 <div className="shop-page-header">
                     <div className="product-section-header centered">
-                        <h2>
-                            <FaThLarge />
-                            <span className="heading-first">Category:</span> <span className="heading-last">{category ? category.name : 'Loading...'}</span>
-                        </h2>
+                        {(!loading && !category) ? (
+                            <NotFound />
+                        ) : (
+                            <h2>
+                                <FaThLarge />
+                                <span className="heading-first">Category:</span> <span className="heading-last">{category ? category.name : 'Loading...'}</span>
+                            </h2>
+                        )}
                     </div>
                 </div>
 
@@ -194,7 +205,26 @@ const CategoryProducts = () => {
                             <div className="filter-header">
                                 <h3>FILTER BY:</h3>
                             </div>
+                            <div className="sidebar-widget">
+                                <h3>Categories</h3>
+                                <ul className="categories-list">
+                                    <li
+                                        className={!id ? 'active' : ''}
+                                        onClick={() => navigate(getShopPath('/products'))}
+                                    >All Categories</li>
+                                    {categories.map(cat => (
+                                        <li
+                                            key={cat._id}
+                                            className={id === cat._id ? 'active' : ''}
+                                            onClick={() => navigate(getShopPath(`/category/${cat._id}`))}
+                                        >
+                                            {cat.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
 
+                            <div className="filter-divider"></div>
 
                             <div className="sidebar-widget">
                                 <h3>Price</h3>
@@ -221,6 +251,8 @@ const CategoryProducts = () => {
                                 </div>
                             </div>
 
+                            <div className="filter-divider"></div>
+
                             <div className="sidebar-widget">
                                 <h3>Stock Status</h3>
                                 <div className="checkbox-list">
@@ -246,41 +278,47 @@ const CategoryProducts = () => {
                             </div>
 
                             {availableColors.length > 0 && (
-                                <div className="sidebar-widget">
-                                    <h3>Product Colors</h3>
-                                    <div className="checkbox-list">
-                                        {availableColors.map(color => (
-                                            <label key={color} className="checkbox-item">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedColors.includes(color)}
-                                                    onChange={() => toggleColor(color)}
-                                                />
-                                                <span className="checkmark"></span>
-                                                {color}
-                                            </label>
-                                        ))}
+                                <>
+                                    <div className="filter-divider"></div>
+                                    <div className="sidebar-widget">
+                                        <h3>Product Colors</h3>
+                                        <div className="checkbox-list">
+                                            {availableColors.map(color => (
+                                                <label key={color} className="checkbox-item">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedColors.includes(color)}
+                                                        onChange={() => toggleColor(color)}
+                                                    />
+                                                    <span className="checkmark"></span>
+                                                    {color}
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
 
                             {availableSizes.length > 0 && (
-                                <div className="sidebar-widget">
-                                    <h3>Product Sizes</h3>
-                                    <div className="checkbox-list">
-                                        {availableSizes.map(size => (
-                                            <label key={size} className="checkbox-item">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedSizes.includes(size)}
-                                                    onChange={() => toggleSize(size)}
-                                                />
-                                                <span className="checkmark"></span>
-                                                {size}
-                                            </label>
-                                        ))}
+                                <>
+                                    <div className="filter-divider"></div>
+                                    <div className="sidebar-widget">
+                                        <h3>Product Sizes</h3>
+                                        <div className="checkbox-list">
+                                            {availableSizes.map(size => (
+                                                <label key={size} className="checkbox-item">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedSizes.includes(size)}
+                                                        onChange={() => toggleSize(size)}
+                                                    />
+                                                    <span className="checkmark"></span>
+                                                    {size}
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
                         </div>
                     </div>

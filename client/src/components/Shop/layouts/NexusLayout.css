@@ -11,7 +11,7 @@
     --secondary-dark: color-mix(in srgb, var(--secondary), black 20%);
     --secondary-light: color-mix(in srgb, var(--secondary), white 20%);
 
-    --background: var(--background-color, #131420);
+    --background: var(--background-color, #F9FAFB);
     /* Page background */
     --foreground: var(--surface-color, #1d1e30);
     /* Cards, sections */
@@ -440,130 +440,10 @@
 /* =========================================
    PRODUCT CARDS
    ========================================= */
-
-.nexus-theme .ecommerce-product-card {
-    width: 185px;
-    border: none;
-    border-radius: 10px;
-    text-align: left;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background-color: var(--surface-color, #ffffff);
-}
+/* Product card styles are now in ProductStyles.css and shared across all themes */
 
 .nexus-theme .dynamic-section-wrapper {
     margin: 20px 0;
-}
-
-
-
-.nexus-theme .ecommerce-product-card img {
-    transition: transform 0.3s ease, filter 0.3s ease;
-}
-
-
-
-.nexus-theme .discount-badge {
-    background-color: var(--primary);
-    color: var(--primary-content);
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.nexus-theme .product-image-container:hover {
-    transform: scale(1);
-}
-
-/* Text in Cards */
-.nexus-theme .product-details h3 {
-    font-size: .75rem;
-    font-weight: normal;
-    margin: 0;
-    color: var(--text-color, #1f2937);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-height: 2.4em;
-    transition: color 0.3s ease;
-    cursor: pointer;
-}
-
-.nexus-theme .ecommerce-product-card:hover .product-details h3 {
-    color: var(--primary);
-}
-
-.nexus-theme .product-details p {
-    /* Description if any */
-    color: var(--copy-light);
-}
-
-.nexus-theme .product-price {
-    font-weight: bold;
-    color: var(--primary-color, #000);
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.nexus-theme .original-price {
-    font-size: 12px;
-    text-decoration: line-through;
-    color: #9ca3af;
-    white-space: nowrap;
-    opacity: 0.7;
-}
-
-/* Ratings */
-.nexus-theme .star {
-    color: #fbbf24;
-}
-
-.nexus-theme .rating-value {
-    color: #6b7280;
-    font-weight: 500;
-}
-
-/* Add to Cart Button (Card) */
-.nexus-theme .add-to-cart-btn-small {
-    background-color: var(--primary);
-    color: var(--primary-content);
-    border: none;
-    border-radius: 0 0 10px 10px;
-    padding: 0.75rem;
-    cursor: pointer;
-    width: 100%;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.nexus-theme .add-to-cart-btn-small:hover {
-    background-color: var(--primary-dark);
-    color: var(--primary-content);
-    transform: translateY(-1px);
-}
-
-/* Wishlist Heart Icon (Card) */
-.nexus-theme .wishlist-btn {
-    color: var(--copy-lighter);
-    background: transparent;
-    border: none;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.nexus-theme .wishlist-btn:hover {
-    color: var(--secondary-light);
-    transform: scale(1.1);
-}
-
-.nexus-theme .wishlist-btn.active {
-    color: var(--secondary);
 }
 
 
@@ -571,182 +451,7 @@
    PRODUCT DETAIL PAGE
    ========================================= */
 
-.nexus-theme .product-detail {
-    background-color: var(--background);
-    color: var(--copy);
-}
-
-/* Image Container */
-
-/* Product Info */
-.nexus-theme .product-detail-name {
-    color: var(--copy);
-}
-
-.nexus-theme .product-stats {
-    /* Subtitle/Stats wrapper */
-    color: var(--copy-light);
-}
-
-.nexus-theme .product-selling-price {
-    color: #111827;
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.nexus-theme .product-original-price {
-    color: var(--copy-lighter);
-    text-decoration: line-through;
-}
-
-.nexus-theme .product-discount {
-    background-color: var(--success);
-    color: var(--success-content);
-}
-
-.nexus-theme .reviews-text,
-.nexus-theme .sku-text {
-    color: var(--copy-lighter);
-}
-
-/* Stock Status */
-.nexus-theme .product-stock {
-    color: var(--success);
-    /* In Stock text */
-}
-
-.nexus-theme .stock-dot {
-    background-color: var(--success);
-}
-
-.nexus-theme .low-stock-warning,
-.nexus-theme .out-of-stock {
-    color: var(--error);
-}
-
-/* Section Headings & Links */
-.nexus-theme .option-group label {
-    color: var(--copy);
-}
-
-.nexus-theme .size-guide {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.nexus-theme .size-guide:hover {
-    color: var(--primary-dark);
-}
-
-/* Color Swatches */
-.nexus-theme .color-swatch {
-    background-color: var(--foreground);
-    /* If transparent image, shows bg */
-    border: 1px solid var(--border);
-    transition: all 0.2s ease;
-}
-
-.nexus-theme .color-swatch:hover {
-    border-color: var(--copy-light);
-    transform: scale(1.1);
-}
-
-.nexus-theme .color-option.active .color-swatch,
-.nexus-theme .color-swatch.selected {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
-}
-
-.nexus-theme .color-option span {
-    color: var(--copy-light);
-}
-
-/* Size Buttons */
-.nexus-theme .size-button {
-    background-color: var(--foreground);
-    color: var(--copy);
-    border: 1px solid var(--border);
-    transition: all 0.2s ease;
-}
-
-.nexus-theme .size-button:hover {
-    background-color: var(--border);
-    /* Slightly lighter than foreground usually */
-    color: var(--copy);
-}
-
-.nexus-theme .size-button.active {
-    background-color: var(--primary);
-    color: var(--primary-content);
-    border-color: var(--primary);
-}
-
-/* Quantity Selector */
-.nexus-theme .quantity-control {
-    background-color: var(--foreground);
-    border: 1px solid var(--border);
-}
-
-.nexus-theme .quantity-input {
-    background-color: var(--foreground) !important;
-    color: var(--copy);
-    border: none;
-}
-
-.nexus-theme .quantity-control button {
-    background-color: transparent;
-    color: var(--copy-light);
-    transition: all 0.2s ease;
-}
-
-.nexus-theme .quantity-control button:hover:not(:disabled) {
-    background-color: var(--border);
-    color: var(--primary);
-}
-
-/* Action Buttons (Detail Page) */
-.nexus-theme .buy-now-btn {
-    background-color: var(--primary);
-    color: var(--primary-content);
-    border: none;
-    transition: all 0.2s ease;
-}
-
-.nexus-theme .buy-now-btn:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(88, 102, 242, 0.3);
-    /* Using primary shade logic */
-}
-
-.nexus-theme .add-to-cart-btn-detail {
-    background-color: var(--background);
-    color: var(--copy);
-    border: 1px solid var(--border);
-    transition: all 0.2s ease;
-}
-
-.nexus-theme .add-to-cart-btn-detail:hover:not(:disabled) {
-    background-color: var(--primary);
-    color: var(--primary-content);
-    border-color: var(--primary);
-    transform: translateY(-1px);
-}
-
-/* Shipping Info */
-.nexus-theme .shipping-info svg,
-.nexus-theme .delivery-location svg {
-    color: var(--success);
-}
-
-.nexus-theme .shipping-info {
-    color: var(--copy-light);
-}
-
-.nexus-theme .delivery-location {
-    color: var(--copy-lighter);
-}
+/* All product detail styles are now in ProductDetail.css and shared across themes */
 
 
 /* =========================================
@@ -772,6 +477,18 @@
     font-weight: 800;
     font-size: 1.5rem;
     color: inherit;
+}
+
+.nexus-theme .nexus-footer-brand-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nexus-theme .nexus-footer-logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
 }
 
 .nexus-theme .nexus-tagline-col p {

@@ -1,48 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../CartProvider';
+import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
+import { getShopPath } from '../../../themeUtils';
 import CartSlidePanel from '../CartSlidePanel';
 import './NexusLayout.css';
 
 const NexusHeader = () => {
     const navigate = useNavigate();
-    const [storeName, setStoreName] = useState('WHCH');
-    const [storeLogo, setStoreLogo] = useState(null);
+    const { siteSettings } = useContext(SiteSettingsContext);
+    const [navbarStyle, setNavbarStyle] = useState('basic');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [navbarStyle, setNavbarStyle] = useState('basic');
     const [categories, setCategories] = useState([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { items: cartItems } = useCart();
     const cartCount = cartItems?.reduce((total, item) => total + (Number(item.quantity) || 0), 0) || 0;
 
-    const loadSettings = () => {
-        const settingsStr = localStorage.getItem('storeSettings');
-        const navbarSettingsStr = localStorage.getItem('nexus_navbarSettings') || localStorage.getItem('navbarSettings');
+    // Use trim() to avoid empty spaces being treated as valid names
+    const rawBrand = siteSettings?.brandName?.trim();
+    const rawStore = siteSettings?.storeName?.trim();
 
-        let logo = null;
-        let name = 'WHCH';
-        let style = 'basic';
+    let storeName = rawBrand || rawStore || '';
+    let storeLogo = siteSettings?.logo;
 
-        if (settingsStr) {
-            const parsed = JSON.parse(settingsStr);
-            if (parsed.logo) logo = parsed.logo;
-            if (parsed.brandName || parsed.storeName) {
-                name = parsed.brandName || parsed.storeName;
+    // Fallback to localStorage if context is empty (e.g. direct preview)
+    if (!storeName) {
+        const savedSettings = localStorage.getItem('storeSettings');
+        if (savedSettings) {
+            try {
+                const parsed = JSON.parse(savedSettings);
+                const localBrand = parsed.brandName?.trim();
+                const localStore = parsed.storeName?.trim();
+                storeName = localBrand || localStore || '';
+                storeLogo = parsed.logo || storeLogo;
+            } catch (e) {
+                // Ignore parse errors
             }
         }
+    }
+
+    const loadNavbarSettings = () => {
+        const navbarSettingsStr = localStorage.getItem('nexus_navbarSettings') || localStorage.getItem('navbarSettings');
+        let style = 'basic';
 
         if (navbarSettingsStr) {
             const parsedNavbar = JSON.parse(navbarSettingsStr);
-            if (parsedNavbar.logo) logo = parsedNavbar.logo;
-            if (parsedNavbar.brandName) name = parsedNavbar.brandName;
             if (parsedNavbar.navbarStyle) style = parsedNavbar.navbarStyle;
         }
-
-        setStoreLogo(logo);
-        setStoreName(name);
         setNavbarStyle(style);
     };
 
@@ -57,25 +64,15 @@ const NexusHeader = () => {
     };
 
     useEffect(() => {
-        loadSettings();
+        loadNavbarSettings();
         fetchCategories();
 
-        const handleStorageChange = (e) => {
-            if (e.key === 'storeSettings' || e.key === 'navbarSettings') {
-                loadSettings();
-            }
-        };
+        const handleCustomUpdate = () => loadNavbarSettings();
 
-        const handleCustomUpdate = () => loadSettings();
-
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('storeSettingsUpdated', handleCustomUpdate);
         window.addEventListener('navbarSettingsUpdated', handleCustomUpdate);
         window.addEventListener('nexus_navbarSettingsUpdated', handleCustomUpdate);
 
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('storeSettingsUpdated', handleCustomUpdate);
             window.removeEventListener('navbarSettingsUpdated', handleCustomUpdate);
             window.removeEventListener('nexus_navbarSettingsUpdated', handleCustomUpdate);
         };
@@ -90,7 +87,7 @@ const NexusHeader = () => {
 
     const handleSearchSubmit = (e) => {
         if (e.key === 'Enter' && searchQuery.trim()) {
-            navigate(`/shop?search=${searchQuery}`);
+            navigate(getShopPath(`/products?search=${searchQuery}`));
             setIsSearchOpen(false);
         }
     };
@@ -112,33 +109,44 @@ const NexusHeader = () => {
                         </div>
                         <div className="nexus-mobile-links">
                             <a
-                                href="/shop"
+                                href={getShopPath('/')}
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    navigate('/shop');
+                                    navigate(getShopPath('/'));
                                     setIsMobileMenuOpen(false);
                                 }}
                             >
                                 Home
                             </a>
                             <a
-                                href="/shop/products"
+                                href={getShopPath('/products')}
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    navigate('/shop/products');
+                                    navigate(getShopPath('/products'));
                                     setIsMobileMenuOpen(false);
                                 }}
                             >
                                 Products
+                            </a>
+                            <a
+                                href={getShopPath('/track-order')}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    navigate(getShopPath('/track-order'));
+                                    setIsMobileMenuOpen(false);
+                                }}
+                            >
+                                Track Order
                             </a>
                             <div className="nexus-mobile-categories">
                                 <h3>Categories</h3>
                                 {categories.map(cat => (
                                     <a
                                         key={cat._id}
-                                        href={`/shop/category/${cat._id}`}
-                                        onClick={() => {
-                                            navigate(`/shop/category/${cat._id}`);
+                                        href={getShopPath(`/category/${cat._id}`)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            navigate(getShopPath(`/category/${cat._id}`));
                                             setIsMobileMenuOpen(false);
                                         }}
                                     >
@@ -150,7 +158,7 @@ const NexusHeader = () => {
                     </nav>
                 </div>
 
-                <div className="nexus-logo" onClick={() => navigate('/shop')} style={{ cursor: 'pointer' }}>
+                <div className="nexus-logo" onClick={() => navigate(getShopPath('/'))} style={{ cursor: 'pointer' }}>
                     {storeLogo ? (
                         <img src={storeLogo} alt={storeName} style={{ height: '50px', objectFit: 'contain' }} />
                     ) : (
@@ -161,18 +169,19 @@ const NexusHeader = () => {
                 {/* Middle Group for with-category style */}
                 {navbarStyle === 'with-category' && (
                     <nav className="nexus-nav-middle">
-                        <a href="/shop" className="nexus-nav-link">Home</a>
-                        <a href="/shop/products" className="nexus-nav-link">Products</a>
+                        <a href={getShopPath('/')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/')); }}>Home</a>
+                        <a href={getShopPath('/products')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/products')); }}>Products</a>
+                        <a href={getShopPath('/track-order')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/track-order')); }}>Track Order</a>
                         <span className="nexus-separator">|</span>
                         {categories.length > 0 ? (
                             categories.map(cat => (
                                 <a
                                     key={cat._id}
-                                    href={`/shop/category/${cat._id}`}
+                                    href={getShopPath(`/category/${cat._id}`)}
                                     className="nexus-nav-link"
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        navigate(`/shop/category/${cat._id}`);
+                                        navigate(getShopPath(`/category/${cat._id}`));
                                     }}
                                 >
                                     {cat.name}
@@ -185,8 +194,9 @@ const NexusHeader = () => {
                 <div className="nexus-right-group">
                     {navbarStyle !== 'with-category' && (
                         <nav className="nexus-nav">
-                            <a href="/shop" className="nexus-nav-link">Home</a>
-                            <a href="/shop/products" className="nexus-nav-link">Products</a>
+                            <a href={getShopPath('/')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/')); }}>Home</a>
+                            <a href={getShopPath('/products')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/products')); }}>Products</a>
+                            <a href={getShopPath('/track-order')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/track-order')); }}>Track Order</a>
                         </nav>
                     )}
 

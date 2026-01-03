@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import '../theme.css';
+import '../ProductStyles.css';
 import './EcommerceLayout.css';
 import EcommerceHeader from './EcommerceHeader';
 import EcommerceFooter from './EcommerceFooter';
@@ -8,13 +9,13 @@ import NexusHeader from './NexusHeader';
 import NexusFooter from './NexusFooter';
 import HeroSection from './HeroSection';
 
-import { applyStoreSettings } from '../../../themeUtils';
+import { applyStoreSettings, getShopPath } from '../../../themeUtils';
 
 
 const EcommerceLayout = () => {
   const location = useLocation();
-  const isProductDetailPage = location.pathname.startsWith('/shop/product/');
-  const isCheckoutPage = location.pathname === '/shop/checkout';
+  const isProductDetailPage = location.pathname.includes('/product/');
+  const isCheckoutPage = location.pathname.includes('/checkout');
 
   // Load settings and update title/favicon
   useEffect(() => {
@@ -43,17 +44,15 @@ const EcommerceLayout = () => {
   }, [location.pathname]); // Update on route changes too
 
   return (
-    <div className={`ecommerce-layout shop-container ${localStorage.getItem('themeId') === 'nexus' ? 'nexus-theme' : ''}`}>
-      {localStorage.getItem('themeId') === 'nexus' ? <NexusHeader /> : <EcommerceHeader />}
+    <div className="ecommerce-layout shop-container">
+      <EcommerceHeader />
       <main>
-        {!isProductDetailPage && !isCheckoutPage && location.pathname !== '/shop/products' && localStorage.getItem('themeId') !== 'nexus' && (
-          <>
-            <HeroSection />
-          </>
+        {(location.pathname === getShopPath('/') || location.pathname === '/' || location.pathname === '/shop' || location.pathname === '/shop/') && (
+          <HeroSection />
         )}
         <Outlet />
       </main>
-      {localStorage.getItem('themeId') === 'nexus' ? <NexusFooter /> : <EcommerceFooter />}
+      <EcommerceFooter />
     </div>
   );
 };

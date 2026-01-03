@@ -17,7 +17,22 @@ const getApiUrl = () => {
     return 'https://api.nepostore.xyz';
   }
 
-  // 3. Development: use relative URL to go through proxy (setup in package.json)
+  // 3. Development: If using subdomains on localhost (e.g. app.localhost, nepostore.localhost),
+  // For 'app' subdomain, we want to use the proxy (relative path) so cookies/sessions work
+  // For other subdomains, use direct backend
+  if (hostname.includes('localhost') && hostname !== 'localhost') {
+    const parts = hostname.split('.');
+    const subdomain = parts[0];
+    // For app subdomain, use proxy (empty string) - proxy should forward to backend
+    // For tenant stores, use direct backend
+    if (subdomain === 'app') {
+      return ''; // Use proxy for app subdomain
+    } else if (subdomain !== 'www' && subdomain !== 'localhost') {
+      return 'http://localhost:5002';
+    }
+  }
+
+  // Standard localhost:3000 -> proxy -> localhost:5002
   return '';
 };
 

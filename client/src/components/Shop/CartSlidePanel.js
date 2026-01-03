@@ -2,23 +2,24 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart, useDispatchCart } from './CartProvider';
 import { FaTimes, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { getShopPath } from '../../themeUtils';
 import './CartSlidePanel.css';
 
 const CartSlidePanel = ({ isOpen, onClose }) => {
     const { items } = useCart();
     const dispatch = useDispatchCart();
 
-    const handleRemove = (id) => {
-        dispatch({ type: 'REMOVE_ITEM', payload: { id } });
+    const handleRemove = (id, variant) => {
+        dispatch({ type: 'REMOVE_ITEM', payload: { id, variant } });
     };
 
-    const handleIncrement = (id, currentQuantity) => {
-        dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity: currentQuantity + 1 } });
+    const handleIncrement = (id, variant, currentQuantity) => {
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { id, variant, quantity: currentQuantity + 1 } });
     };
 
-    const handleDecrement = (id, currentQuantity) => {
+    const handleDecrement = (id, variant, currentQuantity) => {
         if (currentQuantity > 1) {
-            dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity: currentQuantity - 1 } });
+            dispatch({ type: 'UPDATE_QUANTITY', payload: { id, variant, quantity: currentQuantity - 1 } });
         }
     };
 
@@ -79,18 +80,19 @@ const CartSlidePanel = ({ isOpen, onClose }) => {
                             <p>Your cart is empty</p>
                         </div>
                     ) : (
-                        items.map(item => (
-                            <div key={item.id} className="cart-slide-item">
+                        items.map((item, index) => (
+                            <div key={`${item.id}-${item.variant || index}`} className="cart-slide-item">
                                 <img src={item.image} alt={item.name} className="cart-slide-item-image" />
 
                                 <div className="cart-slide-item-details">
                                     <h4>{item.name}</h4>
+                                    {item.variant && <span className="item-variant-label">{item.variant}</span>}
                                     <div className="quantity-controls">
-                                        <button onClick={() => handleDecrement(item.id, item.quantity)}>
+                                        <button onClick={() => handleDecrement(item.id, item.variant, item.quantity)}>
                                             <FaMinus />
                                         </button>
                                         <span>{item.quantity}</span>
-                                        <button onClick={() => handleIncrement(item.id, item.quantity)}>
+                                        <button onClick={() => handleIncrement(item.id, item.variant, item.quantity)}>
                                             <FaPlus />
                                         </button>
                                     </div>
@@ -98,7 +100,7 @@ const CartSlidePanel = ({ isOpen, onClose }) => {
 
                                 <div className="cart-slide-item-right">
                                     <p className="cart-slide-item-price">NPR {((Number(item.price) || 0) * (Number(item.quantity) || 0)).toLocaleString()}</p>
-                                    <button className="remove-item-btn" onClick={() => handleRemove(item.id)}>
+                                    <button className="remove-item-btn" onClick={() => handleRemove(item.id, item.variant)}>
                                         <FaTrash />
                                     </button>
                                 </div>
@@ -114,7 +116,7 @@ const CartSlidePanel = ({ isOpen, onClose }) => {
                             <span className="subtotal-amount">NPR {subtotal.toLocaleString()}</span>
                         </div>
                         <p className="shipping-note">Shipping will be calculated at checkout.</p>
-                        <Link to="/shop/checkout" onClick={onClose}>
+                        <Link to={getShopPath('/checkout')} onClick={onClose}>
                             <button className="checkout-btn-slide">Checkout</button>
                         </Link>
                     </div>

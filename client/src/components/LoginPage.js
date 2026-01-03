@@ -21,21 +21,83 @@ const LoginPage = () => {
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
+    
+    const loginUrl = API_URL ? `${API_URL}/api/auth/login` : '/api/auth/login';
+    console.log('🔐 Login attempt:', { email, url: loginUrl, API_URL });
+    
+    const performLogin = async (url) => {
+      const response = await axios.post(url, { email, password }, { withCredentials: true });
+      console.log('✅ Login response:', response.data);
+      
       if (response.data.success) {
+        console.log('✅ Login successful, preparing redirect...');
+        console.log('User data:', response.data.user);
         toast.success('Successfully logged in! Redirecting...');
-
+        
         // Wait a moment for session cookie to be set, then redirect
-        // Increased delay to ensure session is fully saved and cookie is set
+        // Use window.location.href for full page reload to ensure ProtectedRoute picks up session
         setTimeout(() => {
-          // Use navigate for React Router navigation (stays on same subdomain)
-          navigate('/dashboard', { replace: true });
-        }, 1500);
+          console.log('🔄 Redirecting to dashboard...');
+          console.log('Current location:', window.location.href);
+          console.log('Cookies before redirect:', document.cookie);
+          
+          // Force redirect - try multiple methods to ensure it works
+          try {
+            window.location.href = '/dashboard';
+          } catch (e) {
+            console.error('Redirect error:', e);
+            window.location.replace('/dashboard');
+          }
+        }, 500); // Wait for session to be saved
+        
+        return true;
+      }
+      return false;
+    };
+    
+    try {
+      const success = await performLogin(loginUrl);
+      if (success) {
+        // Don't set loading to false here - let the redirect happen
+        return;
+      } else {
+        setLoading(false);
+        toast.error('Login failed - no success response');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error.response?.data?.msg || 'Invalid Credentials');
+      console.error('❌ Login error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      
+      // If it's a 404, try direct backend URL as fallback
+      if (error.response?.status === 404 && !API_URL) {
+        console.log('🔄 Trying direct backend URL as fallback...');
+        try {
+          const fallbackUrl = 'http://localhost:5002/api/auth/login';
+          const success = await performLogin(fallbackUrl);
+          if (success) {
+            // Don't set loading to false here - let the redirect happen
+            return;
+          } else {
+            setLoading(false);
+            toast.error('Login failed - no success response');
+          }
+        } catch (fallbackError) {
+          console.error('❌ Fallback login also failed:', fallbackError);
+          toast.error(fallbackError.response?.data?.msg || 'Invalid Credentials');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Show specific error message
+      const errorMessage = error.response?.data?.msg || error.message || 'Invalid Credentials';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

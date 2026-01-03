@@ -64,9 +64,9 @@
 .general-info-container,
 .address-form-container {
   border: 1px solid #ddd;
-  padding: 20px 30px 20px 20px;
-  border-radius: 5px;
-  margin-bottom: 20px;
+  padding: 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
   background-color: white;
 }
 
@@ -94,38 +94,45 @@
 
 .form-row {
   display: flex;
-  gap: 1.5rem;
+  gap: 20px;
   margin-bottom: 0;
 }
 
-.form-row .form-group {
-  flex: 1;
-}
-
 .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  flex: 1;
 }
 
 .form-group label {
   font-weight: 500;
   font-size: 14px;
   display: block;
-  margin-bottom: 0;
+  margin-bottom: 8px;
+  color: #374151;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  padding: 10px 12px;
+  padding: 10px 14px;
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
-#phone {
-  margin-right: 15px;
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
+
+
 
 .place-order-btn {
   background-color: #4f46e5;
@@ -363,20 +370,46 @@
   font-size: 1.1em;
 }
 
-.continue-shopping-btn {
+.confirmation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.track-order-btn {
   display: inline-block;
-  background-color: #3498db;
+  background-color: var(--primary-color, #4f46e5);
   color: white;
   padding: 12px 24px;
-  border-radius: 4px;
+  border-radius: 6px;
   text-decoration: none;
-  font-weight: bold;
-  margin-top: 20px;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+}
+
+.track-order-btn:hover {
+  background-color: var(--primary-color-dark, #4338ca);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.2);
+}
+
+.continue-shopping-btn {
+  display: inline-block;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 12px 24px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
 }
 
 .continue-shopping-btn:hover {
-  background-color: #2980b9;
+  background-color: #e5e7eb;
+  color: #111827;
 }
 
 .coupon-dropdown {

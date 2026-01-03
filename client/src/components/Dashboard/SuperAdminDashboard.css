@@ -338,6 +338,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     vertical-align: middle;
     font-size: 0.9rem;
+    text-align: left;
 }
 
 .store-info-wrapper {
@@ -406,6 +407,12 @@
     background: rgba(239, 68, 68, 0.1);
     color: var(--danger-red);
 }
+
+.btn-orange {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
 
 /* Bottom Pagination */
 .pagination-row {
@@ -477,4 +484,299 @@
     background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
     font-size: 0.85rem;
+}
+
+/* Enhanced Table Cell Styles */
+.count-badge {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--brand-blue);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+.owner-cell span {
+    font-weight: 600;
+    color: #fff;
+}
+
+.contact-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.email-link {
+    color: #fff;
+    font-weight: 500;
+}
+
+.phone-num {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.stats-mini {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--brand-blue);
+    font-weight: 600;
+}
+
+.dot {
+    color: var(--border-color);
+}
+
+.performance-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    min-width: 140px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stat-val {
+    color: var(--brand-blue);
+    font-weight: 700;
+}
+
+.join-date {
+    font-size: 0.85rem;
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.tenant-row {
+    cursor: pointer;
+}
+
+.clickable-owner {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.clickable-owner:hover {
+    transform: translateX(5px);
+}
+
+.clickable-owner h4 {
+    color: var(--brand-blue) !important;
+}
+
+/* Modal Styles */
+.saas-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.saas-modal-content {
+    background: var(--bg-card);
+    width: 90%;
+    max-width: 900px;
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    position: relative;
+}
+
+.modal-header {
+    padding: 32px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.owner-profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.owner-profile-summary img {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.owner-profile-summary h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.owner-profile-summary p {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.close-modal {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.close-modal:hover {
+    background: var(--danger-red);
+    color: white;
+}
+
+.modal-body {
+    padding: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-stores-table-container {
+    padding: 24px;
+}
+
+.modal-stores-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modal-stores-table th {
+    text-align: left;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modal-stores-table td {
+    padding: 20px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+}
+
+.modal-store-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-store-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--brand-blue);
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.modal-store-name {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-store-name strong {
+    font-size: 1rem;
+    color: #fff;
+}
+
+.modal-store-name span {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.saas-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    accent-color: var(--brand-blue);
+    display: block;
+    margin: 0 auto;
+}
+
+/* Dark Theme Overrides for Confirmation Modal */
+.saas-admin-container .confirm-modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: #fff;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.saas-admin-container .confirm-modal-content h4 {
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.saas-admin-container .confirm-modal-content p {
+    color: var(--text-secondary);
+}
+
+.saas-admin-container .btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.saas-admin-container .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.saas-admin-container .btn-confirm-delete {
+    background: var(--danger-red);
+    border-radius: 10px;
 }

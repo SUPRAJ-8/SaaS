@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import '../ProductStyles.css';
 import './PortfolioLayout.css'; // This file will be created next
 
 import { applyStoreSettings } from '../../../themeUtils';

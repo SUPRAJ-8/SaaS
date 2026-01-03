@@ -14,8 +14,8 @@ const cartReducer = (state, action) => {
         return {
           ...state,
           items: state.items.map(item =>
-            (item.id === id && item.variant === variant) 
-              ? { ...item, quantity: item.quantity + quantity } 
+            (item.id === id && item.variant === variant)
+              ? { ...item, quantity: item.quantity + quantity }
               : item
           ),
         };
@@ -34,18 +34,22 @@ const cartReducer = (state, action) => {
         items: state.items.filter(item => !(item.id === id && item.variant === variant)),
       };
     }
-    case 'REMOVE_ITEM': {
-      return {
-        ...state,
-        items: state.items.filter(item => item.id !== action.payload.id),
-      };
-    }
     case 'UPDATE_QUANTITY': {
+      const { id, variant, quantity } = action.payload;
       return {
         ...state,
         items: state.items.map(item =>
-          item.id === action.payload.id ? { ...item, quantity: action.payload.quantity } : item
+          (item.id === id && item.variant === variant)
+            ? { ...item, quantity: quantity }
+            : item
         ),
+      };
+    }
+    case 'REMOVE_ITEM': {
+      const { id, variant } = action.payload;
+      return {
+        ...state,
+        items: state.items.filter(item => !(item.id === id && item.variant === variant)),
       };
     }
     case 'CLEAR_CART':

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart, useDispatchCart } from './CartProvider';
+import { getShopPath } from '../../themeUtils';
 import './Cart.css';
 
 const Cart = () => {
@@ -76,16 +77,16 @@ const Cart = () => {
                 <h4>Apply Coupon</h4>
               </div>
               <div className="coupon-body">
-                <input 
-                  type="text" 
-                  placeholder="Enter coupon code" 
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
                   value={coupon}
                   onChange={(e) => setCoupon(e.target.value)}
                 />
                 <button onClick={handleApplyCoupon}>Apply</button>
               </div>
             </div>
-            <Link to="/shop/checkout">
+            <Link to={getShopPath('/checkout')}>
               <button className="checkout-btn">Proceed to Checkout</button>
             </Link>
           </div>

@@ -83,6 +83,7 @@
 
 .close-cart-btn:hover {
     color: #ffffff;
+    background-color: red;
 }
 
 .cart-panel-body {
@@ -118,6 +119,7 @@
 }
 
 .cart-slide-item-details {
+    text-align: left;
     flex: 1;
     display: flex;
     flex-direction: column;

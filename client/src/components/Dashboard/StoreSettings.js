@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FaUpload, FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import axios from 'axios';
+import { FaUpload, FaTrashAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import API_URL from '../../apiConfig';
 import './Customers.css';
 import './StoreSettings.css';
 
@@ -123,14 +125,35 @@ const StoreSettings = () => {
   });
 
   useEffect(() => {
-    const loadSettings = () => {
+    const loadSettings = async () => {
+      // 1. Try to fetch from API first (Source of Truth)
+      try {
+        const response = await axios.get(`${API_URL}/api/store-settings`, {
+          withCredentials: true
+        });
+
+        if (response.data && Object.keys(response.data).length > 0) {
+          // Merge API data with defaults
+          const mergedData = { ...defaultSettings, ...response.data };
+          setStoreData(mergedData);
+
+          // Also update localStorage to keep it in sync for other components
+          localStorage.setItem('storeSettings', JSON.stringify(mergedData));
+          window.dispatchEvent(new Event('storeSettingsUpdated'));
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to load store settings from API:', error);
+      }
+
+      // 2. Fallback to localStorage if API fails or returns empty
       const savedSettings = localStorage.getItem('storeSettings');
       if (savedSettings) {
         try {
           const parsed = JSON.parse(savedSettings);
           setStoreData(prev => ({ ...prev, ...parsed }));
         } catch (error) {
-          console.error('Failed to load store settings:', error);
+          console.error('Failed to parse local store settings:', error);
         }
       }
 
@@ -144,8 +167,15 @@ const StoreSettings = () => {
     loadSettings();
 
     // Listen for updates from other parts of the dashboard (like Themes page)
-    window.addEventListener('storeSettingsUpdated', loadSettings);
-    return () => window.removeEventListener('storeSettingsUpdated', loadSettings);
+    const handleLocalUpdate = () => {
+      const savedSettings = localStorage.getItem('storeSettings');
+      if (savedSettings) {
+        setStoreData(prev => ({ ...prev, ...JSON.parse(savedSettings) }));
+      }
+    };
+
+    window.addEventListener('storeSettingsUpdated', handleLocalUpdate);
+    return () => window.removeEventListener('storeSettingsUpdated', handleLocalUpdate);
   }, []);
 
   // Save active tab to localStorage whenever it changes
@@ -153,90 +183,104 @@ const StoreSettings = () => {
     localStorage.setItem('storeSettingsActiveTab', activeTab);
   }, [activeTab]);
 
+  // Helper function to save settings to API and LocalStorage
+  const saveSettingsToApi = async (newData, successMessage) => {
+    try {
+      // 1. Save to API
+      await axios.put(`${API_URL}/api/store-settings`, newData, {
+        withCredentials: true
+      });
+
+      // 2. Save to LocalStorage (for immediate UI updates in dashboard)
+      localStorage.setItem('storeSettings', JSON.stringify(newData));
+      window.dispatchEvent(new Event('storeSettingsUpdated'));
+
+      if (successMessage) {
+        toast.success(successMessage);
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings to server. Changes saved locally only.');
+      // Fallback: still save locally
+      localStorage.setItem('storeSettings', JSON.stringify(newData));
+      window.dispatchEvent(new Event('storeSettingsUpdated'));
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
     const updatedData = {
       ...storeData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     };
     setStoreData(updatedData);
 
-    // Auto-save font family changes
-    if (name === 'fontFamily') {
+    // Immediate local feedback for branding/naming fields (updates tab title, sidebar, etc.)
+    if (['brandName', 'storeName'].includes(name)) {
       localStorage.setItem('storeSettings', JSON.stringify(updatedData));
-      toast.success('Font family updated successfully!');
+      window.dispatchEvent(new Event('storeSettingsUpdated'));
+    }
+
+    // Auto-save font family changes (keeps existing logic)
+    if (name === 'fontFamily') {
+      saveSettingsToApi(updatedData, 'Font family updated successfully!');
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
-    toast.success('Store settings saved successfully!');
+    saveSettingsToApi(storeData, 'Store settings saved successfully!');
   };
 
   const handleComplianceSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Compliance information saved successfully!');
+    saveSettingsToApi(storeData, 'Compliance information saved successfully!');
   };
 
   const handleSocialAccountsSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Social accounts saved successfully!');
+    saveSettingsToApi(storeData, 'Social accounts saved successfully!');
   };
 
   const handleDomainsSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Domain settings saved successfully!');
+    saveSettingsToApi(storeData, 'Domain settings saved successfully!');
   };
 
   const handleBrandingSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
-    toast.success('Branding settings saved successfully!');
+    saveSettingsToApi(storeData, 'Branding settings saved successfully!');
   };
 
   const handleBrandNameSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Brand Name saved successfully!');
+    saveSettingsToApi(storeData, 'Brand Name saved successfully!');
   };
 
   const handleImageRatioSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Image Ratio settings saved successfully!');
+    saveSettingsToApi(storeData, 'Image Ratio settings saved successfully!');
   };
 
   const handleCurrencySubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Currency settings saved successfully!');
+    saveSettingsToApi(storeData, 'Currency settings saved successfully!');
   };
 
   const handleConstructionSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
-    toast.success('Site construction settings saved successfully!');
+    saveSettingsToApi(storeData, 'Site construction settings saved successfully!');
   };
 
   const handleThemesSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
-    toast.success('Themes & Fonts settings saved successfully!');
+    saveSettingsToApi(storeData, 'Themes & Fonts settings saved successfully!');
   };
 
   const handleComponentsSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('storeSettings', JSON.stringify(storeData));
-    toast.success('Component settings saved successfully!');
+    saveSettingsToApi(storeData, 'Component settings saved successfully!');
   };
 
   const handleThemeSelect = (theme) => {
@@ -251,74 +295,94 @@ const StoreSettings = () => {
       selectedTheme: theme.name
     };
     setStoreData(updatedData);
-    localStorage.setItem('storeSettings', JSON.stringify(updatedData));
-    window.dispatchEvent(new Event('storeSettingsUpdated'));
-    toast.success(`${theme.name} theme applied successfully!`);
+    saveSettingsToApi(updatedData, `${theme.name} theme applied successfully!`);
   };
 
   const handleFileUpload = (file, field) => {
-    if (file && file.type.startsWith('image/')) {
-      // Check file type for favicon - only allow SVG or PNG
-      if (field === 'favicon') {
-        const allowedTypes = ['image/svg+xml', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
-          toast.error('Favicon must be SVG or PNG format only!');
-          return;
-        }
+    if (!file) return;
+
+    console.log(`[File Upload] Detected:`, { name: file.name, type: file.type, size: `${(file.size / 1024 / 1024).toFixed(2)} MB` });
+
+    const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+    const isIco = file.type === 'image/x-icon' || file.type === 'image/vnd.microsoft.icon' || file.name.toLowerCase().endsWith('.ico');
+    const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+    const isJpg = file.type === 'image/jpeg' || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg');
+    const fieldName = field === 'logo' ? 'Logo' : 'Favicon';
+
+    // 1. Size Validation (Max 10MB to prevent browser/server crashes)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(`${fieldName} is too large! Max limit is 10MB.`);
+      return;
+    }
+
+    // 2. Initial Validation
+    if (field === 'favicon') {
+      const allowedTypes = ['image/svg+xml', 'image/png', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/jpeg'];
+      const isAllowed = allowedTypes.includes(file.type) || isIco || isSvg || isPng || isJpg;
+
+      if (!isAllowed) {
+        toast.error('Favicon must be SVG, PNG, JPG or ICO format!');
+        return;
+      }
+    } else if (!file.type.startsWith('image/') && !isIco && !isSvg && !isPng && !isJpg) {
+      toast.error('Please upload a valid image file');
+      return;
+    }
+
+    // 3. Read file (Ensures data access)
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const base64Data = e.target.result;
+      if (!base64Data) {
+        toast.error(`Failed to read ${fieldName} data. Please try again.`);
+        return;
       }
 
-      // Create an image to check dimensions
+      const commitUpload = () => {
+        const updatedData = { ...storeData, [field]: base64Data };
+        setStoreData(updatedData);
+        saveSettingsToApi(updatedData, `${fieldName} uploaded successfully!`);
+      };
+
+      if (isSvg) {
+        commitUpload();
+        return;
+      }
+
       const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-
       img.onload = () => {
-        const { width, height } = img;
-        let maxWidth, maxHeight, fieldName;
+        const maxWidth = field === 'logo' ? 3000 : 1024; // Relaxed limits
+        const maxHeight = field === 'logo' ? 1500 : 1024;
 
-        // Set dimension limits based on field
-        if (field === 'logo') {
-          maxWidth = 2000;  // Universal max for logo
-          maxHeight = 500;
-          fieldName = 'Logo';
-        } else if (field === 'favicon') {
-          maxWidth = 256;   // Max 256x256 for favicon
-          maxHeight = 256;
-          fieldName = 'Favicon';
-        }
-
-        // Check if dimensions exceed maximum size
-        if (width > maxWidth || height > maxHeight) {
-          toast.error(`${fieldName} dimensions too large! Maximum: ${maxWidth} x ${maxHeight} px. Your image: ${width} x ${height} px`, {
-            autoClose: 5000
-          });
-          URL.revokeObjectURL(objectUrl);
+        if (img.width > maxWidth || img.height > maxHeight) {
+          toast.error(`${fieldName} is too large (${img.width}x${img.height}px). Max: ${maxWidth}x${maxHeight}px`);
           return;
         }
-
-        // If dimensions are valid, proceed with upload
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const updatedData = { ...storeData, [field]: reader.result };
-          setStoreData(updatedData);
-          // Auto-save to localStorage
-          localStorage.setItem('storeSettings', JSON.stringify(updatedData));
-          toast.success(`${fieldName} uploaded and saved successfully!`);
-        };
-        reader.onerror = () => {
-          toast.error(`Failed to read ${fieldName} file!`);
-        };
-        reader.readAsDataURL(file);
-        URL.revokeObjectURL(objectUrl);
+        commitUpload();
       };
 
       img.onerror = () => {
-        toast.error('Failed to load image. Please try another file.');
-        URL.revokeObjectURL(objectUrl);
+        if (isIco) {
+          commitUpload();
+        } else {
+          toast.error('Could not verify image dimensions. The file might be in an unsupported format.');
+        }
       };
 
-      img.src = objectUrl;
-    } else {
-      toast.error('Please upload a valid image file');
+      img.src = base64Data;
+    };
+
+    reader.onerror = (err) => {
+      console.error("FileReader Error:", err);
+      toast.error(`Error reading ${file.name}. It might be corrupted or locked by another app.`);
+    };
+
+    try {
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Reader Trigger Error:", err);
+      toast.error("An error occurred while starting the file read.");
     }
   };
 
@@ -725,12 +789,11 @@ const StoreSettings = () => {
                                 onClick={() => {
                                   const updatedData = { ...storeData, logo: '' };
                                   setStoreData(updatedData);
-                                  localStorage.setItem('storeSettings', JSON.stringify(updatedData));
-                                  toast.success('Logo deleted successfully!');
+                                  saveSettingsToApi(updatedData, 'Logo deleted successfully!');
                                 }}
                                 title="Delete logo"
                               >
-                                <FaTrash />
+                                <FaTrashAlt />
                               </button>
                             </div>
                           )}
@@ -776,12 +839,11 @@ const StoreSettings = () => {
                                 onClick={() => {
                                   const updatedData = { ...storeData, favicon: '' };
                                   setStoreData(updatedData);
-                                  localStorage.setItem('storeSettings', JSON.stringify(updatedData));
-                                  toast.success('Favicon deleted successfully!');
+                                  saveSettingsToApi(updatedData, 'Favicon deleted successfully!');
                                 }}
                                 title="Delete favicon"
                               >
-                                <FaTrash />
+                                <FaTrashAlt />
                               </button>
                             </div>
                           )}
@@ -817,7 +879,7 @@ const StoreSettings = () => {
                         name="brandName"
                         value={storeData.brandName}
                         onChange={handleInputChange}
-                        placeholder="Enter your brand name"
+                        placeholder={storeData.storeName || "Enter your brand name"}
                       />
                       <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>This will be displayed across your store</small>
                     </div>

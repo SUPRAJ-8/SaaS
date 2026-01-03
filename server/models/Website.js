@@ -10,15 +10,15 @@ const WebsiteSchema = new mongoose.Schema({
     {
       title: {
         type: String,
-        required: true,
+        default: 'Untitled Page'
       },
       content: {
         type: String, // Could be HTML, Markdown, or JSON
-        required: true,
+        default: '[]'
       },
       slug: {
         type: String, // e.g., '/about-us'
-        required: true,
+        default: ''
       },
       metaDescription: {
         type: String,
@@ -27,8 +27,16 @@ const WebsiteSchema = new mongoose.Schema({
       status: {
         type: String,
         enum: ['draft', 'published'],
-        default: 'draft',
+        default: 'published',
       },
+      themeId: {
+        type: String,
+        default: 'nexus'
+      },
+      metadata: {
+        type: Object,
+        default: {}
+      }
     },
   ],
   settings: {
@@ -47,13 +55,22 @@ const WebsiteSchema = new mongoose.Schema({
   },
 });
 
-// Ensure slugs are unique per website
+// Ensure slugs are unique per website PER THEME
 WebsiteSchema.pre('save', function (next) {
   if (this.isModified('pages')) {
-    const slugs = this.pages.map(page => page.slug);
-    const uniqueSlugs = new Set(slugs);
-    if (slugs.length !== uniqueSlugs.size) {
-      return next(new Error('Page slugs must be unique within a website.'));
+    // We check for duplicates within the SAME themeId
+    const slugThemeMap = {}; // { themeId: [slugs] }
+
+    for (const page of this.pages) {
+      const themeId = page.themeId || 'nexus';
+      const slug = page.slug || '';
+
+      if (!slugThemeMap[themeId]) slugThemeMap[themeId] = [];
+
+      if (slugThemeMap[themeId].includes(slug)) {
+        return next(new Error(`Duplicate slug "${slug}" found for theme "${themeId}".`));
+      }
+      slugThemeMap[themeId].push(slug);
     }
   }
   next();

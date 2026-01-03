@@ -1,8 +1,40 @@
-export const applyStoreSettings = () => {
-    const settings = localStorage.getItem('storeSettings');
-    if (settings) {
+// Helper to update the document favicon
+const updateFavicon = (url) => {
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    // If url is available, use it; otherwise fallback to the default favicon.ico
+    link.href = url || '/favicon.ico';
+};
+
+export const applyStoreSettings = (providedSettings = null) => {
+    let parsedSettings = providedSettings;
+
+    if (!parsedSettings) {
+        const settings = localStorage.getItem('storeSettings');
+        if (settings) {
+            try {
+                parsedSettings = JSON.parse(settings);
+            } catch (error) {
+                console.error('Failed to parse store settings:', error);
+            }
+        }
+    }
+
+    if (parsedSettings) {
         try {
-            const parsedSettings = JSON.parse(settings);
+            // Apply document title (Browser Tab Name)
+            // Priority: Brand Name > Store Name > Default
+            const displayTitle = parsedSettings.brandName || parsedSettings.storeName || 'Ecommerce Store';
+            if (displayTitle) {
+                document.title = displayTitle;
+            }
+
+            // Apply favicon with fallback
+            updateFavicon(parsedSettings.favicon);
 
             // Apply font family
             if (parsedSettings.fontFamily) {
@@ -59,4 +91,28 @@ export const applyStoreSettings = () => {
             console.error('Failed to apply store settings:', error);
         }
     }
+};
+
+// Helper for links to stay within /shop subpath if that's where we are
+export const getShopPath = (path) => {
+    const prefix = window.location.pathname.startsWith('/shop') ? '/shop' : '';
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${prefix}${cleanPath}`;
+};
+
+// Robust helper to resolve image URLs from DB or local file picks
+export const resolveImageUrl = (imagePath, API_URL) => {
+    if (!imagePath) return '';
+    if (typeof imagePath !== 'string') return '';
+
+    // 1. If it's already an absolute URL (http/https), a data URL, or a blob URL, return as is
+    if (imagePath.startsWith('http') || imagePath.startsWith('data:') || imagePath.startsWith('blob:')) {
+        return imagePath;
+    }
+
+    // 2. Ensure we have a clean path (starts with / if not present)
+    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+
+    // 3. Append API_URL (which might be empty if using proxy)
+    return `${API_URL}${cleanPath}`;
 };

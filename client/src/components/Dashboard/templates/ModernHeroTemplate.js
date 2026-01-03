@@ -4,6 +4,8 @@ import {
     FaArrowAltCircleRight, FaSearch, FaBolt, FaStar, FaGlobe, FaEnvelope
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../../../apiConfig';
+import { resolveImageUrl } from '../../../themeUtils';
 import './ModernHeroTemplate.css';
 
 const ModernHeroTemplate = ({ content }) => {
@@ -138,7 +140,7 @@ const ModernHeroTemplate = ({ content }) => {
 
                 <div className="hero-visual">
                     <div className="visual-image-wrapper">
-                        <img src={imageUrl.startsWith('blob:') || imageUrl.startsWith('http') || imageUrl.startsWith('data:') ? imageUrl : `http://localhost:5002${imageUrl}`} alt="Dashboard Preview" />
+                        <img src={resolveImageUrl(imageUrl, API_URL)} alt="Dashboard Preview" />
                     </div>
                 </div>
             </div>

@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+.not-found-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 95vh;
+    overflow: hidden;
+    background-color: #ffffff;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    padding: 20px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.not-found-content {
+    text-align: center;
+    position: relative;
+    max-width: 900px;
+    width: 100%;
+}
+
+.not-found-bg-text {
+    font-size: 350px;
+    font-weight: 800;
+    color: #f2f2f2;
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translate(-50%, -100%);
+    z-index: 10;
+    line-height: 1;
+    user-select: none;
+    letter-spacing: 20px;
+}
+
+.not-found-image-container {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 20px;
+}
+
+.not-found-gif {
+    width: 750px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    transform: scale(1.1);
+}
+
+.not-found-text-content {
+    position: relative;
+    z-index: 3;
+}
+
+.not-found-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 10px 0;
+}
+
+.not-found-subtitle {
+    font-size: 24px;
+    color: #666666;
+    margin-bottom: 40px;
+}
+
+.not-found-home-btn {
+    background-color: #39ac31;
+    color: white;
+    padding: 18px 50px;
+    font-size: 20px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: capitalize;
+}
+
+.not-found-home-btn:hover {
+    background-color: #2e8b28;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(57, 172, 49, 0.3);
+}
+
+@media (max-width: 991px) {
+    .not-found-bg-text {
+        font-size: 250px;
+        top: 25%;
+    }
+
+    .not-found-gif {
+        width: 600px;
+    }
+
+    .not-found-title {
+        font-size: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .not-found-container {
+        height: 95vh;
+        overflow: hidden;
+    }
+
+    .not-found-bg-text {
+        font-size: 180px;
+        top: 30%;
+        letter-spacing: 10px;
+    }
+
+    .not-found-gif {
+        width: 100%;
+        transform: scale(1);
+    }
+
+
+
+    .not-found-title {
+        font-size: 32px;
+    }
+
+    .not-found-subtitle {
+        font-size: 18px;
+    }
+
+    .not-found-home-btn {
+        padding: 14px 35px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .not-found-bg-text {
+        font-size: 120px;
+        top: 15%;
+        letter-spacing: 5px;
+    }
+
+    .not-found-title {
+        font-size: 26px;
+    }
+
+    .not-found-subtitle {
+        font-size: 15px;
+        margin-bottom: 30px;
+    }
+
+    .not-found-home-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        width: 100%;
+    }
+
+
+}

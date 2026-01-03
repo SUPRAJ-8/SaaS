@@ -5,6 +5,7 @@ const ItemSchema = new mongoose.Schema({
   name: String,
   quantity: Number,
   price: Number,
+  image: String,
   variant: String, // Store variant information (e.g., "Variant: Red/M")
 });
 

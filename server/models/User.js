@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  phoneNumber: {
+    type: String,
+    required: false
+  },
   password: {
     type: String,
     required: false // No password needed for OAuth users

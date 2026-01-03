@@ -1,8 +1,11 @@
 import React from 'react';
-import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaEnvelope, FaPhone, FaMapMarkerAlt, FaLinkedin } from 'react-icons/fa';
+import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaLinkedin } from 'react-icons/fa';
 import './NexusLayout.css';
+import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
+import { getShopPath } from '../../../themeUtils';
 
 const NexusFooter = ({ previewConfig }) => {
+    const { siteSettings } = React.useContext(SiteSettingsContext);
     const [footerSettings, setFooterSettings] = React.useState({});
 
     const loadFooterSettings = React.useCallback(() => {
@@ -31,26 +34,42 @@ const NexusFooter = ({ previewConfig }) => {
         };
     }, [loadFooterSettings]);
 
-    const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
+    // Use siteSettings from context for global store data
+    // Fallback to localStorage if context not ready (e.g. dashboard preview)
+    const getGlobalSettings = () => {
+        if (siteSettings && (siteSettings.brandName || siteSettings.storeName)) {
+            return siteSettings;
+        }
+        try {
+            return JSON.parse(localStorage.getItem('storeSettings') || '{}');
+        } catch (e) {
+            return {};
+        }
+    };
+
+    const settings = getGlobalSettings();
     // Prioritize previewConfig if it exists, otherwise use state config
     const config = previewConfig || footerSettings;
 
-    const storeName = settings.brandName || settings.storeName || 'Azimute';
+    const rawBrand = settings.brandName?.trim();
+    const rawStore = settings.storeName?.trim();
+    const storeName = rawBrand || rawStore || '';
     const tagline = config.tagline || 'Digital transformation that really works.';
 
     // Editable columns from theme settings
     const col1Title = config.col1Title || 'Company';
-    const col1Links = config.col1Links || [
-        { text: 'About Us', url: '/about' },
-        { text: 'Services', url: '/services' },
-        { text: 'Testimonials', url: '/testimonials' },
-        { text: 'Contact', url: '/contact' }
+    const col1Links = footerSettings.col1Links || [
+        { text: 'All Products', url: '/products' },
+        { text: 'New Arrivals', url: '/products' },
+        { text: 'Featured', url: '/products' },
+        { text: 'Offers', url: '/products' }
     ];
 
     const col2Title = config.col2Title || 'Navigation';
     const col2Links = config.col2Links || [
         { text: 'Main Benefits', url: '/benefits' },
-        { text: 'Our Services', url: '/shop' },
+        { text: 'Our Services', url: '/' },
+        { text: 'Track Order', url: '/track-order' },
         { text: 'Why Salesforce', url: '/why-us' },
         { text: 'Testimonials', url: '/testimonials' }
     ];
@@ -91,8 +110,12 @@ const NexusFooter = ({ previewConfig }) => {
         <footer className="nexus-footer" style={footerStyles}>
             <div className="nexus-footer-top">
                 <div className="nexus-brand-col">
-                    {/* You can use a logo image here if available in settings */}
-                    <h2 className="nexus-footer-logo">{storeName}</h2>
+                    <div className="nexus-footer-brand-container">
+                        {settings.logo && (
+                            <img src={settings.logo} alt={storeName} className="nexus-footer-logo-img" />
+                        )}
+                        <h2 className="nexus-footer-logo">{storeName}</h2>
+                    </div>
                 </div>
                 <div className="nexus-tagline-col">
                     <p style={{ color: textColor }}>{tagline}</p>
@@ -108,7 +131,7 @@ const NexusFooter = ({ previewConfig }) => {
                         <h3>{col1Title}</h3>
                         <ul className="nexus-links-list">
                             {col1Links.map((link, index) => (
-                                <li key={index}><a href={link.url}>{link.text}</a></li>
+                                <li key={index}><a href={getShopPath(link.url)}>{link.text}</a></li>
                             ))}
                         </ul>
                     </div>
@@ -118,7 +141,7 @@ const NexusFooter = ({ previewConfig }) => {
                         <h3>{col2Title}</h3>
                         <ul className="nexus-links-list">
                             {col2Links.map((link, index) => (
-                                <li key={index}><a href={link.url}>{link.text}</a></li>
+                                <li key={index}><a href={getShopPath(link.url)}>{link.text}</a></li>
                             ))}
                         </ul>
                     </div>
@@ -132,7 +155,7 @@ const NexusFooter = ({ previewConfig }) => {
                                 <span>{contactEmail}</span>
                             </li>
                             <li>
-                                <FaPhone />
+                                <FaPhoneAlt />
                                 <span>{contactPhone}</span>
                             </li>
                             <li>
@@ -165,7 +188,7 @@ const NexusFooter = ({ previewConfig }) => {
                         { text: 'Privacy Policy', url: '/privacy' },
                         { text: 'Cookies', url: '/cookies' }
                     ]).map((link, index) => (
-                        <a key={index} href={link.url}>{link.text}</a>
+                        <a key={index} href={getShopPath(link.url)}>{link.text}</a>
                     ))}
                 </div>
             </div>

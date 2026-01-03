@@ -7,6 +7,7 @@ import { ProductModal } from './ProductModal.js';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { getProducts } from '../../services/productService';
 import API_URL from '../../apiConfig';
+import { resolveImageUrl } from '../../themeUtils';
 
 const Products = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -328,7 +329,11 @@ const Products = () => {
                   <td>{index + 1}</td>
                   <td>
                     <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-                      <img src={product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : ''} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                      <img
+                        src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL)}
+                        alt={product.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
+                      />
                       {product.images && product.images.length > 1 && (
                         <span style={{
                           position: 'absolute',

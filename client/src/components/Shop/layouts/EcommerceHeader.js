@@ -4,6 +4,7 @@ import { FaShoppingCart, FaSearch, FaChevronDown, FaBars, FaTimes, FaRegHeart, F
 import './EcommerceLayout.css';
 import { useCart } from '../CartProvider';
 import CartSlidePanel from '../CartSlidePanel';
+import { getShopPath } from '../../../themeUtils';
 
 const EcommerceHeader = () => {
     const navigate = useNavigate();
@@ -86,7 +87,7 @@ const EcommerceHeader = () => {
 
     const handleSearchSubmit = (e) => {
         if (e.key === 'Enter' && searchQuery.trim()) {
-            navigate(`/shop?search=${searchQuery}`);
+            navigate(getShopPath(`/products?search=${searchQuery}`));
             setIsSearchOpen(false);
         }
     };
@@ -107,33 +108,44 @@ const EcommerceHeader = () => {
                     </div>
                     <div className="mobile-nav-links">
                         <a
-                            href="/shop"
+                            href={getShopPath('/')}
                             onClick={(e) => {
                                 e.preventDefault();
-                                navigate('/shop');
+                                navigate(getShopPath('/'));
                                 setIsMobileMenuOpen(false);
                             }}
                         >
                             Home
                         </a>
                         <a
-                            href="/shop/products"
+                            href={getShopPath('/products')}
                             onClick={(e) => {
                                 e.preventDefault();
-                                navigate('/shop/products');
+                                navigate(getShopPath('/products'));
                                 setIsMobileMenuOpen(false);
                             }}
                         >
                             Products
+                        </a>
+                        <a
+                            href={getShopPath('/track-order')}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                navigate(getShopPath('/track-order'));
+                                setIsMobileMenuOpen(false);
+                            }}
+                        >
+                            Track Order
                         </a>
                         <div className="mobile-categories">
                             <h3>Categories</h3>
                             {categories.map(cat => (
                                 <a
                                     key={cat._id}
-                                    href={`/shop/category/${cat._id}`}
-                                    onClick={() => {
-                                        navigate(`/shop/category/${cat._id}`);
+                                    href={getShopPath(`/category/${cat._id}`)}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        navigate(getShopPath(`/category/${cat._id}`));
                                         setIsMobileMenuOpen(false);
                                     }}
                                 >
@@ -149,7 +161,7 @@ const EcommerceHeader = () => {
             {navbarStyle === 'custom' ? (
                 <div className="premium-header-content">
                     {/* Logo */}
-                    <div className="logo-container" onClick={() => navigate('/shop')} style={{ cursor: 'pointer' }}>
+                    <div className="logo-container" onClick={() => navigate(getShopPath('/'))} style={{ cursor: 'pointer' }}>
                         {storeLogo ? (
                             <img src={storeLogo} alt={storeName} className="store-logo-img" />
                         ) : (
@@ -183,7 +195,7 @@ const EcommerceHeader = () => {
                             {/* Dropdown would go here */}
                         </div>
 
-                        <div className="action-item" onClick={() => navigate('/shop/stores')}>
+                        <div className="action-item" onClick={() => navigate(getShopPath('/stores'))}>
                             <FaStore className="action-icon" />
                             <span>Stores</span>
                         </div>
@@ -195,7 +207,7 @@ const EcommerceHeader = () => {
                             </div>
                         </button>
 
-                        <button className="premium-action-btn wishlist-btn" onClick={() => navigate('/wishlist')}>
+                        <button className="premium-action-btn wishlist-btn" onClick={() => navigate(getShopPath('/wishlist'))}>
                             <div className="icon-wrapper">
                                 <FaRegHeart />
                                 <span className="badge red">2</span> {/* Mock value as requested in image */}
@@ -206,7 +218,7 @@ const EcommerceHeader = () => {
             ) : (
                 <>
                     {/* Logo */}
-                    <div className="logo-container" onClick={() => navigate('/shop')} style={{ cursor: 'pointer' }}>
+                    <div className="logo-container" onClick={() => navigate(getShopPath('/'))} style={{ cursor: 'pointer' }}>
                         {storeLogo ? (
                             <img src={storeLogo} alt={storeName} className="store-logo-img" />
                         ) : (
@@ -220,18 +232,19 @@ const EcommerceHeader = () => {
                     {/* Middle Group for with-category style */}
                     {navbarStyle === 'with-category' && (
                         <nav className="header-nav-middle">
-                            <a href="/shop" className="nav-link">Home</a>
-                            <a href="/shop/products" className="nav-link">Products</a>
+                            <a href={getShopPath('/')} className="nav-link" onClick={() => navigate(getShopPath('/'))}>Home</a>
+                            <a href={getShopPath('/products')} className="nav-link" onClick={() => navigate(getShopPath('/products'))}>Products</a>
+                            <a href={getShopPath('/track-order')} className="nav-link" onClick={() => navigate(getShopPath('/track-order'))}>Track Order</a>
                             <span className="nav-separator">|</span>
                             {categories.length > 0 ? (
                                 categories.map(cat => (
                                     <a
                                         key={cat._id}
-                                        href={`/shop/category/${cat._id}`}
+                                        href={getShopPath(`/category/${cat._id}`)}
                                         className="nav-link category-link"
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            navigate(`/shop/category/${cat._id}`);
+                                            navigate(getShopPath(`/category/${cat._id}`));
                                         }}
                                     >
                                         {cat.name}
@@ -244,8 +257,9 @@ const EcommerceHeader = () => {
                     <div className={navbarStyle === 'with-category' ? 'header-actions' : 'header-right-group'}>
                         {navbarStyle !== 'with-category' && (
                             <nav className="header-nav">
-                                <a href="/shop" className="nav-link">Home</a>
-                                <a href="/shop/products" className="nav-link">Products</a>
+                                <a href={getShopPath('/')} className="nav-link" onClick={() => navigate(getShopPath('/'))}>Home</a>
+                                <a href={getShopPath('/products')} className="nav-link" onClick={() => navigate(getShopPath('/products'))}>Products</a>
+                                <a href={getShopPath('/track-order')} className="nav-link" onClick={() => navigate(getShopPath('/track-order'))}>Track Order</a>
                             </nav>
                         )}
 

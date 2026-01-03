@@ -34,6 +34,10 @@ const clientSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true // Allows multiple documents to have a null value for this field
+  },
+  settings: {
+    type: Object,
+    default: {}
   }
 }, { timestamps: true });
 

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope } from 'react-icons/fa';
 import './PageBuilder.css';
 import { toast } from 'react-toastify';
+import axios from 'axios';
+import API_URL from '../../apiConfig';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import FooterEditorModal from './FooterEditorModal';
 import NavbarEditorModal from './NavbarEditorModal';
@@ -215,6 +217,7 @@ const PageBuilder = () => {
         onConfirm: null,
         type: 'delete'
     });
+    const [pageMetadata, setPageMetadata] = useState(null);
     const [isHeroDragging, setIsHeroDragging] = useState(false);
 
     // Get active theme from context
@@ -248,6 +251,15 @@ const PageBuilder = () => {
     const HeaderComponent = currentTheme.header;
     const FooterComponent = currentTheme.footer;
 
+    // Load page metadata (slug, title) on mount
+    useEffect(() => {
+        const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
+        const page = savedPages.find(p => String(p.id) === String(id));
+        if (page) {
+            setPageMetadata(page);
+        }
+    }, [id]);
+
     // Auto-save to localStorage whenever sections change
     useEffect(() => {
         if (sections.length > 0) {
@@ -265,20 +277,72 @@ const PageBuilder = () => {
     }, [sections, id]);
 
     // Load sections from localStorage on mount
+    // Load sections from API on mount
     useEffect(() => {
-        const pageKey = `page_${id}_sections`;
-        const savedSections = localStorage.getItem(pageKey);
-        if (savedSections) {
+        const fetchPageData = async () => {
+            if (id === 'new') return;
+
             try {
-                setSections(JSON.parse(savedSections));
-            } catch (e) {
-                console.error('Failed to load saved sections:', e);
+                // We fetch all pages and find the one matching the slug/id
+                const response = await axios.get(`${API_URL}/api/client-pages`, { withCredentials: true });
+                const pages = response.data;
+                const page = pages.find(p => p.slug === id || (pageMetadata && p.slug === pageMetadata.slug));
+
+                if (page && page.content) {
+                    try {
+                        setSections(JSON.parse(page.content));
+                        return;
+                    } catch (err) {
+                        console.error('Error parsing page content:', err);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch page from server:', error);
             }
-        }
+
+            // Fallback to LocalStorage
+            const pageKey = `page_${id}_sections`;
+            const savedSections = localStorage.getItem(pageKey);
+            if (savedSections) {
+                try {
+                    setSections(JSON.parse(savedSections));
+                } catch (e) {
+                    console.error('Failed to load saved sections:', e);
+                }
+            }
+        };
+
+        fetchPageData();
     }, [id]);
 
-    const handleSave = () => {
-        toast.success('Page saved successfully');
+    const handleSave = async () => {
+        try {
+            const pageData = {
+                slug: pageMetadata?.slug !== undefined ? pageMetadata.slug : (id === 'new' ? 'new-page' : id),
+                title: pageMetadata?.title || (id === 'new' ? 'New Page' : (id.charAt(0).toUpperCase() + id.slice(1))),
+                content: JSON.stringify(sections),
+                status: 'published',
+                themeId: activeThemeId
+            };
+
+            await axios.post(`${API_URL}/api/client-pages`, pageData, { withCredentials: true });
+
+            // ALSO Save to LocalStorage for immediate local preview (app.localhost usage)
+            const pageKey = `page_${id}_sections`;
+            localStorage.setItem(pageKey, JSON.stringify(sections));
+
+            toast.success('Page published successfully!');
+            setShowSavedNotification(true);
+            setTimeout(() => setShowSavedNotification(false), 2000);
+        } catch (error) {
+            console.error('Failed to save page:', error.response?.data || error.message);
+            const errorMsg = error.response?.data?.msg || error.response?.data?.message || 'Failed to save page to server.';
+            toast.error(`${errorMsg} Saved locally only.`);
+
+            // Fallback to local storage
+            const pageKey = `page_${id}_sections`;
+            localStorage.setItem(pageKey, JSON.stringify(sections));
+        }
     };
 
     const handleFooterSave = () => {
@@ -459,6 +523,34 @@ const PageBuilder = () => {
                         </div>
                         <div className="restriction-tip" style={{ marginTop: '20px', fontSize: '0.9rem', color: '#64748b', textAlign: 'center' }}>
                             <span>💡 Tip:</span> Customize global colors, logo, and navbar styles in <strong>Store Settings</strong>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // RESTRICTION: Specific System Pages in Nexus Theme cannot be edited
+    // "product details ,check outs page add to cart page wishlist page category page all product page cannot be change from page buikder"
+    const RESTRICTED_NEXUS_PAGES = ['checkout', 'cart', 'wishlist', 'products', 'shop', 'category', 'product', 'product-details'];
+    if (activeThemeId === 'nexus' && RESTRICTED_NEXUS_PAGES.some(slug => id.toLowerCase() === slug || id.toLowerCase().startsWith('product-') || id.toLowerCase().startsWith('category-'))) {
+        return (
+            <div className="page-builder-container">
+                <div className="builder-restricted-overlay">
+                    <div className="restricted-content animate-fade">
+                        <div className="restricted-icon">🚫</div>
+                        <h1>System Page Restricted</h1>
+                        <p>
+                            The <strong>{id}</strong> page is a core system page (Product Details, Checkout, Category, etc.)
+                            and cannot be edited using the Page Builder in the <strong>Nexus Theme</strong>.
+                        </p>
+                        <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '10px' }}>
+                            These pages use fixed layouts to ensure functionality (Cart, Checkout, etc.).
+                        </p>
+                        <div className="restricted-actions">
+                            <button className="back-btn-restricted" onClick={() => navigate('/dashboard/pages')}>
+                                Back to Pages
+                            </button>
                         </div>
                     </div>
                 </div>

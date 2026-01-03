@@ -610,7 +610,7 @@ textarea[name="constructionMessage"]:focus {
 
 .upload-zone {
   position: relative;
-  width: 100%;
+  width: 99%;
   min-height: 220px;
   height: 220px;
   border: 3px dashed #d1d5db;
@@ -661,7 +661,7 @@ textarea[name="constructionMessage"]:focus {
 }
 
 .upload-zone.has-image {
-  width: 100%;
+  width: 99%;
   border-style: solid;
   border-color: #e5e7eb;
   padding: 0;
@@ -785,24 +785,25 @@ textarea[name="constructionMessage"]:focus {
 
 /* Delete Icon Button */
 .delete-icon-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: 2px solid white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  color: white !important;
+  border: 2px solid white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
   opacity: 0;
   transform: scale(0.8);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-  z-index: 10;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+  z-index: 100 !important;
+  padding: 0 !important;
 }
 
 .upload-zone:hover .delete-icon-button {
@@ -811,13 +812,19 @@ textarea[name="constructionMessage"]:focus {
 }
 
 .delete-icon-button:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  background: #dc2626 !important;
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
 }
 
 .delete-icon-button svg {
-  font-size: 16px;
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 18px !important;
+  fill: white !important;
+  color: white !important;
+  display: block !important;
+  margin: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Save Button */

@@ -1,23 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt } from 'react-icons/fa';
+import axios from 'axios';
+import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight } from 'react-icons/fa';
 import StoresModal from './StoresModal';
+import API_URL from '../../apiConfig';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const [isStoresModalOpen, setIsStoresModalOpen] = useState(false);
+  const [client, setClient] = useState(null);
+
+  const fetchClientInfo = async () => {
+    try {
+      const userRes = await axios.get(`${API_URL}/auth/current_user`);
+      if (userRes.data && userRes.data.clientId) {
+        const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
+        setClient(clientRes.data);
+      }
+    } catch (error) {
+      console.error('Error fetching sidebar client info:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClientInfo();
+
+    // Listen for updates from StoreSettings
+    const handleUpdate = () => fetchClientInfo();
+    window.addEventListener('storeSettingsUpdated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('storeSettingsUpdated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header" onClick={() => setIsStoresModalOpen(true)} style={{ cursor: 'pointer' }}>
-        <div className="logo">N</div>
+    <aside className="dashboard-sidebar">
+      <div className="dashboard-sidebar-header" onClick={() => setIsStoresModalOpen(true)}>
+        <div className="logo">
+          {client?.settings?.logo ? (
+            <img src={client.settings.logo} alt="Store Logo" className="sidebar-logo-img" />
+          ) : (
+            client?.name ? client.name.charAt(0).toUpperCase() : 'N'
+          )}
+        </div>
         <div className="company-details">
-          <span className="company-name">NEPO</span>
-          <span className="company-role">OWNER</span>
+          <div className="company-name-wrapper">
+            <span className="company-name">
+              {client?.settings?.brandName?.trim() || client?.name || 'My Store'}
+            </span>
+            <FaChevronRight className="header-arrow" />
+          </div>
         </div>
       </div>
       <StoresModal isOpen={isStoresModalOpen} onClose={() => setIsStoresModalOpen(false)} />
-      <nav className="sidebar-nav">
+      <nav className="dashboard-sidebar-nav">
         <h3 className="nav-title">Main Links</h3>
         <ul>
           <li><NavLink to="/dashboard" end><FaHome className="nav-icon" /> Home</NavLink></li>

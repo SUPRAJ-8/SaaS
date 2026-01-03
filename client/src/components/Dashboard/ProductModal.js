@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './ProductModal.css';
 import RichTextEditor from './RichTextEditor';
 import 'react-quill-new/dist/quill.snow.css';
+import API_URL from '../../apiConfig';
+import { resolveImageUrl } from '../../themeUtils';
 
 const ProductModal = ({ isOpen, onClose, product, onSave }) => {
   const [formData, setFormData] = useState({
@@ -443,7 +445,10 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                 <div className="image-preview">
                   {formData.existingImages.map((image, index) => (
                     <div key={`existing-${index}`} className="image-thumbnail">
-                      <img src={`http://localhost:5002${image}`} alt={`existing ${index}`} />
+                      <img
+                        src={resolveImageUrl(image, API_URL)}
+                        alt={`existing ${index}`}
+                      />
                       <button type="button" onClick={() => removeImage(index, true)}>×</button>
                     </div>
                   ))}

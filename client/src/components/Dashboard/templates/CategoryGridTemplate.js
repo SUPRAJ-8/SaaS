@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import API_URL from '../../../apiConfig';
+import { getShopPath, resolveImageUrl } from '../../../themeUtils';
 import './CategoryGridTemplate.css';
 
 const CategoryGridTemplate = ({ content }) => {
@@ -53,12 +55,12 @@ const CategoryGridTemplate = ({ content }) => {
                     {categories.map(cat => (
                         <Link
                             key={cat._id}
-                            to={`/shop/category/${cat._id}`}
+                            to={getShopPath(`/category/${cat._id}`)}
                             className="cat-card"
                             onClick={(e) => isBuilder && e.preventDefault()}
                         >
                             <div className="cat-img-wrapper">
-                                <img src={cat.image || 'https://via.placeholder.com/400'} alt={cat.name} />
+                                <img src={resolveImageUrl(cat.image, API_URL) || 'https://via.placeholder.com/400'} alt={cat.name} />
                                 <div className="cat-overlay">
                                     <h3>{cat.name}</h3>
                                     <button className="shop-now-mini">SHOP NOW</button>
