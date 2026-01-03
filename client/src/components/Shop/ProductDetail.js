@@ -250,11 +250,7 @@ const ProductDetail = () => {
   return (
     <div className="product-list-page">
       <div className="shop-page-wrapper">
-        <div className="breadcrumb">
-          <Link to={getShopPath('/')}>Home</Link> &nbsp;/&nbsp;
-          <Link to={getShopPath('/products')}>Products</Link> &nbsp;/&nbsp;
-          <span>{product.name}</span>
-        </div>
+
         <div className="product-detail-content">
           <div
             className="product-gallery"

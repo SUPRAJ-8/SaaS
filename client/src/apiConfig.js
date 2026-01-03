@@ -10,6 +10,13 @@ const getApiUrl = () => {
 
   // 2. Fallback logic based on hostname
   const hostname = window.location.hostname;
+
+  // IMPORTANT: If we are running locally (development) but using the production domain (e.g. via hosts file),
+  // we must point to the local backend, otherwise it tries to hit the real production API.
+  if (process.env.NODE_ENV === 'development' && hostname.includes('nepostore.xyz')) {
+    return 'http://localhost:5002';
+  }
+
   const isProd = hostname.includes('nepostore.xyz');
 
   if (isProd) {

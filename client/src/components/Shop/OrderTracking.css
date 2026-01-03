@@ -161,7 +161,8 @@
 .header-meta {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .status-tag {
@@ -171,27 +172,65 @@
     font-weight: 700;
 }
 
-.status-tag.pending {
+.status-tag.order-pending {
     background: #fef3c7;
     color: #92400e;
 }
 
-.status-tag.processing {
+.status-tag.order-processing {
     background: #dbeafe;
     color: #1e40af;
 }
 
-.status-tag.shipping {
+.status-tag.order-shipping {
     background: #ede9fe;
     color: #5b21b6;
 }
 
-.status-tag.delivered {
+.status-tag.order-delivered {
     background: #d1fae5;
     color: #065f46;
 }
 
-.print-action-btn {
+/* Cancelled Status Tag - Multiple selectors for maximum specificity */
+.status-tag.order-cancelled,
+.header-meta .status-tag.order-cancelled,
+div.status-tag.order-cancelled,
+.tracking-card-header .status-tag.order-cancelled {
+    background-color: #fee2e2 !important;
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #dc2626 !important;
+}
+
+.status-tag.order-refunded {
+    background: #d1fae5 !important;
+    color: #16a34a !important;
+}
+
+/* Payment Status Tags */
+.status-tag.payment-paid {
+    background: #def7ec;
+    color: #03543f;
+}
+
+.status-tag.payment-unpaid {
+    background: #fdf2f2;
+    color: #9b1c1c;
+}
+
+.status-tag.payment-pending {
+    background: #fdf6b2;
+    color: #723b13;
+}
+
+.status-tag.payment-refunded {
+    background: #d1fae5;
+    color: #16a34a;
+}
+
+.print-action-btn,
+.refresh-action-btn {
     background: #f3f4f6;
     border: none;
     padding: 0 16px;
@@ -201,17 +240,33 @@
     align-items: center;
     justify-content: center;
     color: #374151;
-    /* Dark grey */
     cursor: pointer;
     transition: all 0.2s;
     flex-shrink: 0;
     min-width: 100px;
     font-weight: 600;
+    gap: 5px;
 }
 
-.print-action-btn:hover {
+.print-action-btn:hover,
+.refresh-action-btn:hover {
     background: #e5e7eb;
     color: #111827;
+}
+
+.refresh-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .item-thumb-img {
@@ -414,7 +469,7 @@
 .info-pair.grand .val {
     font-weight: 800;
     font-size: 1.1rem;
-    color: #9333ea;
+    color: var(--primary);
 }
 
 .status-free {
@@ -429,7 +484,7 @@
 
 .table-header-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
     padding: 12px 0;
     border-bottom: 1px solid #f3f4f6;
     font-size: 0.75rem;
@@ -446,7 +501,7 @@
 .table-item-row {
     text-align: left;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
     align-items: center;
     padding: 20px 0;
     border-bottom: 1px solid #f9fafb;
@@ -473,6 +528,18 @@
 .item-info-meta .variant {
     font-size: 0.8rem;
     color: #9ca3af;
+}
+
+.td-qty,
+.th-qty {
+    text-align: center;
+}
+
+.td-price,
+.th-price,
+.td-total,
+.th-total {
+    text-align: left;
 }
 
 .td-qty,
@@ -585,6 +652,92 @@
     }
 }
 
+/* Horizontal Timeline for Cancelled/Refunded Orders */
+.horizontal-timeline {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    padding: 40px 20px;
+    position: relative;
+}
+
+.timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: 3px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.timeline-step.completed .timeline-circle {
+    background: #ede9fe;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.timeline-step.completed .timeline-circle.cancelled {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+.timeline-step.completed .timeline-circle.refunded {
+    background: #d1fae5;
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.timeline-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.timeline-label.cancelled {
+    color: #dc2626;
+}
+
+.timeline-label.refunded {
+    color: #16a34a;
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.timeline-connector {
+    flex: 1;
+    height: 3px;
+    background: #e5e7eb;
+    margin: 30px 0 0 0;
+    position: relative;
+    min-width: 100px;
+}
+
+.timeline-connector.completed {
+    background: #9333ea;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .order-tracking-container {
@@ -624,40 +777,109 @@
     }
 
     .stepper-section {
+        padding: 30px 20px !important;
+    }
+
+    /* Horizontal timeline responsive */
+    .horizontal-timeline {
+        flex-direction: column;
+        align-items: flex-start;
         padding: 30px 20px;
+        gap: 0;
+    }
+
+    /* Hide the original connector div in responsive */
+    .horizontal-timeline .timeline-connector {
+        display: none !important;
+    }
+
+    .timeline-step {
+        flex-direction: row;
+        text-align: left;
+        margin-bottom: 30px;
+        gap: 15px;
+        width: 100%;
+        position: relative;
+    }
+
+    /* Vertical connector line */
+    .timeline-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 28px;
+        /* Center of 60px circle (~30px) - half line width */
+        top: 60px;
+        bottom: -30px;
+        /* Bridge the margin gap */
+        width: 4px;
+        background: #e5e7eb;
+        z-index: 1;
+    }
+
+    /* Active vertical line color */
+    .timeline-step.completed.connector-active:not(:last-child)::after {
+        background: #9333ea;
+    }
+
+    .timeline-circle {
+        margin-bottom: 0;
+        flex-shrink: 0;
+        z-index: 2;
+        position: relative;
+    }
+
+    .timeline-circle {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .timeline-label,
+    .timeline-date {
+        text-align: left;
     }
 
     .stepper-line-bg {
-        display: none;
+        display: flex;
+        left: 40px !important;
+        transform: translateX(-50%);
+        top: 50px !important;
+        bottom: 50px !important;
+        width: 2px;
+        background: #e5e7eb !important;
+        z-index: 1;
     }
 
     .stepper-progress-fill {
-        display: block;
-        left: 42px;
-        /* Section padding (20px) + Circle radius (22px) */
-        top: 30px;
-        /* Top padding of section */
+        display: block !important;
+        left: 40px !important;
+        transform: translateX(-50%);
+        top: 50px !important;
         width: 2px;
         height: 0;
-        background: #06b6d4;
+        background: #16a34a !important;
         transition: height 0.5s ease;
         z-index: 2;
     }
 
     .stepper-progress-fill.status-pending {
-        height: 0;
+        height: 0 !important;
     }
 
     .stepper-progress-fill.status-processing {
-        height: calc(33% - 10px);
+        height: calc((100% - 134px) * 0.33) !important;
+        /* 134px = 67px top + 67px bottom */
     }
 
     .stepper-progress-fill.status-shipping {
-        height: calc(66% - 10px);
+        height: calc((100% - 134px) * 0.66) !important;
     }
 
     .stepper-progress-fill.status-delivered {
-        height: calc(100% - 44px);
+        height: calc(100% - 134px) !important;
+    }
+
+    .stepper-steps-row::before {
+        display: none !important;
     }
 
     .stepper-steps-row {
@@ -666,20 +888,11 @@
         align-items: flex-start;
         position: relative;
         padding-left: 0;
-        /* Clear padding to align line better */
+        z-index: 2;
     }
 
-    /* Vertical line for mobile */
     .stepper-steps-row::before {
-        content: '';
-        position: absolute;
-        left: 22px;
-        /* Center of circle (44px / 2) */
-        top: 22px;
-        bottom: 22px;
-        width: 2px;
-        background: #e5e7eb;
-        z-index: 1;
+        display: none !important;
     }
 
     .track-step {
@@ -692,15 +905,20 @@
         box-sizing: border-box;
     }
 
+    .step-point-container {
+        position: relative;
+        z-index: 3;
+    }
+
     .step-circle {
         margin-bottom: 0;
         flex-shrink: 0;
-        z-index: 2;
+        z-index: 3;
         width: 44px;
-        /* Back to original size */
         height: 44px;
+        box-sizing: border-box;
+        position: relative;
         margin-left: 0;
-        /* Align to the start of the row */
     }
 
     .step-text-content {
@@ -748,6 +966,7 @@
     }
 
     .big-id {
+        text-align: left;
         font-size: 1.2rem;
     }
 

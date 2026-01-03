@@ -50,7 +50,7 @@
    ========================================= */
 
 .nexus-theme .nexus-header {
-    background-color: var(--background);
+    background-color: #f0f4ff;
     border-bottom: 1px solid var(--border);
     padding: 0 2rem;
     height: 80px;
@@ -173,7 +173,7 @@
 }
 
 .nexus-theme .nexus-nav-link {
-    color: var(--copy, #ffffff);
+    color: black;
     text-decoration: none;
     font-weight: 500;
     font-size: 1rem;
@@ -333,7 +333,7 @@
 }
 
 .nexus-theme .nexus-search input::placeholder {
-    color: var(--copy-lighter);
+    color: rgb(110, 109, 109);
 }
 
 .nexus-theme .nexus-search svg {
@@ -366,7 +366,7 @@
 .nexus-theme .nexus-icon-btn {
     background-color: transparent;
     border: 1px solid var(--border);
-    color: var(--copy, #ffffff);
+    color: black;
     padding: 0.6rem;
     border-radius: 8px;
     cursor: pointer;
@@ -415,8 +415,8 @@
 }
 
 .nexus-theme .nexus-icon-btn:hover {
-    background-color: var(--foreground);
-    border-color: var(--primary);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary, #7c3aed);
     transform: translateY(-1px);
 }
 
@@ -660,18 +660,18 @@
    ========================================= */
 
 .nexus-theme input {
-    background-color: var(--foreground);
-    color: var(--copy);
+    background-color: transparent;
+    color: black;
     border: 1px solid var(--border);
     transition: all 0.2s ease;
 }
 
 .nexus-theme input::placeholder {
-    color: var(--copy-lighter);
+    color: rgb(110, 109, 109);
 }
 
 .nexus-theme input:hover {
-    border-color: var(--copy-lighter);
+    border-color: var(--border);
 }
 
 .nexus-theme input:focus {

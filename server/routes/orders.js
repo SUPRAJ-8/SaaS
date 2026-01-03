@@ -458,6 +458,13 @@ router.get('/track/:orderId', async (req, res) => {
       customerName: order.customerDetails?.name,
       customerEmail: order.customerDetails?.email,
       customerPhone: order.customerDetails?.phone,
+      paymentStatus: (() => {
+        const invoices = order.invoices || [];
+        if (invoices.length === 0) return 'Unpaid';
+        if (invoices.every(inv => inv.status === 'Refunded')) return 'Refunded';
+        if (invoices.some(inv => inv.status === 'Paid')) return 'Paid';
+        return 'Unpaid';
+      })(),
       items: (order.items || []).map(item => ({
         name: item.name,
         quantity: item.quantity,

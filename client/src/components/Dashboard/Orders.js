@@ -196,14 +196,16 @@ const Orders = () => {
       const updatePromises = orders
         .filter(order => selectedOrderIds.includes(order.orderId))
         .map(order => {
-          const updatedOrder = {
-            ...order,
-            status: newStatus === 'Refunded' ? 'refunded' : order.status,
-            invoices: order.invoices && order.invoices.length > 0
-              ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
-              : [{ status: newStatus }]
-          };
-          return axios.put(`/api/orders/${order._id}`, updatedOrder);
+          const updatedInvoices = order.invoices && order.invoices.length > 0
+            ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
+            : [{ status: newStatus }];
+
+          const updateData = { invoices: updatedInvoices };
+          if (newStatus === 'Refunded') {
+            updateData.status = 'refunded';
+          }
+
+          return axios.put(`/api/orders/${order._id}`, updateData);
         });
 
       await Promise.all(updatePromises);
@@ -211,12 +213,14 @@ const Orders = () => {
       // Update local state
       const updatedOrders = orders.map(order => {
         if (selectedOrderIds.includes(order.orderId)) {
+          const updatedInvoices = order.invoices && order.invoices.length > 0
+            ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
+            : [{ status: newStatus }];
+
           return {
             ...order,
             status: newStatus === 'Refunded' ? 'refunded' : order.status,
-            invoices: order.invoices && order.invoices.length > 0
-              ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
-              : [{ status: newStatus }]
+            invoices: updatedInvoices
           };
         }
         return order;
@@ -227,7 +231,7 @@ const Orders = () => {
 
       const message = newStatus === 'Refunded'
         ? `Successfully updated payment status to "Refunded" and order status to "refunded" for ${selectedOrderIds.length} order(s)`
-        : `Successfully updated payment status to "${newStatus}" for ${selectedOrderIds.length} order(s)`;
+        : `Successfully updated payment status to "${newStatus}" for ${selectedOrderIds.length} order(s) (order status unchanged)`;
 
       toast.update(toastId, {
         render: message,
@@ -260,18 +264,7 @@ const Orders = () => {
       const updatePromises = orders
         .filter(order => selectedOrderIds.includes(order.orderId))
         .map(order => {
-          const updatedInvoices = newStatus === 'refunded'
-            ? (order.invoices && order.invoices.length > 0
-              ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
-              : [{ status: 'Refunded' }])
-            : order.invoices;
-
-          const updatedOrder = {
-            ...order,
-            status: newStatus,
-            invoices: updatedInvoices
-          };
-          return axios.put(`/api/orders/${order._id}`, updatedOrder);
+          return axios.put(`/api/orders/${order._id}`, { status: newStatus });
         });
 
       await Promise.all(updatePromises);
@@ -279,16 +272,9 @@ const Orders = () => {
       // Update local state
       const updatedOrders = orders.map(order => {
         if (selectedOrderIds.includes(order.orderId)) {
-          const updatedInvoices = newStatus === 'refunded'
-            ? (order.invoices && order.invoices.length > 0
-              ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
-              : [{ status: 'Refunded' }])
-            : order.invoices;
-
           return {
             ...order,
-            status: newStatus,
-            invoices: updatedInvoices
+            status: newStatus
           };
         }
         return order;
@@ -297,9 +283,7 @@ const Orders = () => {
       setOrders(updatedOrders);
       setSelectedOrderIds([]);
 
-      const message = newStatus === 'refunded'
-        ? `Successfully updated order status to "refunded" and payment status to "Refunded" for ${selectedOrderIds.length} order(s)`
-        : `Successfully updated order status to "${newStatus}" for ${selectedOrderIds.length} order(s)`;
+      const message = `Successfully updated order status to "${newStatus}" for ${selectedOrderIds.length} order(s)`;
 
       toast.update(toastId, {
         render: message,
@@ -388,13 +372,15 @@ const Orders = () => {
         ? orderToUpdate.invoices.map(inv => ({ ...inv, status: newStatus }))
         : [{ status: newStatus }];
 
-      const updatedOrder = {
-        ...orderToUpdate,
-        status: newStatus === 'Refunded' ? 'refunded' : orderToUpdate.status,
+      const updateData = {
         invoices: updatedInvoices
       };
 
-      await axios.put(`/api/orders/${orderToUpdate._id}`, updatedOrder);
+      if (newStatus === 'Refunded') {
+        updateData.status = 'refunded';
+      }
+
+      await axios.put(`/api/orders/${orderToUpdate._id}`, updateData);
 
       const updatedOrders = orders.map(order => {
         if (order.orderId === orderId) {
@@ -411,7 +397,7 @@ const Orders = () => {
 
       const message = newStatus === 'Refunded'
         ? `Payment status updated to "Refunded" and order status set to "refunded"`
-        : `Payment status updated to "${newStatus}"`;
+        : `Payment status updated to "${newStatus}" (order status unchanged)`;
 
       toast.update(toastId, {
         render: message,
@@ -439,27 +425,13 @@ const Orders = () => {
     const toastId = toast.loading('Updating order status...');
 
     try {
-      const updatedInvoices = newStatus === 'refunded'
-        ? (orderToUpdate.invoices && orderToUpdate.invoices.length > 0
-          ? orderToUpdate.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
-          : [{ status: 'Refunded' }])
-        : orderToUpdate.invoices;
-
-      const updatedOrder = {
-        ...orderToUpdate,
-        status: newStatus,
-        invoices: updatedInvoices
-      };
-
-      await axios.put(`/api/orders/${orderToUpdate._id}`, updatedOrder);
+      await axios.put(`/api/orders/${orderToUpdate._id}`, { status: newStatus });
 
       setOrders(orders.map(order =>
-        order.orderId === orderId ? { ...order, status: newStatus, invoices: updatedInvoices } : order
+        order.orderId === orderId ? { ...order, status: newStatus } : order
       ));
 
-      const message = newStatus === 'refunded'
-        ? `Order status updated to "refunded" and payment status set to "Refunded"`
-        : `Order status updated to "${newStatus}"`;
+      const message = `Order status updated to "${newStatus}"`;
 
       toast.update(toastId, {
         render: message,
@@ -742,27 +714,27 @@ const Orders = () => {
       )}
 
       <div className="customers-table-container">
+        <OrderDetailsModal
+          isOpen={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          order={selectedOrder}
+          onOrderUpdate={handleOrderUpdate}
+        />
+        <ConfirmationModal
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="Confirm Deletion"
+        >
+          Are you sure you want to delete this order? This action cannot be undone.
+        </ConfirmationModal>
+        <LabelsModal
+          isOpen={isLabelsModalOpen}
+          onClose={() => setIsLabelsModalOpen(false)}
+          order={orderToEditLabels}
+          onSaveLabels={handleSaveLabels}
+        />
         <table className="customers-table">
-          <OrderDetailsModal
-            isOpen={!!selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-            order={selectedOrder}
-            onOrderUpdate={handleOrderUpdate}
-          />
-          <ConfirmationModal
-            isOpen={isConfirmOpen}
-            onClose={() => setIsConfirmOpen(false)}
-            onConfirm={handleConfirmDelete}
-            title="Confirm Deletion"
-          >
-            Are you sure you want to delete this order? This action cannot be undone.
-          </ConfirmationModal>
-          <LabelsModal
-            isOpen={isLabelsModalOpen}
-            onClose={() => setIsLabelsModalOpen(false)}
-            order={orderToEditLabels}
-            onSaveLabels={handleSaveLabels}
-          />
           <thead>
             <tr>
               <th>

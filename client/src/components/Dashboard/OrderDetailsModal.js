@@ -70,34 +70,16 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
     const previousPaymentStatus = paymentStatus;
     setCurrentStatus(newStatus);
 
-    // If order status is set to refunded, automatically set payment status to Refunded
-    if (newStatus === 'refunded') {
-      setPaymentStatus('Refunded');
-    }
-
     try {
-      const updatedInvoices = newStatus === 'refunded'
-        ? (order.invoices && order.invoices.length > 0
-          ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
-          : [{ status: 'Refunded' }])
-        : order.invoices;
-
-      const updatedOrder = {
-        ...order,
-        status: newStatus,
-        invoices: updatedInvoices
-      };
-
-      await axios.put(`/api/orders/${order._id}`, updatedOrder);
+      const updatedOrder = { ...order, status: newStatus };
+      await axios.put(`/api/orders/${order._id}`, { status: newStatus });
 
       // Update parent component
       if (onOrderUpdate) {
         onOrderUpdate(updatedOrder);
       }
 
-      const message = newStatus === 'refunded'
-        ? `Order status updated to "refunded" and payment status set to "Refunded"`
-        : `Order status updated to "${newStatus}"`;
+      const message = `Order status updated to "${newStatus}"`;
 
       toast.success(message, {
         position: 'top-right',
@@ -150,14 +132,17 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
         ? order.invoices.map(inv => ({ ...inv, status: newPaymentStatus }))
         : [{ status: newPaymentStatus }];
 
-      const updatedOrder = {
-        ...order,
-        status: newPaymentStatus === 'Refunded' ? 'refunded' : order.status,
+      const updateData = {
         invoices: updatedInvoices
       };
 
-      await axios.put(`/api/orders/${order._id}`, updatedOrder);
+      if (newPaymentStatus === 'Refunded') {
+        updateData.status = 'refunded';
+      }
 
+      await axios.put(`/api/orders/${order._id}`, updateData);
+
+      const updatedOrder = { ...order, ...updateData };
       // Update parent component
       if (onOrderUpdate) {
         onOrderUpdate(updatedOrder);
@@ -165,7 +150,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
 
       const message = newPaymentStatus === 'Refunded'
         ? `Payment status updated to "Refunded" and order status set to "refunded"`
-        : `Payment status updated to "${newPaymentStatus}"`;
+        : `Payment status updated to "${newPaymentStatus}" (order status unchanged)`;
 
       toast.success(message, {
         position: 'top-right',

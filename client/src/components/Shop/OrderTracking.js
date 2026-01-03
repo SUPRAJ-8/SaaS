@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaSearch, FaBox, FaTruck, FaCheckCircle, FaUndo, FaTimesCircle, FaClock, FaShoppingBag, FaPrint, FaUser, FaShoppingCart, FaShieldAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaSearch, FaBox, FaTruck, FaCheckCircle, FaUndo, FaTimesCircle, FaClock, FaShoppingBag, FaPrint, FaUser, FaShoppingCart, FaShieldAlt, FaChevronDown, FaChevronUp, FaSync } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import axios from 'axios';
 import { getShopPath, resolveImageUrl } from '../../themeUtils';
@@ -15,6 +15,7 @@ const OrderTracking = () => {
     const [error, setError] = useState('');
     const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
     const [expandedSections, setExpandedSections] = useState({ summary: true, items: true });
+    const [refreshInterval, setRefreshInterval] = useState(null);
 
     useEffect(() => {
         const settings = localStorage.getItem('storeSettings');
@@ -31,6 +32,19 @@ const OrderTracking = () => {
             fetchOrder(urlOrderId);
         }
     }, [urlOrderId]);
+
+    // Auto-refresh order data every 30 seconds to get updated payment status
+    useEffect(() => {
+        if (order && order.orderId) {
+            const interval = setInterval(() => {
+                fetchOrder(order.orderId);
+            }, 30000); // Refresh every 30 seconds
+
+            return () => {
+                if (interval) clearInterval(interval);
+            };
+        }
+    }, [order?.orderId]);
 
     const fetchOrder = async (id) => {
         setLoading(true);
@@ -80,6 +94,7 @@ const OrderTracking = () => {
 
     // Helper to get status details
     const getStatusStep = (status) => {
+        const normalizedStatus = (status || '').toLowerCase();
         const steps = [
             { id: 'pending', label: 'Order Placed', icon: <FaShoppingBag /> },
             { id: 'processing', label: 'Processing', icon: <FaBox /> },
@@ -87,10 +102,10 @@ const OrderTracking = () => {
             { id: 'delivered', label: 'Delivered', icon: <FaCheckCircle /> }
         ];
 
-        if (status === 'cancelled') return { label: 'Cancelled', icon: <FaTimesCircle />, color: '#e74c3c' };
-        if (status === 'refunded') return { label: 'Refunded', icon: <FaUndo />, color: '#7f8c8d' };
+        if (normalizedStatus === 'cancelled') return { label: 'Cancelled', icon: <FaTimesCircle />, color: '#e74c3c' };
+        if (normalizedStatus === 'refunded') return { label: 'Refunded', icon: <FaUndo />, color: '#7f8c8d' };
 
-        const currentIndex = steps.findIndex(s => s.id === status);
+        const currentIndex = steps.findIndex(s => s.id === normalizedStatus);
         return { steps, currentIndex };
     };
 
@@ -120,7 +135,7 @@ const OrderTracking = () => {
                                 <FaSearch className="inner-search-icon" />
                                 <input
                                     type="text"
-                                    placeholder="ORD-1014"
+                                    placeholder="eg: ORD-1014"
                                     value={orderIdInput}
                                     onChange={(e) => setOrderIdInput(e.target.value)}
                                     required
@@ -144,9 +159,36 @@ const OrderTracking = () => {
                                     <h2 className="big-id">#{order.orderId}</h2>
                                 </div>
                                 <div className="header-meta">
-                                    <div className={`status-tag ${order.status}`}>
+                                    <div className="status-label" style={{ fontWeight: 600, color: '#6b7280', marginRight: '4px' }}>Status:</div>
+                                    <div
+                                        className={`status-tag order-${order.status.trim().toLowerCase()}`}
+                                        style={{
+                                            ...(order.status.trim().toLowerCase() === 'cancelled' && {
+                                                backgroundColor: '#fee2e2',
+                                                color: '#dc2626',
+                                                border: '1px solid #dc2626'
+                                            }),
+                                            ...(order.status.trim().toLowerCase() === 'refunded' && {
+                                                backgroundColor: '#d1fae5',
+                                                color: '#16a34a'
+                                            })
+                                        }}
+                                    >
                                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                     </div>
+                                    <div className={`status-tag payment-${(order.paymentStatus || 'Unpaid').toLowerCase().replace(/\s+/g, '-')}`}>
+                                        {order.paymentStatus || 'Unpaid'}
+                                    </div>
+                                    <button
+                                        className="refresh-action-btn"
+                                        onClick={() => fetchOrder(order.orderId)}
+                                        title="Refresh Order Status"
+                                        aria-label="Refresh Order Status"
+                                        disabled={loading}
+                                    >
+                                        <FaSync size={16} style={{ display: 'block', animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+                                        <span style={{ fontSize: '12px', marginLeft: '5px' }}>Refresh</span>
+                                    </button>
                                     <button className="print-action-btn" onClick={handlePrint} title="Print Order" aria-label="Print Order">
                                         <FaPrint size={18} style={{ display: 'block' }} />
                                         <span style={{ fontSize: '12px', marginLeft: '5px' }}>Print</span>
@@ -154,36 +196,95 @@ const OrderTracking = () => {
                                 </div>
                             </div>
 
-                            <div className="stepper-section">
-                                <div className="stepper-line-bg"></div>
-                                <div className={`stepper-progress-fill status-${order.status}`}></div>
-                                <div className="stepper-steps-row">
-                                    {statusInfo.steps.map((step, index) => {
-                                        const isPast = index < statusInfo.currentIndex;
-                                        const isCurrent = index === statusInfo.currentIndex;
-                                        const isCompleted = index <= statusInfo.currentIndex;
 
-                                        return (
-                                            <div key={step.id} className={`track-step ${isCompleted ? 'active' : ''} ${isCurrent ? 'current' : ''}`}>
-                                                <div className="step-point-container">
-                                                    <div className="step-circle">
-                                                        {step.icon}
-                                                    </div>
-                                                </div>
-                                                <div className="step-text-content">
-                                                    <div className="step-name">{step.label}</div>
-                                                    {isCurrent && (
-                                                        <div className="step-timestamp">
-                                                            {new Date(order.updatedOn || order.placedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                            <br />
-                                                            {new Date(order.updatedOn || order.placedOn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                            <div className="stepper-section">
+                                {(order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() === 'refunded') ? (
+                                    // Horizontal timeline for cancelled/refunded orders
+                                    <div className="horizontal-timeline">
+                                        {(() => {
+                                            const isRefunded = (order.status.toLowerCase() === 'refunded') && (order.paymentStatus && order.paymentStatus.toLowerCase() === 'refunded');
+
+                                            return (
+                                                <>
+                                                    <div className="timeline-step completed connector-active">
+                                                        <div className="timeline-circle">
+                                                            <FaShoppingBag />
                                                         </div>
+                                                        <div className="timeline-label">Order Placed</div>
+                                                        <div className="timeline-date">
+                                                            {new Date(order.placedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            <br />
+                                                            {new Date(order.placedOn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                                        </div>
+                                                    </div>
+                                                    <div className="timeline-connector completed"></div>
+                                                    <div className={`timeline-step completed ${isRefunded ? 'connector-active' : ''}`}>
+                                                        <div className="timeline-circle cancelled">
+                                                            <FaTimesCircle />
+                                                        </div>
+                                                        <div className="timeline-label cancelled">
+                                                            Cancelled
+                                                        </div>
+                                                        <div className="timeline-date">
+                                                            {new Date(order.updatedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            <br />
+                                                            {new Date(order.updatedOn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                                        </div>
+                                                    </div>
+                                                    {isRefunded && (
+                                                        <>
+                                                            <div className="timeline-connector completed"></div>
+                                                            <div className="timeline-step completed">
+                                                                <div className="timeline-circle refunded">
+                                                                    <FaUndo />
+                                                                </div>
+                                                                <div className="timeline-label refunded">Refunded</div>
+                                                                <div className="timeline-date">
+                                                                    {new Date(order.updatedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    <br />
+                                                                    {new Date(order.updatedOn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                                                </div>
+                                                            </div>
+                                                        </>
                                                     )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                ) : (
+                                    // Vertical stepper for normal orders
+                                    <>
+                                        <div className="stepper-line-bg"></div>
+                                        <div className={`stepper-progress-fill status-${order.status}`}></div>
+                                        <div className="stepper-steps-row">
+                                            {statusInfo.steps.map((step, index) => {
+                                                const isPast = index < statusInfo.currentIndex;
+                                                const isCurrent = index === statusInfo.currentIndex;
+                                                const isCompleted = index <= statusInfo.currentIndex;
+
+                                                return (
+                                                    <div key={step.id} className={`track-step ${isCompleted ? 'active' : ''} ${isCurrent ? 'current' : ''}`}>
+                                                        <div className="step-point-container">
+                                                            <div className="step-circle">
+                                                                {step.icon}
+                                                            </div>
+                                                        </div>
+                                                        <div className="step-text-content">
+                                                            <div className="step-name">{step.label}</div>
+                                                            {isCurrent && (
+                                                                <div className="step-timestamp">
+                                                                    {new Date(order.updatedOn || order.placedOn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    <br />
+                                                                    {new Date(order.updatedOn || order.placedOn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <div className="expandable-section">
@@ -293,7 +394,7 @@ const OrderTracking = () => {
                     <p>Having trouble? <a href="mailto:support@nepostore.xyz" className="primary-link">Contact Support</a></p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
