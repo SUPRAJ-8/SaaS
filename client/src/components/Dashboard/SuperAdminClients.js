@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
     FaUsers,
@@ -16,10 +16,11 @@ import {
     FaLayerGroup,
     FaBullhorn,
     FaWrench,
+    FaEdit,
+    FaComments,
     FaCheckCircle,
     FaFilter,
-    FaArrowUp,
-    FaEdit
+    FaArrowUp
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import API_URL from '../../apiConfig';
@@ -42,6 +43,13 @@ const SuperAdminClients = () => {
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeletingFromModal, setIsDeletingFromModal] = useState(false);
 
+    // Tab switching state
+    const [activeTab, setActiveTab] = useState('tenants');
+
+    // Live Chat state
+    const [tawkId, setTawkId] = useState('');
+    const [isSavingChat, setIsSavingChat] = useState(false);
+
     // Helper function to get API URL with fallback
     const getApiUrl = (endpoint) => {
         if (API_URL) {
@@ -51,10 +59,10 @@ const SuperAdminClients = () => {
     };
 
     // Helper function to handle API calls with fallback
-    const apiCall = async (method, endpoint, data = null, config = {}) => {
+    const apiCall = useCallback(async (method, endpoint, data = null, config = {}) => {
         const url = getApiUrl(endpoint);
         const axiosConfig = { ...config, withCredentials: true };
-        
+
         try {
             let response;
             if (method === 'get') {
@@ -92,27 +100,71 @@ const SuperAdminClients = () => {
             }
             throw error;
         }
-    };
+    }, [getApiUrl]);
 
-    useEffect(() => {
-        fetchClients();
-    }, []);
+    const fetchSiteSettings = useCallback(async () => {
+        try {
+            const response = await apiCall('get', '/api/super-admin/site-settings');
+            if (response.data) {
+                setTawkId(response.data.tawkToId || '');
+            }
+        } catch (error) {
+            console.error('Error fetching site settings:', error);
+        }
+    }, [apiCall]);
 
-    const fetchClients = async () => {
-        console.log('API_URL value:', API_URL);
-        console.log('Current hostname:', window.location.hostname);
+    const fetchClients = useCallback(async () => {
         try {
             const response = await apiCall('get', '/api/super-admin/clients');
-            console.log('✅ Successfully fetched clients:', response.data?.length || 0, 'clients');
-            // Ensure response.data is always an array
             const clientsData = Array.isArray(response.data) ? response.data : [];
             setClients(clientsData);
             setLoading(false);
         } catch (error) {
-            console.error('❌ Error fetching clients:', error);
+            console.error('Error fetching clients:', error);
             toast.error('Failed to fetch tenants');
-            setClients([]); // Set to empty array on error
+            setClients([]);
             setLoading(false);
+        }
+    }, [apiCall]);
+
+    useEffect(() => {
+        fetchClients();
+        fetchSiteSettings();
+    }, [fetchClients, fetchSiteSettings]);
+
+    const saveSiteSettings = async () => {
+        if (!tawkId) {
+            toast.warning('Please enter a tawk.to ID');
+            return;
+        }
+
+        // Handle full URL if pasted: https://tawk.to/chat/677.../1ig...
+        let cleanedId = tawkId.trim();
+        if (cleanedId.includes('tawk.to/chat/')) {
+            const parts = cleanedId.split('tawk.to/chat/')[1].split('/');
+            if (parts.length >= 2) {
+                cleanedId = `${parts[0]}/${parts[1]}`;
+            }
+        } else if (cleanedId.includes('embed.tawk.to/')) {
+            const parts = cleanedId.split('embed.tawk.to/')[1].split('/');
+            if (parts.length >= 2) {
+                cleanedId = `${parts[0]}/${parts[1]}`;
+            }
+        }
+
+        setIsSavingChat(true);
+        try {
+            await apiCall('post', '/api/super-admin/site-settings', {
+                tawkToId: cleanedId
+            });
+            setTawkId(cleanedId); // Update state to show cleaned version
+            toast.success('Live chat settings saved successfully');
+        } catch (error) {
+            console.error('Error saving site settings:', error);
+            const errorMsg = error.response?.data?.msg || error.message || 'Failed to save settings';
+            toast.error(`Failed to save: ${errorMsg}`);
+        } finally {
+            setIsSavingChat(false);
         }
     };
 
@@ -199,13 +251,16 @@ const SuperAdminClients = () => {
                     <div className="sidebar-item">
                         <FaChartLine className="sidebar-icon" /> Dashboard
                     </div>
-                    <div className="sidebar-item active">
+                    <div className={`sidebar-item ${activeTab === 'tenants' ? 'active' : ''}`} onClick={() => setActiveTab('tenants')}>
                         <FaUsers className="sidebar-icon" /> Tenants
                     </div>
-                    <div className="sidebar-item">
+                    <div className={`sidebar-item ${activeTab === 'livechat' ? 'active' : ''}`} onClick={() => setActiveTab('livechat')}>
+                        <FaComments className="sidebar-icon" /> Live Chat
+                    </div>
+                    <div className={`sidebar-item ${activeTab === 'billing' ? 'active' : ''}`} onClick={() => setActiveTab('billing')}>
                         <FaCreditCard className="sidebar-icon" /> Plans & Billing
                     </div>
-                    <div className="sidebar-item">
+                    <div className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
                         <FaCog className="sidebar-icon" /> Settings
                     </div>
                 </div>
@@ -223,186 +278,254 @@ const SuperAdminClients = () => {
 
             {/* Main Content Area */}
             <main className="saas-main">
-                <header className="top-nav">
-                    <div className="page-title-section">
-                        <h2>Tenant Management</h2>
-                        <p>Overview and controls for all SaaS stores</p>
-                    </div>
-                    <div className="top-actions">
-                        <div className="notification-btn">
-                            <FaBell />
-                        </div>
-                        <button className="btn-add-tenant">
-                            <FaPlus /> Add New Tenant
-                        </button>
-                    </div>
-                </header>
-
-                {/* Stat Cards */}
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-card-header">
-                            Total Stores
-                            <div className="stat-icon-bg"><FaStore /></div>
-                        </div>
-                        <div className="stat-card-value">
-                            {Array.isArray(clients) ? clients.length.toLocaleString() : 0} <span className="stat-trend"><FaArrowUp /> 5%</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-header">
-                            Active Subscriptions
-                            <div className="stat-icon-bg"><FaCheckCircle /></div>
-                        </div>
-                        <div className="stat-card-value">
-                            {Array.isArray(clients) ? clients.filter(c => c.subscriptionStatus === 'active').length : 0} <span className="stat-trend"><FaArrowUp /> 21%</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-header">
-                            MRR
-                            <div className="stat-icon-bg"><FaDollarSign /></div>
-                        </div>
-                        <div className="stat-card-value">
-                            $45.2k <span className="stat-trend"><FaArrowUp /> 10%</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-header">
-                            Platform GMV
-                            <div className="stat-icon-bg"><FaShoppingBag /></div>
-                        </div>
-                        <div className="stat-card-value">
-                            $1.2M <span className="stat-trend"><FaArrowUp /> 15%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* All Tenants Table Card */}
-                <div className="tenants-section">
-                    <div className="section-header">
-                        <h3>All Tenants <span className="count-badge">({clients.length})</span></h3>
-                        <div className="search-controls">
-                            <div className="search-wrapper">
-                                <FaSearch className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Search tenants..."
-                                    className="search-input"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                {activeTab === 'tenants' ? (
+                    <>
+                        <header className="top-nav">
+                            <div className="page-title-section">
+                                <h2>Tenant Management</h2>
+                                <p>Overview and controls for all SaaS stores</p>
                             </div>
-                            <button className="filter-btn"><FaFilter /></button>
-                        </div>
-                    </div>
+                            <div className="top-actions">
+                                <div className="notification-btn">
+                                    <FaBell />
+                                </div>
+                                <button className="btn-add-tenant">
+                                    <FaPlus /> Add New Tenant
+                                </button>
+                            </div>
+                        </header>
 
-                    <table className="tenants-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: '40px' }}>
-                                    <input type="checkbox" className="saas-checkbox" onClick={(e) => e.stopPropagation()} />
-                                </th>
-                                <th style={{ width: '80px' }}>#</th>
-                                <th>Store Owner</th>
-                                <th>Contact</th>
-                                <th>Joined</th>
-                                <th>Plan</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredClients.map(client => (
-                                <tr key={client._id} className="tenant-row" onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)}>
-                                    <td onClick={(e) => e.stopPropagation()}>
-                                        <input type="checkbox" className="saas-checkbox" />
-                                    </td>
-                                    <td>
-                                        <div className="id-badge">ID: #{client._id.slice(-4).toUpperCase()}</div>
-                                    </td>
-                                    <td>
-                                        <div className="store-info-wrapper">
-                                            <div className="store-name-box">
-                                                <h4>{client.ownerName}</h4>
-                                                <p>{client.name}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="contact-cell">
-                                            <div className="email-link">{client.ownerEmail}</div>
-                                            <div className="phone-num">{client.ownerPhone}</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="join-date">
-                                            {new Date(client.createdAt).toLocaleDateString('en-US', {
-                                                month: 'short',
-                                                day: '2-digit',
-                                                year: 'numeric'
-                                            })}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <select
-                                            value={client.subscriptionPlan}
-                                            onChange={(e) => updateStatus(client._id, 'subscriptionPlan', e.target.value)}
-                                            onClick={(e) => e.stopPropagation()} // Prevent modal when choosing plan
-                                            className="plan-pill"
-                                        >
-                                            <option value="free">Free</option>
-                                            <option value="basic">Basic</option>
-                                            <option value="pro">Pro</option>
-                                            <option value="enterprise">Enterprise</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <div className="action-btns" onClick={(e) => e.stopPropagation()}>
-                                            <div className="btn-square btn-blue" onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)} title="View Stores"><FaEye /></div>
-                                            <div className="btn-square btn-orange" onClick={() => toast.info('Edit mode coming soon')} title="Edit Owner"><FaEdit /></div>
-                                            <div className="btn-square btn-red" onClick={() => deleteClient(client._id)} title="Delete Store"><FaTrash /></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    <div className="pagination-row">
-                        <div className="pagination-info">
-                            Showing 1-{filteredClients.length} of {Array.isArray(clients) ? clients.length : 0} tenants
-                        </div>
-                        <div className="pagination-btns">
-                            <button className="btn-page">Prev</button>
-                            <button className="btn-page active">1</button>
-                            <button className="btn-page">2</button>
-                            <button className="btn-page">3</button>
-                            <button className="btn-page">Next</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Panels */}
-                <div className="secondary-section">
-                    <div>
-                        <div className="panel-title"><FaLayerGroup className="icon" /> Revenue & Subscriptions</div>
-                        <div className="inner-panel">
-                            <div className="inner-item-row">
-                                <span>Plan Overrides</span>
-                                <FaPlus style={{ cursor: 'pointer' }} />
+                        {/* Stat Cards */}
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Total Stores
+                                    <div className="stat-icon-bg"><FaStore /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    {Array.isArray(clients) ? clients.length.toLocaleString() : 0} <span className="stat-trend"><FaArrowUp /> 5%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Active Subscriptions
+                                    <div className="stat-icon-bg"><FaCheckCircle /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    {Array.isArray(clients) ? clients.filter(c => c.subscriptionStatus === 'active').length : 0} <span className="stat-trend"><FaArrowUp /> 21%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    MRR
+                                    <div className="stat-icon-bg"><FaDollarSign /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    $45.2k <span className="stat-trend"><FaArrowUp /> 10%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Platform GMV
+                                    <div className="stat-icon-bg"><FaShoppingBag /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    $1.2M <span className="stat-trend"><FaArrowUp /> 15%</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <div className="panel-title"><FaWrench className="icon" /> Platform Maintenance</div>
-                        <div className="inner-panel">
-                            <div className="inner-item-row">
-                                <span><FaBullhorn style={{ marginRight: '8px' }} /> Broadcast Message</span>
-                                <FaPlus style={{ cursor: 'pointer' }} />
+
+                        {/* All Tenants Table Card */}
+                        <div className="tenants-section">
+                            <div className="section-header">
+                                <h3>All Tenants <span className="count-badge">({clients.length})</span></h3>
+                                <div className="search-controls">
+                                    <div className="search-wrapper">
+                                        <FaSearch className="search-icon" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search tenants..."
+                                            className="search-input"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                    <button className="filter-btn"><FaFilter /></button>
+                                </div>
+                            </div>
+
+                            <table className="tenants-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '40px' }}>
+                                            <input type="checkbox" className="saas-checkbox" onClick={(e) => e.stopPropagation()} />
+                                        </th>
+                                        <th style={{ width: '80px' }}>#</th>
+                                        <th>Store Owner</th>
+                                        <th>Contact</th>
+                                        <th>Joined</th>
+                                        <th>Plan</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredClients.map(client => (
+                                        <tr key={client._id} className="tenant-row" onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)}>
+                                            <td onClick={(e) => e.stopPropagation()}>
+                                                <input type="checkbox" className="saas-checkbox" />
+                                            </td>
+                                            <td>
+                                                <div className="id-badge">ID: #{client._id.slice(-4).toUpperCase()}</div>
+                                            </td>
+                                            <td>
+                                                <div className="store-info-wrapper">
+                                                    <div className="store-name-box">
+                                                        <h4>{client.ownerName}</h4>
+                                                        <p>{client.name}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="contact-cell">
+                                                    <div className="email-link">{client.ownerEmail}</div>
+                                                    <div className="phone-num">{client.ownerPhone}</div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="join-date">
+                                                    {new Date(client.createdAt).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        day: '2-digit',
+                                                        year: 'numeric'
+                                                    })}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    value={client.subscriptionPlan}
+                                                    onChange={(e) => updateStatus(client._id, 'subscriptionPlan', e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()} // Prevent modal when choosing plan
+                                                    className="plan-pill"
+                                                >
+                                                    <option value="free">Free</option>
+                                                    <option value="basic">Basic</option>
+                                                    <option value="pro">Pro</option>
+                                                    <option value="enterprise">Enterprise</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <div className="action-btns" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="btn-square btn-blue" onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)} title="View Stores"><FaEye /></div>
+                                                    <div className="btn-square btn-orange" onClick={() => toast.info('Edit mode coming soon')} title="Edit Owner"><FaEdit /></div>
+                                                    <div className="btn-square btn-red" onClick={() => deleteClient(client._id)} title="Delete Store"><FaTrash /></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className="pagination-row">
+                                <div className="pagination-info">
+                                    Showing 1-{filteredClients.length} of {Array.isArray(clients) ? clients.length : 0} tenants
+                                </div>
+                                <div className="pagination-btns">
+                                    <button className="btn-page">Prev</button>
+                                    <button className="btn-page active">1</button>
+                                    <button className="btn-page">2</button>
+                                    <button className="btn-page">3</button>
+                                    <button className="btn-page">Next</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Panels */}
+                        <div className="secondary-section">
+                            <div>
+                                <div className="panel-title"><FaLayerGroup className="icon" /> Revenue & Subscriptions</div>
+                                <div className="inner-panel">
+                                    <div className="inner-item-row">
+                                        <span>Plan Overrides</span>
+                                        <FaPlus style={{ cursor: 'pointer' }} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="panel-title"><FaWrench className="icon" /> Platform Maintenance</div>
+                                <div className="inner-panel">
+                                    <div className="inner-item-row">
+                                        <span><FaBullhorn style={{ marginRight: '8px' }} /> Broadcast Message</span>
+                                        <FaPlus style={{ cursor: 'pointer' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : activeTab === 'livechat' ? (
+                    <div className="live-chat-settings">
+                        <header className="top-nav">
+                            <div className="page-title-section">
+                                <h2>Live Chat Configuration</h2>
+                                <p>Manage tawk.to integration for customer support</p>
+                            </div>
+                        </header>
+
+                        <div className="tenants-section" style={{ maxWidth: '600px', margin: '2rem 0' }}>
+                            <div className="section-header">
+                                <h3>tawk.to Integration</h3>
+                            </div>
+                            <div className="settings-form" style={{ padding: '1.5rem' }}>
+                                <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                        tawk.to Property ID / Widget Key
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="search-input"
+                                        placeholder="e.g. 64b73.../1igob96l7"
+                                        style={{ width: '100%', padding: '0.8rem' }}
+                                        value={tawkId}
+                                        onChange={(e) => setTawkId(e.target.value)}
+                                    />
+                                    <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                                        Paste the <strong>Widget Key</strong> (e.g., 677.../1ig...). Found in tawk.to Admin &gt; Chat Widget &gt; Direct Chat Link section.
+                                    </p>
+                                </div>
+                                <button
+                                    className="btn-add-tenant"
+                                    style={{ width: '100%' }}
+                                    onClick={saveSiteSettings}
+                                    disabled={isSavingChat}
+                                >
+                                    {isSavingChat ? 'Saving...' : 'Save Configuration'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="secondary-section">
+                            <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '1.5rem', borderRadius: '12px' }}>
+                                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                                    <FaComments style={{ marginRight: '10px', color: '#3b82f6' }} /> Why use tawk.to?
+                                </h4>
+                                <ul style={{ color: '#94a3b8', fontSize: '0.9rem', paddingLeft: '1.2rem', lineHeight: '1.6' }}>
+                                    <li>100% Free live chat software for your platform.</li>
+                                    <li>Monitor and chat with your users in real time.</li>
+                                    <li>Easy setup by just pasting your property widget key.</li>
+                                    <li>Works across all tenants if globally enabled.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="other-tab-placeholder">
+                        <header className="top-nav">
+                            <div className="page-title-section">
+                                <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
+                                <p>Section coming soon</p>
+                            </div>
+                        </header>
+                    </div>
+                )}
             </main>
 
             {/* Store Details Modal */}

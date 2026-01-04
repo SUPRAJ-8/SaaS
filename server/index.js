@@ -207,6 +207,7 @@ app.use('/api/upload', require('./routes/upload'));
 app.use('/api/super-admin', require('./routes/super-admin'));
 app.use('/api/store-settings', require('./routes/store-settings'));
 app.use('/api/client-pages', require('./routes/client-pages'));
+app.use('/api/public-settings', require('./routes/public-settings'));
 
 const port = process.env.PORT || 5002;
 

@@ -182,6 +182,7 @@ const RecentlyViewedSection = ({ products }) => (
 
 const ProductList = () => {
   const { theme } = useContext(ThemeContext) || { theme: { id: 'ecommerce' } };
+  const isNexus = theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus';
   const { slug } = useParams();
   const [allProducts, setAllProducts] = useState([]);
   const [popularProducts, setPopularProducts] = useState([]);
@@ -321,10 +322,12 @@ const ProductList = () => {
     fetchData();
   }, []);
 
-  // Load dynamic sections for Nexus Theme
+  const [loadingDynamic, setLoadingDynamic] = useState(isNexus);
+
   // Load dynamic sections for Nexus Theme
   useEffect(() => {
-    if (theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus') {
+    if (isNexus) {
+      setLoadingDynamic(true);
       const fetchDynamicContent = async () => {
         let currentSlug = slug || 'new-page'; // Default to home/new-page if no slug
 
@@ -350,6 +353,7 @@ const ProductList = () => {
             const response = await axios.get(`${API_URL}/api/client-pages/public/${subdomain}?slug=${targetSlug}`);
             if (response.data && response.data.content) {
               setDynamicSections(JSON.parse(response.data.content));
+              setLoadingDynamic(false);
               return;
             }
           } catch (error) {
@@ -403,6 +407,7 @@ const ProductList = () => {
             setPageNotFound(false);
           }
         }
+        setLoadingDynamic(false);
       };
 
       fetchDynamicContent();
@@ -414,7 +419,7 @@ const ProductList = () => {
         setPageNotFound(false);
       }
     }
-  }, [theme.id, slug]);
+  }, [theme.id, slug, isNexus]);
 
 
   const toggleColor = (color) => {
@@ -425,10 +430,20 @@ const ProductList = () => {
     setSelectedSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
   };
 
-  const isNexus = theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus';
 
   if (pageNotFound) {
     return <NotFound />;
+  }
+
+  // Show loading spinner if waiting for dynamic content logic to resolve (Nexus only)
+  if (isNexus && loadingDynamic) {
+    return (
+      <div className="product-list-page nexus-theme">
+        <div style={{ minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -446,7 +461,7 @@ const ProductList = () => {
       {/* Shown when: 1. On /products path, OR 2. Non-Nexus theme, OR 3. Nexus theme but NO dynamic sections found */}
       {(slug === 'products' ||
         (slug && theme.id !== 'nexus' && localStorage.getItem('themeId') !== 'nexus') ||
-        (theme.id === 'nexus' && dynamicSections.length === 0)
+        (theme.id === 'nexus' && dynamicSections.length === 0 && !loadingDynamic)
       ) && (
           <div className="shop-page-wrapper">
             <div className="shop-page-header">

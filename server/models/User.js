@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false // No password needed for OAuth users
   },
+  currentSessionId: {
+    type: String,
+    required: false
+  },
 }, { timestamps: true });
 
 // To ensure that a user's email is unique within the scope of a single client

@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Client = require('../models/Client');
@@ -82,6 +83,9 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         newUser.password = await bcrypt.hash(password, salt);
 
+        // Generate session ID for single-device login
+        const sessionId = crypto.randomBytes(16).toString('hex');
+        newUser.currentSessionId = sessionId;
         const savedUser = await newUser.save();
 
         // Establish session
@@ -92,6 +96,7 @@ router.post('/register', async (req, res) => {
             }
 
             // req.login() automatically calls serializeUser and sets req.session.passport
+            req.session.sessionId = sessionId; // Store session ID in session
             console.log('💾 Registration session after req.login:', req.session);
 
             res.json({ success: true, msg: 'Store created successfully', user: savedUser });
@@ -131,6 +136,11 @@ router.post('/login', async (req, res) => {
 
         console.log('✅ Password match! Creating session for user:', user.email);
 
+        // Generate session ID for single-device login
+        const sessionId = crypto.randomBytes(16).toString('hex');
+        user.currentSessionId = sessionId;
+        await user.save();
+
         // Establish session strictly for this user
         req.login(user, (err) => {
             if (err) {
@@ -139,6 +149,7 @@ router.post('/login', async (req, res) => {
             }
 
             // req.login() automatically calls serializeUser and sets req.session.passport
+            req.session.sessionId = sessionId; // Store session ID in session
             console.log('💾 Login session after req.login:', req.session);
             console.log('🍪 Session passport data:', req.session.passport);
 
@@ -148,9 +159,9 @@ router.post('/login', async (req, res) => {
                     console.error('❌ Session save error:', saveErr);
                     return res.status(500).json({ msg: 'Session save failed' });
                 }
-                
+
                 console.log('✅ Session saved successfully, passport:', req.session.passport);
-                
+
                 // Send response after session is saved
                 res.json({
                     success: true,

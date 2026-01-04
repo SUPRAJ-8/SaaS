@@ -4,6 +4,7 @@ const Client = require('../models/Client');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const SiteSetting = require('../models/SiteSetting');
 
 // Test route to verify routing works
 router.get('/test', (req, res) => {
@@ -153,6 +154,38 @@ router.delete('/clients/:id', async (req, res) => {
     } catch (err) {
         console.error('Error deleting tenant:', err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/super-admin/site-settings
+// @desc    Get global site settings
+router.get('/site-settings', async (req, res) => {
+    try {
+        let settings = await SiteSetting.findOne();
+        if (!settings) {
+            settings = await SiteSetting.create({ tawkToId: '' });
+        }
+        res.json(settings);
+    } catch (err) {
+        console.error('Error fetching site settings:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/super-admin/site-settings
+// @desc    Update global site settings
+router.post('/site-settings', async (req, res) => {
+    const { tawkToId, whatsAppNumber } = req.body;
+    try {
+        const settings = await SiteSetting.findOneAndUpdate(
+            {},
+            { tawkToId, whatsAppNumber },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        res.json(settings);
+    } catch (err) {
+        console.error('Error updating site settings:', err);
+        res.status(500).json({ msg: 'Server error updating settings', error: err.message });
     }
 });
 
