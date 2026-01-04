@@ -15,9 +15,12 @@ import {
     FaCog,
     FaExternalLinkAlt,
     FaTimes,
-    FaLink
+    FaLink,
+    FaTrash,
+    FaInfoCircle
 } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
+import ConfirmationModal from './ConfirmationModal';
 import './Plugins.css';
 
 const Plugins = () => {
@@ -28,6 +31,9 @@ const Plugins = () => {
     const [selectedPlugin, setSelectedPlugin] = useState(null);
     const [configValue, setConfigValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [countryCode, setCountryCode] = useState('+977'); // Default to Nepal
+    const [isRemoving, setIsRemoving] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const fetchPluginData = async () => {
         try {
@@ -38,7 +44,21 @@ const Plugins = () => {
 
                 // If a plugin is already selected (e.g. after refresh), update its value
                 if (selectedPlugin) {
-                    setConfigValue(clientRes.data.settings?.[selectedPlugin.configKey] || '');
+                    const value = clientRes.data.settings?.[selectedPlugin.configKey] || '';
+
+                    // For WhatsApp, split country code and number
+                    if (selectedPlugin.id === 'whatsapp' && value) {
+                        // Extract country code (assumes format like +977...)
+                        const match = value.match(/^(\+\d{1,4})(.*)$/);
+                        if (match) {
+                            setCountryCode(match[1]);
+                            setConfigValue(match[2]);
+                        } else {
+                            setConfigValue(value);
+                        }
+                    } else {
+                        setConfigValue(value);
+                    }
                 }
             }
         } catch (error) {
@@ -55,16 +75,48 @@ const Plugins = () => {
 
     const handleConnect = (plugin) => {
         setSelectedPlugin(plugin);
-        setConfigValue(client?.settings?.[plugin.configKey] || '');
+        const value = client?.settings?.[plugin.configKey] || '';
+
+        // For WhatsApp, split country code and number
+        if (plugin.id === 'whatsapp' && value) {
+            const match = value.match(/^(\+\d{1,4})(.*)$/);
+            if (match) {
+                setCountryCode(match[1]);
+                setConfigValue(match[2]);
+            } else {
+                setConfigValue(value);
+            }
+        } else {
+            setConfigValue(value);
+        }
+
         setIsModalOpen(true);
     };
 
     const handleSave = async () => {
+        // Validation for WhatsApp
+        if (selectedPlugin.id === 'whatsapp') {
+            const cleanNumber = configValue.replace(/\s/g, '');
+            if (cleanNumber.length !== 10) {
+                toast.error('Please enter a valid 10-digit phone number');
+                return;
+            }
+            if (!/^\d+$/.test(cleanNumber)) {
+                toast.error('Please enter only numbers');
+                return;
+            }
+        }
+
         setIsSaving(true);
         try {
+            // For WhatsApp, combine country code with number
+            const finalValue = selectedPlugin.id === 'whatsapp'
+                ? countryCode + configValue.replace(/\s/g, '') // Remove spaces from number
+                : configValue;
+
             const updatedSettings = {
                 ...client.settings,
-                [selectedPlugin.configKey]: configValue
+                [selectedPlugin.configKey]: finalValue
             };
 
             await axios.put(`${API_URL}/api/store-settings`, updatedSettings, {
@@ -79,6 +131,34 @@ const Plugins = () => {
             toast.error('Failed to save configuration');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleRemove = () => {
+        setIsConfirmOpen(true);
+    };
+
+    const handleConfirmRemove = async () => {
+        setIsConfirmOpen(false);
+        setIsRemoving(true);
+        try {
+            const updatedSettings = {
+                ...client.settings,
+                [selectedPlugin.configKey]: '' // Clear the value
+            };
+
+            await axios.put(`${API_URL}/api/store-settings`, updatedSettings, {
+                withCredentials: true
+            });
+
+            toast.success(`${selectedPlugin.name} removed successfully!`);
+            setIsModalOpen(false);
+            fetchPluginData();
+        } catch (error) {
+            console.error('Error removing plugin:', error);
+            toast.error('Failed to remove plugin');
+        } finally {
+            setIsRemoving(false);
         }
     };
 
@@ -271,29 +351,95 @@ const Plugins = () => {
 
                             <div className="config-form-group">
                                 <label>
-                                    {selectedPlugin.name} {selectedPlugin.configKey.includes('Id') ? 'ID' : selectedPlugin.configKey.includes('Key') ? 'API Key' : 'Value'}
+                                    {selectedPlugin.id === 'whatsapp' ? 'WhatsApp Business Number' :
+                                        selectedPlugin.name + ' ' + (selectedPlugin.configKey.includes('Id') ? 'ID' : selectedPlugin.configKey.includes('Key') ? 'API Key' : 'Value')}
                                 </label>
-                                <input
-                                    type="text"
-                                    placeholder={`Enter your ${selectedPlugin.name} credentials...`}
-                                    value={configValue}
-                                    onChange={(e) => setConfigValue(e.target.value)}
-                                    autoFocus
-                                />
-                                <span className="input-info">
-                                    {selectedPlugin.id === 'whatsapp' && "Enter phone number with country code (e.g., +977...)"}
-                                    {selectedPlugin.id === 'tawkto' && "Enter your tawk.to Widget Key."}
-                                </span>
+
+                                {selectedPlugin.id === 'whatsapp' ? (
+                                    <div style={{ display: 'flex', gap: '10px', marginLeft: '20px' }}>
+                                        <select
+                                            value={countryCode}
+                                            onChange={(e) => setCountryCode(e.target.value)}
+                                            style={{
+                                                width: '140px',
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                border: '1px solid #e0e0e0',
+                                                fontSize: '14px',
+                                                backgroundColor: '#fff',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <option value="+977">🇳🇵 +977 (Nepal)</option>
+                                            <option value="+91">🇮🇳 +91 (India)</option>
+                                            <option value="+1">🇺🇸 +1 (USA)</option>
+                                            <option value="+44">🇬🇧 +44 (UK)</option>
+                                            <option value="+86">🇨🇳 +86 (China)</option>
+                                            <option value="+81">🇯🇵 +81 (Japan)</option>
+                                            <option value="+82">🇰🇷 +82 (S. Korea)</option>
+                                            <option value="+61">🇦🇺 +61 (Australia)</option>
+                                            <option value="+971">🇦🇪 +971 (UAE)</option>
+                                            <option value="+966">🇸🇦 +966 (Saudi)</option>
+                                            <option value="+92">🇵🇰 +92 (Pakistan)</option>
+                                            <option value="+880">🇧🇩 +880 (Bangladesh)</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            placeholder="9888888888"
+                                            value={configValue}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, ''); // Numbers only
+                                                if (val.length <= 10) setConfigValue(val);
+                                            }}
+                                            style={{ flex: 1 }}
+                                            autoFocus
+                                            maxLength={10}
+                                        />
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        placeholder={
+                                            selectedPlugin.id === 'tawkto' ? 'Enter your tawk.to Widget Key' :
+                                                `Enter your ${selectedPlugin.name} credentials...`
+                                        }
+                                        value={configValue}
+                                        onChange={(e) => setConfigValue(e.target.value)}
+                                        autoFocus
+                                    />
+                                )}
+
+                                <div className="input-info">
+                                    <FaInfoCircle />
+                                    <span>
+                                        {selectedPlugin.id === 'whatsapp' && "Enter your phone number without country code (e.g., 9888888888)"}
+                                        {selectedPlugin.id === 'tawkto' && "Enter your tawk.to Widget Key from your tawk.to dashboard."}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
                         <div className="modal-footer">
-                            <button className="cancel-pill-btn" onClick={() => setIsModalOpen(false)}>
-                                Cancel
-                            </button>
-                            <button className="save-pill-btn" onClick={handleSave} disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save Configuration'}
-                            </button>
+                            <div className="footer-left">
+                                {client?.settings?.[selectedPlugin.configKey] && (
+                                    <button
+                                        className="remove-plugin-btn"
+                                        onClick={handleRemove}
+                                        disabled={isRemoving || isSaving}
+                                        title="Remove Integration"
+                                    >
+                                        <FaTrash /> Remove Plugin
+                                    </button>
+                                )}
+                            </div>
+                            <div className="footer-right">
+                                <button className="cancel-pill-btn" onClick={() => setIsModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button className="save-pill-btn" onClick={handleSave} disabled={isSaving || isRemoving}>
+                                    {isSaving ? 'Saving...' : 'Save Configuration'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -306,6 +452,17 @@ const Plugins = () => {
                     <button className="page-nav-btn" disabled>&gt;</button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirmRemove}
+                title={`Remove ${selectedPlugin?.name}`}
+                confirmText="Yes, Remove"
+                cancelText="Keep Plugin"
+            >
+                Are you sure you want to remove the <strong>{selectedPlugin?.name}</strong> integration? This will clear all configuration settings and disable the feature on your site.
+            </ConfirmationModal>
         </div>
     );
 };

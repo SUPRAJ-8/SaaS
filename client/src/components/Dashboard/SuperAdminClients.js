@@ -63,8 +63,9 @@ const SuperAdminClients = () => {
     });
     const [statsLoading, setStatsLoading] = useState(true);
 
-    // Live Chat state
+    // Live Chat & WhatsApp state
     const [tawkId, setTawkId] = useState('');
+    const [whatsAppNum, setWhatsAppNum] = useState('');
     const [isSavingChat, setIsSavingChat] = useState(false);
 
     // Helper function to handle API calls with fallback
@@ -116,6 +117,7 @@ const SuperAdminClients = () => {
             const response = await apiCall('get', '/api/super-admin/site-settings');
             if (response.data) {
                 setTawkId(response.data.tawkToId || '');
+                setWhatsAppNum(response.data.whatsAppNumber || '');
             }
         } catch (error) {
             console.error('Error fetching site settings:', error);
@@ -178,10 +180,11 @@ const SuperAdminClients = () => {
         setIsSavingChat(true);
         try {
             await apiCall('post', '/api/super-admin/site-settings', {
-                tawkToId: cleanedId
+                tawkToId: cleanedId,
+                whatsAppNumber: whatsAppNum
             });
             setTawkId(cleanedId); // Update state to show cleaned version
-            toast.success('Live chat settings saved successfully');
+            toast.success('Plugin settings saved successfully');
         } catch (error) {
             console.error('Error saving site settings:', error);
             const errorMsg = error.response?.data?.msg || error.message || 'Failed to save settings';
@@ -636,14 +639,14 @@ const SuperAdminClients = () => {
                     <div className="live-chat-settings">
                         <header className="top-nav">
                             <div className="page-title-section">
-                                <h2>Live Chat Configuration</h2>
-                                <p>Manage tawk.to integration for customer support</p>
+                                <h2>Plugin Configuration</h2>
+                                <p>Manage tawk.to and WhatsApp integration for the platform</p>
                             </div>
                         </header>
 
                         <div className="tenants-section" style={{ maxWidth: '600px', margin: '2rem 0' }}>
                             <div className="section-header">
-                                <h3>tawk.to Integration</h3>
+                                <h3>Global Plugins</h3>
                             </div>
                             <div className="settings-form" style={{ padding: '1.5rem' }}>
                                 <div className="form-group" style={{ marginBottom: '1.5rem' }}>
@@ -659,9 +662,27 @@ const SuperAdminClients = () => {
                                         onChange={(e) => setTawkId(e.target.value)}
                                     />
                                     <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                                        Paste the <strong>Widget Key</strong> (e.g., 677.../1ig...). Found in tawk.to Admin &gt; Chat Widget &gt; Direct Chat Link section.
+                                        Paste the <strong>Widget Key</strong> (e.g., 677.../1ig...). Found in tawk.to Admin {'>'} Chat Widget {'>'} Direct Chat Link section.
                                     </p>
                                 </div>
+
+                                <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                        WhatsApp Business Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="search-input"
+                                        placeholder="e.g. +9779840007310"
+                                        style={{ width: '100%', padding: '0.8rem' }}
+                                        value={whatsAppNum}
+                                        onChange={(e) => setWhatsAppNum(e.target.value)}
+                                    />
+                                    <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                                        Enter your WhatsApp number with country code (e.g., +9779840007310).
+                                    </p>
+                                </div>
+
                                 <button
                                     className="btn-add-tenant"
                                     style={{ width: '100%' }}
@@ -676,13 +697,13 @@ const SuperAdminClients = () => {
                         <div className="secondary-section">
                             <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '1.5rem', borderRadius: '12px' }}>
                                 <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-                                    <FaComments style={{ marginRight: '10px', color: '#3b82f6' }} /> Why use tawk.to?
+                                    <FaComments style={{ marginRight: '10px', color: '#3b82f6' }} /> About Platform Plugins
                                 </h4>
                                 <ul style={{ color: '#94a3b8', fontSize: '0.9rem', paddingLeft: '1.2rem', lineHeight: '1.6' }}>
-                                    <li>100% Free live chat software for your platform.</li>
-                                    <li>Monitor and chat with your users in real time.</li>
-                                    <li>Easy setup by just pasting your property widget key.</li>
-                                    <li>Works across all tenants if globally enabled.</li>
+                                    <li>These settings apply to the main landing page and platform-wide pages.</li>
+                                    <li><strong>tawk.to:</strong> 100% Free live chat software.</li>
+                                    <li><strong>WhatsApp:</strong> Direct chat link for quick customer support.</li>
+                                    <li>Tenants can configure their own plugins in their own dashboard.</li>
                                 </ul>
                             </div>
                         </div>
@@ -696,85 +717,88 @@ const SuperAdminClients = () => {
                             </div>
                         </header>
                     </div>
-                )}
-            </main>
+                )
+                }
+            </main >
 
             {/* Store Details Modal */}
-            {isModalOpen && (
-                <div className="saas-modal-overlay" onClick={() => setIsModalOpen(false)}>
-                    <div className="saas-modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <div className="owner-profile-summary">
-                                <img src={`https://ui-avatars.com/api/?name=${selectedUser?.name}&background=3b82f6&color=fff`} alt="" />
-                                <div>
-                                    <h3>{selectedUser?.name}</h3>
-                                    <p>{selectedUser?.email}</p>
+            {
+                isModalOpen && (
+                    <div className="saas-modal-overlay" onClick={() => setIsModalOpen(false)}>
+                        <div className="saas-modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <div className="owner-profile-summary">
+                                    <img src={`https://ui-avatars.com/api/?name=${selectedUser?.name}&background=3b82f6&color=fff`} alt="" />
+                                    <div>
+                                        <h3>{selectedUser?.name}</h3>
+                                        <p>{selectedUser?.email}</p>
+                                    </div>
                                 </div>
+                                <button className="close-modal" onClick={() => setIsModalOpen(false)}>&times;</button>
                             </div>
-                            <button className="close-modal" onClick={() => setIsModalOpen(false)}>&times;</button>
-                        </div>
 
-                        <div className="modal-body">
-                            {modalLoading ? (
-                                <div className="modal-loader">Loading store details...</div>
-                            ) : (
-                                <div className="modal-stores-table-container">
-                                    <table className="modal-stores-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Store Name</th>
-                                                <th>Products</th>
-                                                <th>Orders</th>
-                                                <th>Joined</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {userStores.map(store => (
-                                                <tr key={store._id}>
-                                                    <td>
-                                                        <div className="modal-store-name-wrapper">
-                                                            <div className="modal-store-logo">
-                                                                {store.name.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <div className="modal-store-name">
-                                                                <strong>{store.name}</strong>
-                                                                <span>sku: {store.subdomain}.nepostore.xyz</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>{store.productCount?.toLocaleString() || 0}</td>
-                                                    <td>{store.orderCount?.toLocaleString() || 0}</td>
-                                                    <td>
-                                                        {new Date(store.createdAt).toLocaleDateString('en-US', {
-                                                            month: 'short',
-                                                            day: '2-digit',
-                                                            year: 'numeric'
-                                                        })}
-                                                    </td>
-                                                    <td>
-                                                        <div className="action-btns">
-                                                            <div className="btn-square btn-blue" title="Visit Store" onClick={() => window.open(`https://${store.subdomain}.nepostore.xyz`, '_blank')}>
-                                                                <FaEye />
-                                                            </div>
-                                                            <div className="btn-square btn-orange" title="Edit Store" onClick={() => toast.info('Edit mode coming soon')}>
-                                                                <FaEdit />
-                                                            </div>
-                                                            <div className="btn-square btn-red" onClick={() => deleteClient(store._id, true)} title="Delete Store">
-                                                                <FaTrash />
-                                                            </div>
-                                                        </div>
-                                                    </td>
+                            <div className="modal-body">
+                                {modalLoading ? (
+                                    <div className="modal-loader">Loading store details...</div>
+                                ) : (
+                                    <div className="modal-stores-table-container">
+                                        <table className="modal-stores-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Store Name</th>
+                                                    <th>Products</th>
+                                                    <th>Orders</th>
+                                                    <th>Joined</th>
+                                                    <th>Action</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                            </thead>
+                                            <tbody>
+                                                {userStores.map(store => (
+                                                    <tr key={store._id}>
+                                                        <td>
+                                                            <div className="modal-store-name-wrapper">
+                                                                <div className="modal-store-logo">
+                                                                    {store.name.charAt(0).toUpperCase()}
+                                                                </div>
+                                                                <div className="modal-store-name">
+                                                                    <strong>{store.name}</strong>
+                                                                    <span>sku: {store.subdomain}.nepostore.xyz</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>{store.productCount?.toLocaleString() || 0}</td>
+                                                        <td>{store.orderCount?.toLocaleString() || 0}</td>
+                                                        <td>
+                                                            {new Date(store.createdAt).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: '2-digit',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </td>
+                                                        <td>
+                                                            <div className="action-btns">
+                                                                <div className="btn-square btn-blue" title="Visit Store" onClick={() => window.open(`https://${store.subdomain}.nepostore.xyz`, '_blank')}>
+                                                                    <FaEye />
+                                                                </div>
+                                                                <div className="btn-square btn-orange" title="Edit Store" onClick={() => toast.info('Edit mode coming soon')}>
+                                                                    <FaEdit />
+                                                                </div>
+                                                                <div className="btn-square btn-red" onClick={() => deleteClient(store._id, true)} title="Delete Store">
+                                                                    <FaTrash />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <ConfirmationModal
                 isOpen={isConfirmOpen}
@@ -784,7 +808,7 @@ const SuperAdminClients = () => {
             >
                 Are you sure you want to delete this tenant? This action is irreversible and will remove all associated data.
             </ConfirmationModal>
-        </div>
+        </div >
     );
 };
 

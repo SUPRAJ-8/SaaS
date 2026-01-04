@@ -11,6 +11,7 @@ import Checkout from './components/Shop/Checkout';
 import { useSiteSettings } from './contexts/SiteSettingsContext';
 import OrderTracking from './components/Shop/OrderTracking';
 import LandingPage from './components/LandingPage';
+import FloatingPlugins from './components/Shop/FloatingPlugins';
 import './App.css';
 
 // Admin dashboard components
@@ -164,6 +165,9 @@ function AppRouter() {
         )}
 
       </Routes>
+
+      {/* Platform-wide Floating Plugins (WhatsApp, etc.) */}
+      {(isLandingPage || isShopSubdomain) && <FloatingPlugins />}
     </Router>
   );
 }

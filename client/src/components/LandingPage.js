@@ -31,6 +31,7 @@ const LandingPage = () => {
     const [isAnnual, setIsAnnual] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [whatsAppNumber, setWhatsAppNumber] = useState('');
 
     useEffect(() => {
         const handleScroll = () => {
@@ -38,58 +39,21 @@ const LandingPage = () => {
         };
         window.addEventListener('scroll', handleScroll);
 
-        const fetchSettingsAndLoadChat = async () => {
+        const fetchSettings = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/public-settings`);
-                let tawkToId = response.data?.tawkToId;
+                const whatsAppNum = response.data?.whatsAppNumber;
 
-                if (tawkToId) {
-                    let cleanedId = tawkToId.trim();
-                    if (cleanedId.includes('tawk.to/chat/')) {
-                        const parts = cleanedId.split('tawk.to/chat/')[1].split('/');
-                        if (parts.length >= 2) {
-                            cleanedId = `${parts[0]}/${parts[1]}`;
-                        }
-                    } else if (cleanedId.includes('embed.tawk.to/')) {
-                        const parts = cleanedId.split('embed.tawk.to/')[1].split('/');
-                        if (parts.length >= 2) {
-                            cleanedId = `${parts[0]}/${parts[1]}`;
-                        }
-                    }
-                    tawkToId = cleanedId;
-                }
-
-                if (tawkToId && tawkToId.includes('/')) {
-                    window.Tawk_API = window.Tawk_API || {};
-                    window.Tawk_LoadStart = new Date();
-
-                    // Nudge tawk.to up to make room for WhatsApp below it
-                    window.Tawk_API.customStyle = {
-                        visibility: {
-                            desktop: {
-                                yOffset: 95
-                            },
-                            mobile: {
-                                yOffset: 85
-                            }
-                        }
-                    };
-
-                    const s1 = document.createElement("script");
-                    s1.async = true;
-                    s1.src = `https://embed.tawk.to/${tawkToId}`;
-                    s1.charset = 'UTF-8';
-                    s1.setAttribute('crossorigin', '*');
-                    document.head.appendChild(s1);
-                } else {
-                    console.warn('⚠️ No valid TawkTo ID found or format incorrect (missing slash)');
+                // Set WhatsApp number
+                if (whatsAppNum) {
+                    setWhatsAppNumber(whatsAppNum);
                 }
             } catch (error) {
                 console.error('❌ Failed to load site settings:', error);
             }
         };
 
-        fetchSettingsAndLoadChat();
+        fetchSettings();
 
         // Cleanup
         return () => {
@@ -169,15 +133,21 @@ const LandingPage = () => {
                     <div className="nav-auth">
                         <Link to="/login" className="btn-text desktop-only">Log In</Link>
                         <Link to="/signup" className="btn-primary desktop-only">Register Now <FaArrowRight className="btn-arrow" /></Link>
-                        <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
-                            <div className="wa-btn-icon">
-                                <FaWhatsapp />
-                            </div>
-                            <div className="wa-btn-text">
-                                <span className="wa-btn-title">WhatsApp Us</span>
-                                <span className="wa-btn-number">+977-9840007310</span>
-                            </div>
-                        </a>
+                        {whatsAppNumber && (
+                            <a href={`https://wa.me/${whatsAppNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
+                                <div className="wa-btn-icon">
+                                    <FaWhatsapp />
+                                </div>
+                                <div className="wa-btn-text">
+                                    <span className="wa-btn-title">WhatsApp Us</span>
+                                    <span className="wa-btn-number">
+                                        {whatsAppNumber.startsWith('+')
+                                            ? whatsAppNumber.slice(0, 4) + '-' + whatsAppNumber.slice(4)
+                                            : whatsAppNumber}
+                                    </span>
+                                </div>
+                            </a>
+                        )}
                     </div>
                     <button className={`mobile-menu-toggle ${isMenuOpen ? 'mobile-active-toggle' : ''}`} onClick={toggleMenu} aria-label="Toggle Menu">
                         {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
@@ -200,9 +170,11 @@ const LandingPage = () => {
                         </p>
                         <div className="hero-actions">
                             <Link to="/signup" className="btn-primary btn-lg">Register Now</Link>
-                            <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="btn-whatsapp btn-lg">
-                                <FaWhatsapp className="btn-icon-small" /> Contact us on WhatsApp
-                            </a>
+                            {whatsAppNumber && (
+                                <a href={`https://wa.me/${whatsAppNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-whatsapp btn-lg">
+                                    <FaWhatsapp className="btn-icon-small" /> Contact us on WhatsApp
+                                </a>
+                            )}
                         </div>
                         <div className="hero-social-proof">
                             <div className="avatars">
@@ -549,15 +521,6 @@ const LandingPage = () => {
             </footer>
 
             {/* Floating WhatsApp Button */}
-            <a
-                href="https://wa.me/9779840007310"
-                className="whatsapp-float"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Chat with us on WhatsApp"
-            >
-                <FaWhatsapp className="whatsapp-icon" />
-            </a>
         </div>
     );
 };

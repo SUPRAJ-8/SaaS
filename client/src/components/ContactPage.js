@@ -22,6 +22,7 @@ import './ContactPage.css';
 const ContactPage = () => {
     const [scrolled, setScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [whatsAppNumber, setWhatsAppNumber] = useState('');
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -35,6 +36,21 @@ const ContactPage = () => {
         };
         window.addEventListener('scroll', handleScroll);
         window.scrollTo(0, 0);
+
+        // Fetch WhatsApp number
+        const fetchSettings = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/api/public-settings`);
+                const whatsAppNum = response.data?.whatsAppNumber;
+                if (whatsAppNum) {
+                    setWhatsAppNumber(whatsAppNum);
+                }
+            } catch (error) {
+                console.error('Failed to load settings:', error);
+            }
+        };
+
+        fetchSettings();
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
@@ -98,21 +114,27 @@ const ContactPage = () => {
                     <div className="nav-auth">
                         <Link to="/login" className="btn-text desktop-only">Log In</Link>
                         <Link to="/signup" className="btn-primary desktop-only">Register Now <FaArrowRight className="btn-arrow" /></Link>
-                        <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
-                            <div className="wa-btn-icon">
-                                <FaWhatsapp />
-                            </div>
-                            <div className="wa-btn-text">
-                                <span className="wa-btn-title">WhatsApp Us</span>
-                                <span className="wa-btn-number">+977-9840007310</span>
-                            </div>
-                        </a>
+                        {whatsAppNumber && (
+                            <a href={`https://wa.me/${whatsAppNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
+                                <div className="wa-btn-icon">
+                                    <FaWhatsapp />
+                                </div>
+                                <div className="wa-btn-text">
+                                    <span className="wa-btn-title">WhatsApp Us</span>
+                                    <span className="wa-btn-number">
+                                        {whatsAppNumber.startsWith('+')
+                                            ? whatsAppNumber.slice(0, 4) + '-' + whatsAppNumber.slice(4)
+                                            : whatsAppNumber}
+                                    </span>
+                                </div>
+                            </a>
+                        )}
                     </div>
                     <button className={`mobile-menu-toggle ${isMenuOpen ? 'mobile-active-toggle' : ''}`} onClick={toggleMenu} aria-label="Toggle Menu">
                         {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
                     </button>
                 </div>
-            </nav>
+            </nav >
 
             <main className="contact-main">
                 <section className="contact-hero">
@@ -286,18 +308,26 @@ const ContactPage = () => {
                                 </div>
                             </div>
 
-                            <div className="availability-card">
-                                <div className="availability-icon-box green">
-                                    <FaWhatsapp />
-                                </div>
-                                <h3>WhatsApp Support</h3>
-                                <p>Get instant help via chat:</p>
-                                <div className="availability-time">WhatsApp support</div>
-                                <div className="availability-detail">9 AM - 6 PM</div>
-                                <div className="availability-status">
-                                    <span className="status-dot green"></span> Available Now
-                                </div>
-                            </div>
+                            {whatsAppNumber && (
+                                <a
+                                    href={`https://wa.me/${whatsAppNumber.replace(/[^0-9]/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="availability-card"
+                                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                                >
+                                    <div className="availability-icon-box green">
+                                        <FaWhatsapp />
+                                    </div>
+                                    <h3>WhatsApp Support</h3>
+                                    <p>Get instant help via chat:</p>
+                                    <div className="availability-time">{whatsAppNumber}</div>
+                                    <div className="availability-detail">9 AM - 6 PM</div>
+                                    <div className="availability-status">
+                                        <span className="status-dot green"></span> Available Now
+                                    </div>
+                                </a>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -341,7 +371,7 @@ const ContactPage = () => {
                     </div>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 };
 
