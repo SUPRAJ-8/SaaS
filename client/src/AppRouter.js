@@ -166,8 +166,8 @@ function AppRouter() {
 
       </Routes>
 
-      {/* Platform-wide Floating Plugins (WhatsApp, etc.) */}
-      {(isLandingPage || isShopSubdomain) && <FloatingPlugins />}
+      {/* Platform-wide Floating Plugins (WhatsApp, etc.) - Only for Shop pages now */}
+      {isShopSubdomain && <FloatingPlugins />}
     </Router>
   );
 }

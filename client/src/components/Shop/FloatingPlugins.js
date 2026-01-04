@@ -7,36 +7,10 @@ import './FloatingPlugins.css';
 
 const FloatingPlugins = () => {
     const { siteSettings } = useContext(SiteSettingsContext);
-    const [globalSettings, setGlobalSettings] = React.useState(null);
 
-    // Support both casings just in case
-    const whatsappNumber = siteSettings?.whatsappNumber || siteSettings?.whatsAppNumber || globalSettings?.whatsAppNumber;
-    const tawkToId = siteSettings?.tawkToId || globalSettings?.tawkToId;
-
-    useEffect(() => {
-        // If we are on landing/contact page, fetch global settings
-        const hostname = window.location.hostname;
-        const parts = hostname.split('.');
-
-        // Root domain detection (localhost, nepostore.xyz, or www.nepostore.xyz)
-        let isRoot = false;
-        if (hostname === 'localhost' || parts.length <= 2 || (parts.length === 3 && parts[0] === 'www')) {
-            // But exclude 'app' subdomain if it happens to be caught
-            if (parts[0] !== 'app') {
-                isRoot = true;
-            }
-        }
-
-        if (isRoot) {
-            axios.get(`${API_URL}/api/public-settings`)
-                .then(response => {
-                    if (response.data) {
-                        setGlobalSettings(response.data);
-                    }
-                })
-                .catch(err => console.error('Error fetching global settings:', err));
-        }
-    }, []);
+    // Use only tenant specific settings
+    const whatsappNumber = siteSettings?.whatsappNumber || siteSettings?.whatsAppNumber;
+    const tawkToId = siteSettings?.tawkToId;
 
     useEffect(() => {
         // Load Tawk.to if ID exists
