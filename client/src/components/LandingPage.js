@@ -3,11 +3,9 @@ import { Link } from 'react-router-dom';
 import {
     FaChevronDown,
     FaChevronUp,
-    FaPlay,
     FaUserCircle,
     FaGlobe,
     FaShoppingCart,
-    FaChartPie,
     FaCheckCircle,
     FaLock,
     FaBolt,
@@ -31,7 +29,8 @@ const LandingPage = () => {
     const [isAnnual, setIsAnnual] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [whatsAppNumber, setWhatsAppNumber] = useState('');
+    const whatsAppNumber = '9840007310'; // Hardcoded WhatsApp number
+    const [tawkToId, setTawkToId] = useState('');
 
     useEffect(() => {
         const handleScroll = () => {
@@ -39,17 +38,50 @@ const LandingPage = () => {
         };
         window.addEventListener('scroll', handleScroll);
 
+        // Fetch tawk.to settings
         const fetchSettings = async () => {
             try {
-                const response = await axios.get(`${API_URL}/api/public-settings`);
-                const whatsAppNum = response.data?.whatsAppNumber;
+                // Determine API endpoint
+                // If API_URL is '' (empty string), it means we use proxy (relative path)
+                // If API_URL is set (e.g. production), usage it
+                // Default to localhost:5002 only if undefined/null
+                let apiEndpoint;
+                if (API_URL === '') {
+                    apiEndpoint = '/api/public-settings';
+                } else if (API_URL) {
+                    apiEndpoint = `${API_URL}/api/public-settings`;
+                } else {
+                    apiEndpoint = 'http://localhost:5002/api/public-settings';
+                }
 
-                // Set WhatsApp number
-                if (whatsAppNum) {
-                    setWhatsAppNumber(whatsAppNum);
+                console.log('🔍 Fetching tawk.to settings from:', apiEndpoint);
+
+                const response = await axios.get(apiEndpoint);
+                console.log('📦 Received settings:', response.data);
+                const tawkId = response.data?.tawkToId;
+                if (tawkId) {
+                    console.log('✅ Tawk.to ID found:', tawkId);
+                    setTawkToId(tawkId);
+                } else {
+                    console.log('⚠️ No tawk.to ID configured');
                 }
             } catch (error) {
                 console.error('❌ Failed to load site settings:', error);
+                // Try fallback if first attempt fails
+                if (API_URL) {
+                    console.log('🔄 Retrying with direct backend URL...');
+                    try {
+                        const response = await axios.get('http://localhost:5002/api/public-settings');
+                        console.log('📦 Received settings (retry):', response.data);
+                        const tawkId = response.data?.tawkToId;
+                        if (tawkId) {
+                            console.log('✅ Tawk.to ID found (retry):', tawkId);
+                            setTawkToId(tawkId);
+                        }
+                    } catch (retryError) {
+                        console.error('❌ Retry also failed:', retryError);
+                    }
+                }
             }
         };
 
@@ -69,6 +101,73 @@ const LandingPage = () => {
             window.removeEventListener('scroll', handleScroll);
         };
     }, []);
+
+    // Load Tawk.to script
+    useEffect(() => {
+        if (tawkToId) {
+            console.log('🚀 Loading tawk.to script with ID:', tawkToId);
+
+            // Check if Tawk is already loaded
+            if (window.Tawk_API && window.Tawk_API.onLoad) {
+                console.log('⚡ Tawk.to already loaded');
+                return;
+            }
+
+            // Check if script already exists and remove it
+            const existingScript = document.querySelector(`script[src*="embed.tawk.to"]`);
+            if (existingScript) {
+                console.log('⚠️ Removing existing tawk.to script...');
+                existingScript.remove();
+            }
+
+            // Minimal initialization
+            window.Tawk_API = window.Tawk_API || {};
+
+            // Only set customStyle if Tawk hasn't fully loaded yet to avoid conflicts
+            if (!window.Tawk_API.onLoad) {
+                window.Tawk_API.customStyle = {
+                    visibility: {
+                        desktop: {
+                            yOffset: 90
+                        },
+                        mobile: {
+                            yOffset: 90
+                        }
+                    }
+                };
+            }
+
+            window.Tawk_LoadStart = new Date();
+
+            const s1 = document.createElement("script");
+            s1.async = true;
+            s1.src = `https://embed.tawk.to/${tawkToId.trim()}`;
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s1.id = 'tawk-to-script';
+
+            s1.onload = () => {
+                console.log('✅ Tawk.to script loaded successfully');
+            };
+
+            s1.onerror = (error) => {
+                console.error('❌ Failed to load tawk.to script:', error);
+                console.error('❌ Script URL:', s1.src);
+            };
+
+            const s0 = document.getElementsByTagName("script")[0];
+            if (s0 && s0.parentNode) {
+                s0.parentNode.insertBefore(s1, s0);
+            } else {
+                document.head.appendChild(s1);
+            }
+
+            console.log('📝 Tawk.to script inserted');
+            console.log('📍 Script URL:', s1.src);
+        } else {
+            console.log('⏳ Waiting for tawk.to ID...');
+        }
+    }, [tawkToId]);
 
     useEffect(() => {
         if (isMenuOpen) {
@@ -521,6 +620,17 @@ const LandingPage = () => {
             </footer>
 
             {/* Floating WhatsApp Button */}
+            {whatsAppNumber && (
+                <a
+                    href={`https://wa.me/${whatsAppNumber.replace(/[^0-9]/g, '')}`}
+                    className="whatsapp-float"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Chat with us on WhatsApp"
+                >
+                    <FaWhatsapp className="whatsapp-icon" />
+                </a>
+            )}
         </div>
     );
 };

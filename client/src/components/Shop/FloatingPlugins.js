@@ -41,24 +41,32 @@ const FloatingPlugins = () => {
     useEffect(() => {
         // Load Tawk.to if ID exists
         if (tawkToId) {
-            window.Tawk_API = window.Tawk_API || {};
-            window.Tawk_LoadStart = new Date();
+            // Check if Tawk is already loaded
+            if (window.Tawk_API && window.Tawk_API.onLoad) {
+                return;
+            }
 
-            // Nudge tawk.to up to make room for WhatsApp below it
-            window.Tawk_API.customStyle = {
-                visibility: {
-                    desktop: {
-                        yOffset: 95
-                    },
-                    mobile: {
-                        yOffset: 85
+            window.Tawk_API = window.Tawk_API || {};
+
+            // Safe custom style application
+            if (!window.Tawk_API.onLoad) {
+                window.Tawk_API.customStyle = {
+                    visibility: {
+                        desktop: {
+                            yOffset: 90
+                        },
+                        mobile: {
+                            yOffset: 90
+                        }
                     }
-                }
-            };
+                };
+            }
+
+            window.Tawk_LoadStart = new Date();
 
             const s1 = document.createElement("script");
             s1.async = true;
-            s1.src = `https://embed.tawk.to/${tawkToId.trim()}/default`;
+            s1.src = `https://embed.tawk.to/${tawkToId.trim()}`;
             s1.charset = 'UTF-8';
             s1.setAttribute('crossorigin', '*');
             const s0 = document.getElementsByTagName("script")[0];
