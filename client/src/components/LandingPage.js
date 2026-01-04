@@ -17,7 +17,9 @@ import {
     FaHeadset,
     FaShieldAlt,
     FaGem,
-    FaWhatsapp
+    FaWhatsapp,
+    FaBars,
+    FaTimes
 } from 'react-icons/fa';
 import axios from 'axios';
 import API_URL from '../apiConfig';
@@ -27,8 +29,15 @@ import './LandingPage.css';
 const LandingPage = () => {
     const [openFaq, setOpenFaq] = useState(null);
     const [isAnnual, setIsAnnual] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+
         const fetchSettingsAndLoadChat = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/public-settings`);
@@ -93,11 +102,24 @@ const LandingPage = () => {
             if (window.Tawk_API && window.Tawk_API.hideWidget) {
                 window.Tawk_API.hideWidget();
             }
+            window.removeEventListener('scroll', handleScroll);
         };
     }, []);
 
+    useEffect(() => {
+        if (isMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+    }, [isMenuOpen]);
+
     const toggleFaq = (index) => {
         setOpenFaq(openFaq === index ? null : index);
+    };
+
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
     };
 
     const faqs = [
@@ -126,20 +148,27 @@ const LandingPage = () => {
     return (
         <div className="landing-layout">
             {/* Navigation */}
-            <nav className="navbar">
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
                 <div className="nav-container">
-                    <div className="nav-logo">
-                        <span className="logo-icon">🛍️</span> CreatorFlow
-                    </div>
-                    <div className="nav-menu">
-                        <a href="#features">Features</a>
-                        <a href="#how-it-works">How it Works</a>
-                        <a href="#pricing">Pricing</a>
-                        <a href="#faq">FAQ</a>
+                    <Link to="/" className="nav-logo" style={{ textDecoration: 'none' }}>
+                        <div className="logo-box">
+                            <FaShoppingBag />
+                        </div>
+                        <span>CreatorFlow</span>
+                    </Link>
+                    <div className={`nav-menu ${isMenuOpen ? 'mobile-active' : ''}`}>
+                        <a href="#features" onClick={() => setIsMenuOpen(false)}>Features</a>
+                        <a href="#how-it-works" onClick={() => setIsMenuOpen(false)}>How it Works</a>
+                        <a href="#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a>
+                        <a href="#faq" onClick={() => setIsMenuOpen(false)}>FAQ</a>
+                        <div className="nav-menu-auth-mobile">
+                            <Link to="/login" className="btn-text" onClick={() => setIsMenuOpen(false)}>Log In</Link>
+                            <Link to="/signup" className="btn-primary" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                        </div>
                     </div>
                     <div className="nav-auth">
-                        <Link to="/login" className="btn-text">Log In</Link>
-                        <Link to="/signup" className="btn-primary">Get Started</Link>
+                        <Link to="/login" className="btn-text desktop-only">Log In</Link>
+                        <Link to="/signup" className="btn-primary desktop-only">Register <FaArrowRight className="btn-arrow" /></Link>
                         <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
                             <div className="wa-btn-icon">
                                 <FaWhatsapp />
@@ -150,6 +179,9 @@ const LandingPage = () => {
                             </div>
                         </a>
                     </div>
+                    <button className={`mobile-menu-toggle ${isMenuOpen ? 'mobile-active-toggle' : ''}`} onClick={toggleMenu} aria-label="Toggle Menu">
+                        {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+                    </button>
                 </div>
             </nav>
 
