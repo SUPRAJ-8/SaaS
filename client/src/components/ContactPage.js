@@ -14,6 +14,9 @@ import {
     FaHeadset,
     FaCheckCircle
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import API_URL from '../apiConfig';
 import './ContactPage.css';
 
 const ContactPage = () => {
@@ -42,10 +45,33 @@ const ContactPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
-        alert('Thank you for contacting us! We will get back to you soon.');
+        setIsSubmitting(true);
+
+        try {
+            await axios.post(`${API_URL}/api/contact`, formData);
+
+            toast.success('Thank you for contacting us! Your message has been sent to our team.', {
+                position: "top-right",
+                autoClose: 5000,
+            });
+
+            // Clear form
+            setFormData({
+                fullName: '',
+                email: '',
+                subject: '',
+                message: ''
+            });
+        } catch (error) {
+            console.error('Submission error:', error);
+            toast.error('Failed to send message. Please try again later.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -159,8 +185,12 @@ const ContactPage = () => {
                                         ></textarea>
                                     </div>
 
-                                    <button type="submit" className="btn-primary btn-lg submit-btn">
-                                        Send Message
+                                    <button
+                                        type="submit"
+                                        className="btn-primary btn-lg submit-btn"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Sending...' : 'Send Message'}
                                     </button>
                                 </form>
                             </div>
@@ -176,7 +206,9 @@ const ContactPage = () => {
                                         </div>
                                         <div className="info-text">
                                             <span className="info-label">Email Us</span>
-                                            <span className="info-value">support@nepostore.xyz</span>
+                                            <span className="info-value">
+                                                <a href="mailto:support@nepostore.xyz" className="contact-link">support@nepostore.xyz</a>
+                                            </span>
                                             <span className="info-sub">Response time: within 24 hours</span>
                                         </div>
                                     </div>
@@ -187,7 +219,9 @@ const ContactPage = () => {
                                         </div>
                                         <div className="info-text">
                                             <span className="info-label">Phone Support</span>
-                                            <span className="info-value">+9779888888888</span>
+                                            <span className="info-value">
+                                                <a href="tel:+9779888888888" className="contact-link">+9779888888888</a>
+                                            </span>
                                             <span className="info-sub">Sun-Fri from 9am to 5pm</span>
                                         </div>
                                     </div>

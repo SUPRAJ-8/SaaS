@@ -17,6 +17,17 @@
     }
 }
 
+.contact-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.contact-link:hover {
+    color: #7e22ce;
+    text-decoration: underline;
+}
+
 .contact-container {
     max-width: 1200px;
     margin: 0 auto;
