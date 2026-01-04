@@ -163,12 +163,12 @@ const LandingPage = () => {
                         <a href="#faq" onClick={() => setIsMenuOpen(false)}>FAQ</a>
                         <div className="nav-menu-auth-mobile">
                             <Link to="/login" className="btn-text" onClick={() => setIsMenuOpen(false)}>Log In</Link>
-                            <Link to="/signup" className="btn-primary" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                            <Link to="/signup" className="btn-primary" onClick={() => setIsMenuOpen(false)}>Register Now</Link>
                         </div>
                     </div>
                     <div className="nav-auth">
                         <Link to="/login" className="btn-text desktop-only">Log In</Link>
-                        <Link to="/signup" className="btn-primary desktop-only">Register <FaArrowRight className="btn-arrow" /></Link>
+                        <Link to="/signup" className="btn-primary desktop-only">Register Now <FaArrowRight className="btn-arrow" /></Link>
                         <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="nav-whatsapp-btn">
                             <div className="wa-btn-icon">
                                 <FaWhatsapp />
@@ -199,10 +199,10 @@ const LandingPage = () => {
                             Empower your passion. Launch your store, connect with your audience, and sell anything from digital products to physical goods.
                         </p>
                         <div className="hero-actions">
-                            <Link to="/signup" className="btn-primary btn-lg">Start Selling Today</Link>
-                            <button className="btn-secondary btn-lg">
-                                <FaPlay className="btn-icon-small" /> See Demo
-                            </button>
+                            <Link to="/signup" className="btn-primary btn-lg">Register Now</Link>
+                            <a href="https://wa.me/9779840007310" target="_blank" rel="noopener noreferrer" className="btn-whatsapp btn-lg">
+                                <FaWhatsapp className="btn-icon-small" /> Contact us on WhatsApp
+                            </a>
                         </div>
                         <div className="hero-social-proof">
                             <div className="avatars">
@@ -523,32 +523,27 @@ const LandingPage = () => {
                     </div>
                     <div className="footer-links-col">
                         <h5>Product</h5>
-                        <a href="#root">Features</a>
-                        <a href="#root">Integrations</a>
-                        <a href="#root">Pricing</a>
-                        <a href="#root">Changelog</a>
+                        <a href="#features">Features</a>
+                        <a href="#pricing">Pricing</a>
                     </div>
                     <div className="footer-links-col">
-                        <h5>Resources</h5>
-                        <a href="#root">Documentation</a>
-                        <a href="#root">API Reference</a>
-                        <a href="#root">Community</a>
-                        <a href="#root">Blog</a>
+                        <h5>Support</h5>
+                        <a href="#support">Help Center</a>
+                        <Link to="/contact">Contact Us</Link>
+                        <a href="#faq">FAQ</a>
                     </div>
                     <div className="footer-links-col">
                         <h5>Company</h5>
-                        <a href="#root">About</a>
-                        <a href="#root">Careers</a>
-                        <a href="#root">Legal</a>
-                        <a href="#root">Contact</a>
+                        <a href="#about">About Us</a>
+                        <a href="#careers">Careers</a>
                     </div>
                 </div>
                 <div className="footer-bottom">
                     <p>&copy; 2026 CreatorFlow Inc. All rights reserved.</p>
-                    <div className="social-links">
-                        <span className="social-icon">🐦</span>
-                        <span className="social-icon">🐙</span>
-                        <span className="social-icon">💼</span>
+                    <div className="footer-legal">
+                        <Link to="/terms">Terms of Service</Link>
+                        <Link to="/privacy">Privacy Policy</Link>
+                        <Link to="/returns">Return & Refunds</Link>
                     </div>
                 </div>
             </footer>

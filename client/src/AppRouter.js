@@ -30,6 +30,7 @@ import SuperAdminClients from './components/Dashboard/SuperAdminClients';
 import LoginPage from './components/LoginPage';
 import GetStartedPage from './components/GetStartedPage';
 import SignupPage from './components/SignupPage';
+import ContactPage from './components/ContactPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 
@@ -88,6 +89,7 @@ function AppRouter() {
         {isLandingPage && (
           <>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             {/* Redirect auth pages to app subdomain */}
             <Route path="/login" element={<ExternalRedirect url={`${protocol}//app.${baseDomain}${port}/login`} />} />
             <Route path="/signup" element={<ExternalRedirect url={`${protocol}//app.${baseDomain}${port}/signup`} />} />
