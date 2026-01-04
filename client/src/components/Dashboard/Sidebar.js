@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import axios from 'axios';
-import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight } from 'react-icons/fa';
+import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight, FaPlug } from 'react-icons/fa';
 import StoresModal from './StoresModal';
 import API_URL from '../../apiConfig';
 import './Sidebar.css';
@@ -74,6 +74,7 @@ const Sidebar = () => {
         <ul>
           <li><NavLink to="/dashboard/pages"><FaFileAlt className="nav-icon" /> Pages</NavLink></li>
           <li><NavLink to="/dashboard/themes"><FaPalette className="nav-icon" /> Themes</NavLink></li>
+          <li><NavLink to="/dashboard/plugins"><FaPlug className="nav-icon" /> Plugins</NavLink></li>
           <li><NavLink to="/dashboard/store-settings"><FaCog className="nav-icon" /> Store Settings</NavLink></li>
         </ul>
       </nav>

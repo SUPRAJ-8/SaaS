@@ -90,28 +90,30 @@ const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === '
 console.log('[Init] Production mode:', isProd, '(Environment:', process.env.NODE_ENV, ')');
 
 // Cookie session configuration
-const cookieConfig = {
-  name: 'session',
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  keys: ['ecommerce_secret_key'],
-  httpOnly: true
-};
+app.use((req, res, next) => {
+  const cookieConfig = {
+    name: 'session',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    keys: ['ecommerce_secret_key'],
+    httpOnly: true
+  };
 
-if (isProd) {
-  // Production: cross-domain cookies for Vercel -> Render
-  cookieConfig.sameSite = 'none';
-  cookieConfig.secure = true;
-  cookieConfig.domain = '.nepostore.xyz'; // Allow cookies across subdomains
-} else {
-  // Development: allow cookies across localhost subdomains
-  cookieConfig.sameSite = 'lax';
-  cookieConfig.secure = false;
-  // Note: Some browsers don't support .localhost, so we'll set domain dynamically
-  // For now, don't set domain in dev to allow cookies on both localhost and app.localhost
-  // cookieConfig.domain = '.localhost';
-}
+  if (isProd) {
+    cookieConfig.sameSite = 'none';
+    cookieConfig.secure = true;
 
-app.use(cookieSession(cookieConfig));
+    // Only set domain if we're actually on the nepostore domain
+    // This allows cookies to work both on custom domain and default render/vercel URLs
+    if (req.hostname.endsWith('nepostore.xyz')) {
+      cookieConfig.domain = '.nepostore.xyz';
+    }
+  } else {
+    cookieConfig.sameSite = 'lax';
+    cookieConfig.secure = false;
+  }
+
+  cookieSession(cookieConfig)(req, res, next);
+});
 
 // Fix for Passport 0.6.0+
 app.use((req, res, next) => {

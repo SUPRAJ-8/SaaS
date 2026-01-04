@@ -14,25 +14,27 @@ const ProtectedRoute = ({ children }) => {
       // If API_URL is set, use it directly
       const authUrl = API_URL ? `${API_URL}/auth/current_user` : '/auth/current_user';
       console.log('🔍 Checking auth with URL:', authUrl, 'API_URL:', API_URL);
-      
+
       const performAuthCheck = async (url) => {
-        console.log('🔍 Performing auth check:', url);
         const response = await axios.get(url, {
           withCredentials: true
         });
         console.log('✅ Auth check response:', response.data);
-        if (response.data && response.data.clientId) {
+
+        // Check if user is authenticated (has an id or _id)
+        if (response.data && (response.data._id || response.data.id)) {
+          console.log('✅ User is authenticated:', response.data.email);
           setIsAuthenticated(true);
           setLoading(false);
           return true;
         } else {
-          console.log('❌ No clientId in response');
+          console.log('❌ User not found or not authenticated in response');
           setIsAuthenticated(false);
           setLoading(false);
           return false;
         }
       };
-      
+
       try {
         const success = await performAuthCheck(authUrl);
         if (success) return;
@@ -45,7 +47,7 @@ const ProtectedRoute = ({ children }) => {
           url: authUrl,
           hostname: window.location.hostname
         });
-        
+
         // If 404 and no API_URL (using proxy), try direct backend
         if (error.response?.status === 404 && !API_URL) {
           console.log('🔄 Auth check proxy failed (404), trying direct backend...');
@@ -67,7 +69,7 @@ const ProtectedRoute = ({ children }) => {
             }
           }
         }
-        
+
         // Retry once after a short delay if this might be a timing issue
         if (retryCount === 0 && error.response?.status === 401) {
           console.log('🔄 Retrying auth check after delay (401)...');
@@ -86,7 +88,7 @@ const ProtectedRoute = ({ children }) => {
       checkAuth();
     }, 200); // Increased delay
 
-    
+
     return () => clearTimeout(timer);
   }, []);
 

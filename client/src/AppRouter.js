@@ -27,6 +27,7 @@ import StoreSettings from './components/Dashboard/StoreSettings';
 import Pages from './components/Dashboard/Pages';
 import PageBuilder from './components/Dashboard/PageBuilder';
 import SuperAdminClients from './components/Dashboard/SuperAdminClients';
+import Plugins from './components/Dashboard/Plugins';
 import LoginPage from './components/LoginPage';
 import GetStartedPage from './components/GetStartedPage';
 import SignupPage from './components/SignupPage';
@@ -131,6 +132,7 @@ function AppRouter() {
               <Route path="store-settings" element={<StoreSettings />} />
               <Route path="pages" element={<Pages />} />
               <Route path="page-builder/:id" element={<PageBuilder />} />
+              <Route path="plugins" element={<Plugins />} />
             </Route>
             {/* Redirect root to /dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

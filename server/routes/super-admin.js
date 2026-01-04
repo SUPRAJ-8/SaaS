@@ -189,4 +189,60 @@ router.post('/site-settings', async (req, res) => {
     }
 });
 
+// @route   GET api/super-admin/dashboard-stats
+// @desc    Get aggregated stats for Super Admin Dashboard
+router.get('/dashboard-stats', async (req, res) => {
+    try {
+        const totalStores = await Client.countDocuments();
+        const activeSubscriptions = await Client.countDocuments({ subscriptionStatus: 'active' });
+        const totalUsers = await User.countDocuments();
+
+        // Calculate Total Platform Revenue (Sum of all orders)
+        const allOrders = await Order.find({}, 'payment.total');
+        const platformRevenue = allOrders.reduce((acc, order) => acc + (order.payment?.total || 0), 0);
+
+        // Get recent stores
+        const recentStores = await Client.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean();
+
+        // Get plan distribution
+        const planDistribution = await Client.aggregate([
+            { $group: { _id: '$subscriptionPlan', count: { $sum: 1 } } }
+        ]);
+
+        // Get monthly signups (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const monthlySignups = await Client.aggregate([
+            { $match: { createdAt: { $gte: sixMonthsAgo } } },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: '$createdAt' },
+                        year: { $year: '$createdAt' }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1 } }
+        ]);
+
+        res.json({
+            totalStores,
+            activeSubscriptions,
+            totalUsers,
+            platformRevenue,
+            recentStores,
+            planDistribution,
+            monthlySignups
+        });
+    } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

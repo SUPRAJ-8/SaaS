@@ -27,6 +27,14 @@ import API_URL from '../../apiConfig';
 import ConfirmationModal from './ConfirmationModal';
 import './SuperAdminDashboard.css';
 
+// Helper function to get API URL with fallback - defined outside to prevent reference changes
+const getApiUrl = (endpoint) => {
+    if (API_URL) {
+        return `${API_URL}${endpoint}`;
+    }
+    return endpoint;
+};
+
 const SuperAdminClients = () => {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,20 +51,21 @@ const SuperAdminClients = () => {
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeletingFromModal, setIsDeletingFromModal] = useState(false);
 
-    // Tab switching state
-    const [activeTab, setActiveTab] = useState('tenants');
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [stats, setStats] = useState({
+        totalStores: 0,
+        activeSubscriptions: 0,
+        totalUsers: 0,
+        platformRevenue: 0,
+        recentStores: [],
+        planDistribution: [],
+        monthlySignups: []
+    });
+    const [statsLoading, setStatsLoading] = useState(true);
 
     // Live Chat state
     const [tawkId, setTawkId] = useState('');
     const [isSavingChat, setIsSavingChat] = useState(false);
-
-    // Helper function to get API URL with fallback
-    const getApiUrl = (endpoint) => {
-        if (API_URL) {
-            return `${API_URL}${endpoint}`;
-        }
-        return endpoint;
-    };
 
     // Helper function to handle API calls with fallback
     const apiCall = useCallback(async (method, endpoint, data = null, config = {}) => {
@@ -100,7 +109,7 @@ const SuperAdminClients = () => {
             }
             throw error;
         }
-    }, [getApiUrl]);
+    }, []);
 
     const fetchSiteSettings = useCallback(async () => {
         try {
@@ -127,10 +136,24 @@ const SuperAdminClients = () => {
         }
     }, [apiCall]);
 
+    const fetchDashboardStats = useCallback(async () => {
+        try {
+            const response = await apiCall('get', '/api/super-admin/dashboard-stats');
+            if (response.data) {
+                setStats(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+        } finally {
+            setStatsLoading(false);
+        }
+    }, [apiCall]);
+
     useEffect(() => {
         fetchClients();
         fetchSiteSettings();
-    }, [fetchClients, fetchSiteSettings]);
+        fetchDashboardStats();
+    }, [fetchClients, fetchSiteSettings, fetchDashboardStats]);
 
     const saveSiteSettings = async () => {
         if (!tawkId) {
@@ -248,7 +271,7 @@ const SuperAdminClients = () => {
 
                 <div className="sidebar-group">
                     <div className="sidebar-label">Main Menu</div>
-                    <div className="sidebar-item">
+                    <div className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
                         <FaChartLine className="sidebar-icon" /> Dashboard
                     </div>
                     <div className={`sidebar-item ${activeTab === 'tenants' ? 'active' : ''}`} onClick={() => setActiveTab('tenants')}>
@@ -278,7 +301,155 @@ const SuperAdminClients = () => {
 
             {/* Main Content Area */}
             <main className="saas-main">
-                {activeTab === 'tenants' ? (
+                {activeTab === 'dashboard' ? (
+                    <>
+                        <header className="top-nav">
+                            <div className="page-title-section">
+                                <h2>Super Admin Dashboard</h2>
+                                <p>Platform overview and business performance</p>
+                            </div>
+                            <div className="top-actions">
+                                <div className="notification-btn">
+                                    <FaBell />
+                                </div>
+                                <button className="btn-add-tenant" onClick={() => toast.info('Deployment controls coming soon')}>
+                                    <FaWrench /> System Health
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* Stat Cards */}
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Total Platform Revenue
+                                    <div className="stat-icon-bg"><FaDollarSign /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    ${stats.platformRevenue.toLocaleString()} <span className="stat-trend"><FaArrowUp /> 12%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Total Tenants
+                                    <div className="stat-icon-bg"><FaStore /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    {stats.totalStores} <span className="stat-trend"><FaArrowUp /> {Math.round((stats.totalStores / 10) * 100) || 0}%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Total Platform Users
+                                    <div className="stat-icon-bg"><FaUsers /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    {stats.totalUsers} <span className="stat-trend"><FaArrowUp /> 8%</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-card-header">
+                                    Active Subscriptions
+                                    <div className="stat-icon-bg"><FaCheckCircle /></div>
+                                </div>
+                                <div className="stat-card-value">
+                                    {stats.activeSubscriptions} <span className="stat-trend"><FaArrowUp /> 5%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="secondary-section" style={{ gridTemplateColumns: '2fr 1fr', marginBottom: '32px' }}>
+                            <div className="tenants-section" style={{ marginBottom: 0 }}>
+                                <div className="section-header">
+                                    <h3>Recently Joined Stores</h3>
+                                    <button className="btn-page active" onClick={() => setActiveTab('tenants')}>View All</button>
+                                </div>
+                                <table className="tenants-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Store Name</th>
+                                            <th>Owner</th>
+                                            <th>Plan</th>
+                                            <th>Joined</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {stats.recentStores.map(store => (
+                                            <tr key={store._id}>
+                                                <td>
+                                                    <div className="modal-store-name-wrapper">
+                                                        <div className="modal-store-logo">{store.name.charAt(0).toUpperCase()}</div>
+                                                        <div className="modal-store-name">
+                                                            <strong>{store.name}</strong>
+                                                            <span>{store.subdomain}.nepostore.xyz</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{store.ownerEmail}</td>
+                                                <td><span className="plan-pill">{store.subscriptionPlan}</span></td>
+                                                <td>{new Date(store.createdAt).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="inner-panel">
+                                <h3 style={{ marginBottom: '24px', fontSize: '1.1rem' }}>Plan Distribution</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {stats.planDistribution.map(plan => (
+                                        <div key={plan._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px' }}>
+                                            <span style={{ textTransform: 'capitalize', fontWeight: '600' }}>{plan._id || 'Free'}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ width: '100px', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${(plan.count / stats.totalStores) * 100}%`, height: '100%', background: 'var(--brand-blue)' }}></div>
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{plan.count}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="secondary-section">
+                            <div className="inner-panel">
+                                <div className="panel-title"><FaChartLine className="icon" /> Growth Analytics</div>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monthly signup trends and user acquisition data.</p>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '150px', marginTop: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border-color)' }}>
+                                    {stats.monthlySignups.map((data, i) => (
+                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                            <div
+                                                style={{
+                                                    width: '100%',
+                                                    height: `${(data.count / (Math.max(...stats.monthlySignups.map(d => d.count)) || 1)) * 100}px`,
+                                                    background: 'var(--brand-blue)',
+                                                    borderRadius: '4px 4px 0 0',
+                                                    opacity: 0.7 + (i * 0.05)
+                                                }}
+                                            />
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>M{data._id.month}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="inner-panel">
+                                <div className="panel-title"><FaBullhorn className="icon" /> Platform Announcements</div>
+                                <div className="inner-item-row" style={{ marginBottom: '12px' }}>
+                                    <span>System Maintenance - Jan 15</span>
+                                    <FaEdit style={{ cursor: 'pointer', color: 'var(--brand-blue)' }} onClick={() => toast.info('Announcement editor coming soon')} />
+                                </div>
+                                <div className="inner-item-row">
+                                    <span>New Feature: AI Logo Generator</span>
+                                    <FaEdit style={{ cursor: 'pointer', color: 'var(--brand-blue)' }} />
+                                </div>
+                                <button className="btn-add-tenant" style={{ width: '100%', marginTop: '20px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid var(--border-color)' }}>
+                                    <FaPlus /> Create Announcement
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                ) : activeTab === 'tenants' ? (
                     <>
                         <header className="top-nav">
                             <div className="page-title-section">
