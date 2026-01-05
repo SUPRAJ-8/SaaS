@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrashAlt, FaEdit } from 'react-icons/fa';
+import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Customers.css'; // Reusing customer styles for now
@@ -16,6 +16,9 @@ const Products = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
@@ -57,6 +60,25 @@ const Products = () => {
       setSelectedProducts(prev => prev.filter(pid => pid !== id));
     }
   };
+
+  // Filter and Paginate
+  const filteredProducts = React.useMemo(() => {
+    return products.filter(p => {
+      const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesStatus && matchesSearch;
+    });
+  }, [products, statusFilter, searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentItems = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleEditClick = (product) => {
     setProductToEdit(product);
@@ -279,28 +301,59 @@ const Products = () => {
         onConfirm={handleConfirmBulkDelete}
         itemName={`${selectedProducts.length} products`}
       />
-      <div className="page-header">
-        <div className="page-header-top">
+      {/* Top Header: Title & Actions */}
+      <div className="customers-page-header">
+        <div className="header-title-section">
           <h2 className="page-title">Products</h2>
-          <button className="btn btn-primary" onClick={handleAddClick}>Add Product</button>
+          <p className="page-description">Manage your product catalog, inventory, and pricing.</p>
         </div>
-        <div className="filters-container">
-          <div className="status-filters">
-            <button className={`btn ${statusFilter === 'All' ? 'btn-active' : ''}`} onClick={() => setStatusFilter('All')}>All</button>
-            <button className={`btn ${statusFilter === 'Active' ? 'btn-active' : ''}`} onClick={() => setStatusFilter('Active')}>Active</button>
-            <button className={`btn ${statusFilter === 'Draft' ? 'btn-active' : ''}`} onClick={() => setStatusFilter('Draft')}>Draft</button>
-            <button className={`btn ${statusFilter === 'Archived' ? 'btn-active' : ''}`} onClick={() => setStatusFilter('Archived')}>Archived</button>
-          </div>
-          {selectedProducts.length > 0 && (
-            <div className="bulk-actions">
-              <h2><b>Bulk Actions</b></h2>
-              <button className="btn btn-danger" onClick={handleBulkDelete}>Delete</button>
-              <button className="btn btn-warning" onClick={() => handleBulkUpdateStatus('Draft')}>Move to Draft</button>
-              <button className="btn btn-success" onClick={() => handleBulkUpdateStatus('Archived')}>Move to Archive</button>
-            </div>
-          )}
+        <div className="header-actions">
+          <button className="btn-outline-white icon-text-btn" title="Print">
+            <FaPrint /> Print
+          </button>
+          <button className="btn-outline-white icon-text-btn">
+            <FaFileExport /> Export
+          </button>
+          <button className="btn btn-primary add-customer-btn" onClick={handleAddClick}>
+            <FaPlus /> Add Product
+          </button>
         </div>
       </div>
+
+      {/* Toolbar: Tabs & Search */}
+      <div className="customers-toolbar">
+        {/* Left Side: Pill Tabs */}
+        <div className="status-filters-pills">
+          {['All', 'Active', 'Draft', 'Archived'].map(status => (
+            <button
+              key={status}
+              className={`pill-tab ${statusFilter === status ? 'active' : ''}`}
+              onClick={() => setStatusFilter(status)}
+              style={{ textTransform: 'capitalize' }}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Side: Search & Filter */}
+        <div className="toolbar-right-section">
+          <div className="search-wrapper-compact">
+            <FaSearch className="search-icon-grey" />
+            <input type="text" placeholder="Search product name" className="search-input-compact" />
+          </div>
+        </div>
+      </div>
+
+      {/* Conditional Bulk Actions */}
+      {selectedProducts.length > 0 && (
+        <div className="bulk-actions-bar" style={{ marginTop: 0, marginBottom: '20px' }}>
+          <span className="bulk-count" style={{ color: 'white', marginRight: '1rem', fontWeight: 'bold' }}>{selectedProducts.length} selected</span>
+          <button className="btn btn-danger" onClick={handleBulkDelete} style={{ marginRight: '8px' }}>Delete</button>
+          <button className="btn btn-warning" onClick={() => handleBulkUpdateStatus('Draft')} style={{ marginRight: '8px' }}>Move to Draft</button>
+          <button className="btn btn-success" onClick={() => handleBulkUpdateStatus('Archived')}>Move to Archive</button>
+        </div>
+      )}
       <div className="customers-table-container">
         <table className="customers-table">
           <thead>
@@ -377,11 +430,32 @@ const Products = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center' }}>No products found.</td>
+                <td colSpan="10" className="no-data-cell">
+                  <div className="no-data-content">
+                    <FaInbox className="no-data-icon" />
+                    <span>No products found.</span>
+                  </div>
+                </td>
               </tr>
             )}
           </tbody>
         </table>
+        <div className="table-footer">
+          <div className="showing-results">
+            Showing <span className="text-bold">1</span> to <span className="text-bold">{products.length > 3 ? 3 : products.length}</span> of <span className="text-bold">{products.length}</span> results
+          </div>
+          <div className="pagination-controls">
+            <button className="pagination-btn disabled">
+              <FaChevronLeft />
+            </button>
+            <button className="pagination-btn active">1</button>
+            <button className="pagination-btn">2</button>
+            <button className="pagination-btn">3</button>
+            <button className="pagination-btn">
+              <FaChevronRight />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

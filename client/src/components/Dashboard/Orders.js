@@ -6,7 +6,7 @@ import axios from 'axios';
 import OrderDetailsModal from './OrderDetailsModal';
 import ConfirmationModal from './ConfirmationModal';
 import LabelsModal from './LabelsModal';
-import { FaArrowUp, FaArrowDown, FaEdit, FaTrashAlt, FaStar, FaFilter, FaListUl, FaChartLine, FaFileInvoice, FaTruck, FaSlidersH, FaSearch, FaPlus, FaFileExport, FaInbox } from 'react-icons/fa';
+import { FaArrowUp, FaArrowDown, FaEdit, FaTrashAlt, FaStar, FaFilter, FaListUl, FaChartLine, FaFileInvoice, FaTruck, FaSlidersH, FaSearch, FaPlus, FaFileExport, FaInbox, FaChevronLeft, FaChevronRight, FaPrint } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Customers.css'; // Reusing customer styles for now
@@ -538,77 +538,63 @@ const Orders = () => {
 
   return (
     <div className="orders-container">
-      <div className="filter-search-container">
-        <div className="filters-wrapper">
-          {/* Existing filter groups */}
-          <div className="filter-group">
-            <span className="filter-label">Status</span>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
-              <option value="All">All</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipping">Shipping</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="refunded">Refunded</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <span className="filter-label">Label</span>
-            <select value={labelFilter} onChange={(e) => setLabelFilter(e.target.value)} className="filter-select">
-              <option value="All">All</option>
-              {uniqueLabels.map(label => (
-                <option key={label} value={label}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-group">
-            <span className="filter-label">Payment:</span>
-            <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)} className="filter-select">
-              <option value="All">All</option>
-              <option value="COD">COD</option>
-              <option value="QR">QR</option>
-            </select>
-          </div>
-          <div className="filter-group date-filter-group">
-            <select
-              className="filter-select date-preset-select"
-              onChange={(e) => {
-                const value = e.target.value;
-                const now = new Date();
-                switch (value) {
-                  case 'today':
-                    setStartDate(startOfToday());
-                    break;
-                  case 'last3days':
-                    setStartDate(subDays(now, 3));
-                    break;
-                  case 'last7days':
-                    setStartDate(subDays(now, 7));
-                    break;
-                  case 'last30days':
-                    setStartDate(subDays(now, 30));
-                    break;
-                  case 'last3months':
-                    setStartDate(subMonths(now, 3));
-                    break;
-                  case 'thisyear':
-                    setStartDate(startOfYear(now));
-                    break;
-                  default:
-                    setStartDate(subDays(now, 7));
-                }
-                setEndDate(now);
-              }}
-              defaultValue="last7days"
-            >
-              <option value="today">Today</option>
-              <option value="last3days">Last 3 days</option>
-              <option value="last7days">Last 7 days</option>
-              <option value="last30days">Last 30 days</option>
-              <option value="last3months">Last 3 months</option>
-              <option value="thisyear">This year</option>
-            </select>
+      <div className="customers-page-header">
+        <div className="header-title-section">
+          <h1 className="page-title">Orders</h1>
+          <p className="page-description">Manage and track your store orders efficiently.</p>
+        </div>
+        <div className="header-actions">
+          <button className="export-btn">
+            <FaPrint />
+            <span>Print</span>
+          </button>
+          <button className="export-btn" onClick={() => { /* Export logic */ }}>
+            <FaFileExport />
+            <span>Export</span>
+          </button>
+          <button className="add-customer-btn">
+            <FaPlus />
+            <span>Create Order</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="customers-toolbar">
+        <div className="status-filters-pills">
+          <button
+            className={`pill-tab ${statusFilter === 'All' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('All')}
+          >
+            All
+          </button>
+          <button
+            className={`pill-tab ${statusFilter === 'pending' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('pending')}
+          >
+            Pending
+          </button>
+          <button
+            className={`pill-tab ${statusFilter === 'processing' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('processing')}
+          >
+            Processing
+          </button>
+          <button
+            className={`pill-tab ${statusFilter === 'delivered' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('delivered')}
+          >
+            Delivered
+          </button>
+          <button
+            className={`pill-tab ${statusFilter === 'cancelled' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('cancelled')}
+          >
+            Cancelled
+          </button>
+        </div>
+
+        <div className="toolbar-right-section">
+          <div className="filter-group date-filter-group" style={{ margin: 0, border: 'none', background: 'none' }}>
             <DatePicker
               selectsRange={true}
               startDate={startDate}
@@ -623,29 +609,29 @@ const Orders = () => {
               showTimeSelect
               timeFormat="HH:mm"
               timeIntervals={15}
-              customInput={<button>{`${format(startDate, 'MMM d, yyyy')} - ${endDate ? format(endDate, 'MMM d, yyyy') : ''}`}</button>}
+              customInput={
+                <button className="filter-btn-square" style={{ width: 'auto', padding: '0 12px', gap: '8px', fontSize: '0.85rem' }}>
+                  <FaSlidersH />
+                  {`${format(startDate, 'MMM d')} - ${endDate ? format(endDate, 'MMM d') : ''}`}
+                </button>
+              }
             />
           </div>
-        </div>
-        <div className="search-actions-wrapper">
-          <div className="search-wrapper">
-            <FaSearch className="search-icon" />
+
+          <div className="search-wrapper-compact">
+            <FaSearch className="search-icon-compact" />
             <input
               type="text"
-              placeholder="Search orders id, phone, email or name...."
+              placeholder="Search orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="filter-sales-input"
+              className="search-input-compact"
             />
           </div>
-          <div className="actions-wrapper">
-            <button className="action-button export-btn">
-              <FaFileExport />
-              <span>Export to Excel</span>
-            </button>
-            <button className="action-button create-order-btn">
-              <FaPlus />
-              <span>Create Order</span>
+
+          <div className="filter-group" style={{ margin: 0 }}>
+            <button className="filter-btn-square">
+              <FaFilter />
             </button>
           </div>
         </div>
@@ -828,6 +814,22 @@ const Orders = () => {
             )}
           </tbody>
         </table>
+        <div className="table-footer">
+          <div className="showing-results">
+            Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedOrders.length > 3 ? 3 : sortedOrders.length}</span> of <span className="text-bold">{sortedOrders.length}</span> results
+          </div>
+          <div className="pagination-controls">
+            <button className="pagination-btn disabled">
+              <FaChevronLeft />
+            </button>
+            <button className="pagination-btn active">1</button>
+            <button className="pagination-btn">2</button>
+            <button className="pagination-btn">3</button>
+            <button className="pagination-btn">
+              <FaChevronRight />
+            </button>
+          </div>
+        </div>
       </div>
       <ToastContainer
         position="top-right"

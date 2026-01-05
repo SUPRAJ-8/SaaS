@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox } from 'react-icons/fa';
+import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaUsers, FaSignal, FaEnvelope, FaPlus, FaFilter, FaChevronLeft, FaChevronRight, FaPrint } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import AddUserModal from './AddUserModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -20,39 +20,39 @@ const StoreUsers = () => {
       setUsers(JSON.parse(savedUsers));
     } else {
       const mockUsers = [
-      {
-        _id: '1',
-        name: 'John Doe',
-        gender: 'male',
-        avatar: 'https://www.w3schools.com/howto/img_avatar.png',
-        email: 'john.doe@example.com',
-        role: 'Admin',
-        status: 'Active',
-        emailNotification: true,
-        createdAt: '2025-12-09T14:00:00.000Z',
-      },
-      {
-        _id: '2',
-        name: 'Jane Smith',
-        gender: 'female',
-        avatar: 'https://www.w3schools.com/howto/img_avatar2.png',
-        email: 'jane.smith@example.com',
-        role: 'Manager',
-        status: 'Active',
-        emailNotification: false,
-        createdAt: '2025-12-08T11:30:00.000Z',
-      },
-      {
-        _id: '3',
-        name: 'Peter Jones',
-        gender: 'male',
-        avatar: 'https://www.w3schools.com/howto/img_avatar.png',
-        email: 'peter.jones@example.com',
-        role: 'Staff',
-        status: 'Inactive',
-        emailNotification: true,
-        createdAt: '2025-12-07T09:00:00.000Z',
-      },
+        {
+          _id: '1',
+          name: 'John Doe',
+          gender: 'male',
+          avatar: 'https://www.w3schools.com/howto/img_avatar.png',
+          email: 'john.doe@example.com',
+          role: 'Admin',
+          status: 'Active',
+          emailNotification: true,
+          createdAt: '2025-12-09T14:00:00.000Z',
+        },
+        {
+          _id: '2',
+          name: 'Jane Smith',
+          gender: 'female',
+          avatar: 'https://www.w3schools.com/howto/img_avatar2.png',
+          email: 'jane.smith@example.com',
+          role: 'Manager',
+          status: 'Active',
+          emailNotification: false,
+          createdAt: '2025-12-08T11:30:00.000Z',
+        },
+        {
+          _id: '3',
+          name: 'Peter Jones',
+          gender: 'male',
+          avatar: 'https://www.w3schools.com/howto/img_avatar.png',
+          email: 'peter.jones@example.com',
+          role: 'Staff',
+          status: 'Inactive',
+          emailNotification: true,
+          createdAt: '2025-12-07T09:00:00.000Z',
+        },
       ];
       setUsers(mockUsers);
     }
@@ -143,8 +143,8 @@ const StoreUsers = () => {
   };
 
   const handleUserAdded = (newUser) => {
-    const avatar = newUser.gender === 'male' 
-      ? 'https://www.w3schools.com/howto/img_avatar.png' 
+    const avatar = newUser.gender === 'male'
+      ? 'https://www.w3schools.com/howto/img_avatar.png'
       : 'https://www.w3schools.com/howto/img_avatar2.png';
 
     const userWithDefaults = {
@@ -169,24 +169,92 @@ const StoreUsers = () => {
     return new Date(dateString).toLocaleString('en-US', options).replace(',', '');
   };
 
+  // Metrics calculations
+  const totalUsers = users.length;
+  const activeUsers = users.filter(u => u.status === 'Active').length;
+  const pendingInvites = 3; // Mocked as per request/image since we don't have a status for this yet
+
   return (
     <div className="store-users-page">
-      <div className="page-header">
-        <div className="page-header-left">
-          <h2 className="page-title">Store Users</h2>
-          <div className="store-users-search">
-            <FaSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+      <div className="customers-page-header">
+        <div className="header-title-section">
+          <h1 className="page-title">Store Users</h1>
+          <p className="page-description">Manage access, roles, and permissions for your team.</p>
+        </div>
+        <div className="header-actions">
+          <button className="export-btn">
+            <FaPrint />
+            <span>Print</span>
+          </button>
+          <button className="export-btn">
+            <FaSignal />
+            <span>Active Log</span>
+          </button>
+          <button onClick={() => setIsModalOpen(true)} className="add-customer-btn">
+            <FaPlus />
+            <span>Invite User</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Section */}
+      <div className="category-stats-row">
+        <div className="category-stat-card">
+          <div className="category-stat-content">
+            <h3>TOTAL USERS</h3>
+            <p className="category-stat-value">{totalUsers}</p>
+          </div>
+          <div className="category-stat-icon-wrapper blue">
+            <FaUsers />
           </div>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="add-user-btn">Invite user</button>
+        <div className="category-stat-card">
+          <div className="category-stat-content">
+            <h3>ACTIVE NOW</h3>
+            <p className="category-stat-value">{activeUsers}</p>
+          </div>
+          <div className="category-stat-icon-wrapper green">
+            <FaSignal />
+          </div>
+        </div>
+        <div className="category-stat-card">
+          <div className="category-stat-content">
+            <h3>PENDING INVITES</h3>
+            <p className="category-stat-value">{pendingInvites}</p>
+          </div>
+          <div className="category-stat-icon-wrapper purple">
+            <FaEnvelope />
+          </div>
+        </div>
       </div>
+
+      <div className="customers-toolbar">
+        <div className="status-filters-pills">
+          <button className="pill-tab active">All Users</button>
+          <button className="pill-tab">Admins</button>
+          <button className="pill-tab">Staff</button>
+        </div>
+
+        <div className="toolbar-right-section">
+          <div className="search-wrapper-compact">
+            <FaSearch className="search-icon-compact" />
+            <input
+              type="text"
+              placeholder="Search team members..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input-compact"
+            />
+          </div>
+
+          <div className="filter-group" style={{ margin: 0 }}>
+            <button className="filter-btn-square">
+              <FaFilter />
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="users-table-container">
         <table className="users-table">
           <thead>
@@ -295,6 +363,22 @@ const StoreUsers = () => {
             )}
           </tbody>
         </table>
+        <div className="table-footer">
+          <div className="showing-results">
+            Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedUsers.length}</span> of <span className="text-bold">24</span> results
+          </div>
+          <div className="pagination-controls">
+            <button className="pagination-btn disabled">
+              <FaChevronLeft />
+            </button>
+            <button className="pagination-btn active">1</button>
+            <button className="pagination-btn">2</button>
+            <button className="pagination-btn">3</button>
+            <button className="pagination-btn">
+              <FaChevronRight />
+            </button>
+          </div>
+        </div>
       </div>
       <AddUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUserAdded={handleUserAdded} />
       <DeleteConfirmModal

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import axios from 'axios';
-import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight, FaPlug } from 'react-icons/fa';
+import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight, FaPlug, FaTimes } from 'react-icons/fa';
 import StoresModal from './StoresModal';
 import API_URL from '../../apiConfig';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [isStoresModalOpen, setIsStoresModalOpen] = useState(false);
   const [client, setClient] = useState(null);
 
@@ -36,46 +36,57 @@ const Sidebar = () => {
     };
   }, []);
 
+  const handleNavClick = () => {
+    if (window.innerWidth <= 1024 && isOpen) {
+      toggleSidebar();
+    }
+  };
+
   return (
-    <aside className="dashboard-sidebar">
-      <div className="dashboard-sidebar-header" onClick={() => setIsStoresModalOpen(true)}>
-        <div className="logo">
-          {client?.settings?.logo ? (
-            <img src={client.settings.logo} alt="Store Logo" className="sidebar-logo-img" />
-          ) : (
-            client?.name ? client.name.charAt(0).toUpperCase() : 'N'
-          )}
-        </div>
-        <div className="company-details">
-          <div className="company-name-wrapper">
-            <span className="company-name">
-              {client?.settings?.brandName?.trim() || client?.name || 'My Store'}
-            </span>
-            <FaChevronRight className="header-arrow" />
+    <aside className={`dashboard-sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="dashboard-sidebar-header">
+        <div className="header-brand-section" onClick={() => setIsStoresModalOpen(true)}>
+          <div className="logo">
+            {client?.settings?.logo ? (
+              <img src={client.settings.logo} alt="Store Logo" className="sidebar-logo-img" />
+            ) : (
+              client?.name ? client.name.charAt(0).toUpperCase() : 'N'
+            )}
+          </div>
+          <div className="company-details">
+            <div className="company-name-wrapper">
+              <span className="company-name">
+                {client?.settings?.brandName?.trim() || client?.name || 'My Store'}
+              </span>
+              <FaChevronRight className="header-arrow" />
+            </div>
           </div>
         </div>
+        <button className="mobile-close-btn" onClick={toggleSidebar}>
+          <FaTimes />
+        </button>
       </div>
       <StoresModal isOpen={isStoresModalOpen} onClose={() => setIsStoresModalOpen(false)} />
       <nav className="dashboard-sidebar-nav">
         <h3 className="nav-title">Main Links</h3>
         <ul>
-          <li><NavLink to="/dashboard" end><FaHome className="nav-icon" /> Home</NavLink></li>
-          <li><NavLink to="/dashboard/store-user"><FaStore className="nav-icon" /> Store Users</NavLink></li>
-          <li><NavLink to="/dashboard/customers" className={({ isActive }) => isActive ? 'active' : ''}><FaUsers className="nav-icon" /> Customers</NavLink></li>
-          <li><NavLink to="/dashboard/products"><FaBoxOpen className="nav-icon" /> Products</NavLink></li>
-          <li><NavLink to="/dashboard/bulk-upload"><FaUpload className="nav-icon" /> Bulk Upload</NavLink></li>
-          <li><NavLink to="/dashboard/categories"><FaTags className="nav-icon" /> Categories</NavLink></li>
+          <li><NavLink to="/dashboard" end onClick={handleNavClick}><FaHome className="nav-icon" /> Home</NavLink></li>
+          <li><NavLink to="/dashboard/store-user" onClick={handleNavClick}><FaStore className="nav-icon" /> Store Users</NavLink></li>
+          <li><NavLink to="/dashboard/customers" className={({ isActive }) => isActive ? 'active' : ''} onClick={handleNavClick}><FaUsers className="nav-icon" /> Customers</NavLink></li>
+          <li><NavLink to="/dashboard/products" onClick={handleNavClick}><FaBoxOpen className="nav-icon" /> Products</NavLink></li>
+          <li><NavLink to="/dashboard/bulk-upload" onClick={handleNavClick}><FaUpload className="nav-icon" /> Bulk Upload</NavLink></li>
+          <li><NavLink to="/dashboard/categories" onClick={handleNavClick}><FaTags className="nav-icon" /> Categories</NavLink></li>
 
 
-          <li><NavLink to="/dashboard/orders"><FaShoppingCart className="nav-icon" /> Orders</NavLink></li>
-          <li><NavLink to="/dashboard/issue"><FaExclamationCircle className="nav-icon" /> Issues</NavLink></li>
+          <li><NavLink to="/dashboard/orders" onClick={handleNavClick}><FaShoppingCart className="nav-icon" /> Orders</NavLink></li>
+          <li><NavLink to="/dashboard/issue" onClick={handleNavClick}><FaExclamationCircle className="nav-icon" /> Issues</NavLink></li>
         </ul>
         <h3 className="nav-title">Customization</h3>
         <ul>
-          <li><NavLink to="/dashboard/pages"><FaFileAlt className="nav-icon" /> Pages</NavLink></li>
-          <li><NavLink to="/dashboard/themes"><FaPalette className="nav-icon" /> Themes</NavLink></li>
-          <li><NavLink to="/dashboard/plugins"><FaPlug className="nav-icon" /> Plugins</NavLink></li>
-          <li><NavLink to="/dashboard/store-settings"><FaCog className="nav-icon" /> Store Settings</NavLink></li>
+          <li><NavLink to="/dashboard/pages" onClick={handleNavClick}><FaFileAlt className="nav-icon" /> Pages</NavLink></li>
+          <li><NavLink to="/dashboard/themes" onClick={handleNavClick}><FaPalette className="nav-icon" /> Themes</NavLink></li>
+          <li><NavLink to="/dashboard/plugins" onClick={handleNavClick}><FaPlug className="nav-icon" /> Plugins</NavLink></li>
+          <li><NavLink to="/dashboard/store-settings" onClick={handleNavClick}><FaCog className="nav-icon" /> Store Settings</NavLink></li>
         </ul>
       </nav>
     </aside>

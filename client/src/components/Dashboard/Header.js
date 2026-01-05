@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSignOutAlt } from 'react-icons/fa';
+import { FaSignOutAlt, FaBars } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ toggleSidebar }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,11 +29,11 @@ const Header = () => {
       await axios.get(`${API_URL}/auth/logout`, {
         withCredentials: true
       });
-      
+
       // Determine redirect URL based on current location
       const hostname = window.location.hostname;
       let redirectUrl = '/login';
-      
+
       if (hostname.includes('nepostore.xyz')) {
         // Production: stay on app subdomain
         redirectUrl = 'https://app.nepostore.xyz/login';
@@ -44,7 +44,7 @@ const Header = () => {
         // Development: use relative path
         redirectUrl = '/login';
       }
-      
+
       // Redirect to login page
       window.location.href = redirectUrl;
     } catch (error) {
@@ -57,6 +57,9 @@ const Header = () => {
   return (
     <header className="dashboard-header">
       <div className="header-left">
+        <button className="mobile-menu-btn" onClick={toggleSidebar}>
+          <FaBars />
+        </button>
         <div className="header-logo">
           <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M14 0L28 14L14 28L0 14L14 0Z" fill="#5866f2" />

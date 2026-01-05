@@ -5,9 +5,7 @@ const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     image: null,
-    description: '',
     status: 'Active',
-    section: 'shop',
   });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -16,17 +14,13 @@ const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
       setFormData({
         name: category.name || '',
         image: category.image || null,
-        description: category.description || '',
         status: category.status || 'Active',
-        section: category.section || 'shop',
       });
     } else {
       setFormData({
         name: '',
         image: null,
-        description: '',
         status: 'Active',
-        section: 'shop',
       });
     }
   }, [category, isOpen]);
@@ -131,14 +125,7 @@ const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
               </div>
             )}
           </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </div>
+
           <div className="form-group">
             <label>Status</label>
             <select
@@ -150,17 +137,7 @@ const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
               <option value="Inactive">Inactive</option>
             </select>
           </div>
-          <div className="form-group">
-            <label>Choose Section</label>
-            <select
-              name="section"
-              value={formData.section}
-              onChange={handleChange}
-            >
-              <option value="shop">Shop</option>
-              <option value="dashboard">Dashboard</option>
-            </select>
-          </div>
+
           <div className="form-actions">
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel

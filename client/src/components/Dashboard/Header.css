@@ -184,3 +184,35 @@
 .logout-icon {
   font-size: 1.1rem;
 }
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 8px;
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  /* Hide search box on mobile to save space */
+  .dashboard-search-box {
+    display: none;
+  }
+
+  /* Hide user details text, keep avatar */
+  .user-info-text {
+    display: none;
+  }
+
+  .header-company-name {
+    display: none;
+    /* Optional: hide company name if space is tight */
+  }
+}

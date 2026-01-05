@@ -101,6 +101,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     if (description !== undefined) categoryFields.description = description;
     if (status) categoryFields.status = status;
     if (section) categoryFields.section = section;
+    if (req.body.subcategories) categoryFields.subcategories = req.body.subcategories;
 
     let category = await Category.findById(req.params.id);
 
@@ -116,6 +117,24 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   } catch (err) {
     console.error('Error updating category:', err);
     res.status(500).json({ msg: 'Server Error', error: err.message });
+  }
+});
+
+// @route   DELETE api/categories/:id
+// @desc    Delete a category
+// @access  Public
+router.delete('/:id', async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ msg: 'Category not found' });
+    }
+
+    await Category.findByIdAndDelete(req.params.id);
+    res.json({ msg: 'Category removed' });
+  } catch (err) {
+    console.error('Error deleting category:', err);
+    res.status(500).send('Server Error');
   }
 });
 

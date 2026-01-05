@@ -12,11 +12,30 @@
   padding: 11px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  /* Space betwen brand and close button */
   border-bottom: 1px solid #f1f5f9;
   transition: background-color 0.2s ease;
   cursor: pointer;
   user-select: none;
+}
+
+.header-brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .dashboard-sidebar-header:hover {
@@ -143,4 +162,24 @@
 
 .dashboard-sidebar-nav li a.active .nav-icon {
   color: #5866f2;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    left: -260px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .dashboard-sidebar.open {
+    left: 0;
+  }
+
+  .mobile-close-btn {
+    display: block;
+  }
 }

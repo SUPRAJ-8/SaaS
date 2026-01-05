@@ -777,7 +777,25 @@ const SuperAdminClients = () => {
                                                         </td>
                                                         <td>
                                                             <div className="action-btns">
-                                                                <div className="btn-square btn-blue" title="Visit Store" onClick={() => window.open(`https://${store.subdomain}.nepostore.xyz`, '_blank')}>
+                                                                <div className="btn-square btn-blue" title="Visit Store" onClick={() => {
+                                                                    const isLocal = window.location.hostname.includes('localhost');
+                                                                    const host = isLocal ? 'localhost:3000' : 'nepostore.xyz';
+                                                                    const proto = isLocal ? 'http' : 'https';
+                                                                    // If using local custom domains via hosts file, respect that too
+                                                                    const currentHost = window.location.hostname;
+                                                                    const port = window.location.port ? `:${window.location.port}` : '';
+
+                                                                    let url;
+                                                                    if (currentHost.includes('nepostore.xyz') && (window.location.protocol === 'http:' || port)) {
+                                                                        // Local testing with specific domain
+                                                                        url = `http://${store.subdomain}.nepostore.xyz${port}`;
+                                                                    } else if (isLocal) {
+                                                                        url = `http://${store.subdomain}.localhost:3000`;
+                                                                    } else {
+                                                                        url = `https://${store.subdomain}.nepostore.xyz`;
+                                                                    }
+                                                                    window.open(url, '_blank');
+                                                                }}>
                                                                     <FaEye />
                                                                 </div>
                                                                 <div className="btn-square btn-orange" title="Edit Store" onClick={() => toast.info('Edit mode coming soon')}>

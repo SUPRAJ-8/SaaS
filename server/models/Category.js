@@ -25,6 +25,11 @@ const CategorySchema = new mongoose.Schema({
     ref: 'Client',
     required: true
   },
+  subcategories: [{
+    name: String,
+    description: String,
+    itemCount: { type: Number, default: 0 }
+  }],
   date: {
     type: Date,
     default: Date.now

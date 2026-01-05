@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox } from 'react-icons/fa';
+import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaChevronLeft, FaChevronRight, FaPrint, FaFileExport, FaPlus, FaStar } from 'react-icons/fa';
 import CustomerAvatar from './CustomerAvatar';
 import { toast } from 'react-toastify';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -18,6 +18,8 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Fetch customers from API
   useEffect(() => {
@@ -89,6 +91,17 @@ const Customers = () => {
     return sortableCustomers;
   }, [filteredCustomers, sortConfig]);
 
+  // Reset pagination on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(sortedCustomers.length / itemsPerPage);
+  const currentItems = sortedCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const requestSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -140,19 +153,37 @@ const Customers = () => {
 
   return (
     <div className="customers-page">
-      <div className="page-header">
-        <div className="page-header-top">
+      {/* Top Header Section: Title & Tabs */}
+      <div className="customers-page-header">
+        <div className="header-title-section">
           <h2 className="page-title">Customers</h2>
-          <div className="search-box">
-            <FaSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search customers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
+          <p className="page-description">Manage and view your customer base details.</p>
+        </div>
+      </div>
+
+      {/* Toolbar Section: Search & Actions */}
+      <div className="customers-toolbar">
+        <div className="search-wrapper-wide">
+          <FaSearch className="search-icon-grey" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or customer ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input-wide"
+          />
+        </div>
+
+        <div className="toolbar-actions">
+          <button className="btn-outline-white icon-text-btn" title="Print">
+            <FaPrint /> Print
+          </button>
+          <button className="btn-outline-white icon-text-btn">
+            <FaFileExport /> Export
+          </button>
+          <button className="btn-dark icon-text-btn">
+            <FaPlus /> Add Customer
+          </button>
         </div>
       </div>
       <div className="customers-table-container">
@@ -220,12 +251,12 @@ const Customers = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedCustomers.length > 0 ? (
-              sortedCustomers.map((customer, index) => (
+            {currentItems.length > 0 ? (
+              currentItems.map((customer, index) => (
                 <React.Fragment key={customer._id}>
                   <tr className={`customer-row ${selectedCustomers.includes(customer._id) ? 'row-selected' : ''}`} onClick={() => handleRowClick(customer)} >
                     <td><input type="checkbox" checked={selectedCustomers.includes(customer._id)} onChange={(e) => handleSelectOne(e, customer._id)} onClick={(e) => e.stopPropagation()} /></td>
-                    <td>{index + 1}</td>
+                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td>
                       <div className="customer-name-cell">
                         <CustomerAvatar name={customer.name} />
@@ -256,7 +287,7 @@ const Customers = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="no-data-cell">
+                <td colSpan="8" className="no-data-cell">
                   <div className="no-data-content">
                     <FaInbox className="no-data-icon" />
                     <span>No data available</span>
@@ -266,6 +297,28 @@ const Customers = () => {
             )}
           </tbody>
         </table>
+        <div className="table-footer">
+          <div className="showing-results">
+            Showing <span className="text-bold">{sortedCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, sortedCustomers.length)}</span> of <span className="text-bold">{sortedCustomers.length}</span> results
+          </div>
+          <div className="pagination-controls">
+            <button
+              className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <FaChevronLeft />
+            </button>
+            <button className="pagination-btn active">{currentPage}</button>
+            <button
+              className={`pagination-btn ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}`}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+        </div>
       </div>
 
       {customerToDelete && (
