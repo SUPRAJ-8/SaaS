@@ -45,23 +45,23 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
   if (!isOpen) return null;
 
   return (
-    <div className={`modal-overlay ${isVisible ? 'open' : ''}`} onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className={`add-user-modal-overlay ${isVisible ? 'open' : ''}`} onClick={handleClose}>
+      <div className="add-user-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="add-user-modal-header">
           <h2>Invite user</h2>
-          <button onClick={handleClose} className="close-btn">&times;</button>
+          <button onClick={handleClose} className="add-user-close-btn">&times;</button>
         </div>
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="add-user-error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
+          <div className="add-user-form-group">
             <label htmlFor="fullName">Full name</label>
-            <input type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="eg: Supraj Shrestha" required />
+            <input type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="eg: John Doe" required />
           </div>
-          <div className="form-group">
+          <div className="add-user-form-group">
             <label htmlFor="email">Email</label>
-            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="eg: supraj@example.com" required />
+            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="eg: john.doe@example.com" required />
           </div>
-          <div className="form-group">
+          <div className="add-user-form-group">
             <label htmlFor="role">Role</label>
             <select id="role" value={role} onChange={(e) => setRole(e.target.value)} required>
               <option value="" disabled>Pick one</option>
@@ -70,7 +70,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
               <option>Admin</option>
             </select>
           </div>
-          <div className="form-group">
+          <div className="add-user-form-group">
             <label htmlFor="gender">Gender</label>
             <select
               id="gender"
@@ -88,8 +88,8 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
               <option>Female</option>
             </select>
           </div>
-          <div className="modal-actions">
-            <button type="submit" className="btn-submit">Send invitation</button>
+          <div className="add-user-modal-actions">
+            <button type="submit" className="add-user-btn-submit">Send invitation</button>
           </div>
         </form>
       </div>

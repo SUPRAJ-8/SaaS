@@ -34,6 +34,15 @@
   padding: 25px;
 }
 
+@media (max-width: 768px) {
+  .content-area {
+    padding: 8px;
+    /* Reduced to prevent overflow issues */
+    overflow-x: hidden;
+    /* Ensure no horizontal scroll at layout level */
+  }
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;

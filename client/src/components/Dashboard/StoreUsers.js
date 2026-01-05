@@ -186,10 +186,7 @@ const StoreUsers = () => {
             <FaPrint />
             <span>Print</span>
           </button>
-          <button className="export-btn">
-            <FaSignal />
-            <span>Active Log</span>
-          </button>
+
           <button onClick={() => setIsModalOpen(true)} className="add-user-btn">
             <FaPlus />
             <span>Invite User</span>
@@ -226,14 +223,16 @@ const StoreUsers = () => {
             <FaEnvelope />
           </div>
         </div>
+
+        {/* Mobile-only Invite Button positioned in grid */}
+        <button onClick={() => setIsModalOpen(true)} className="add-user-btn mobile-stats-invite-btn">
+          <FaPlus />
+          <span>Invite User</span>
+        </button>
       </div>
 
       <div className="users-toolbar">
-        <div className="status-filters-pills">
-          <button className="pill-tab active">All Users</button>
-          <button className="pill-tab">Admins</button>
-          <button className="pill-tab">Staff</button>
-        </div>
+
 
         <div className="toolbar-right-section">
           <div className="search-wrapper-compact">
@@ -250,118 +249,120 @@ const StoreUsers = () => {
       </div>
 
       <div className="users-table-container">
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th><input type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length === sortedUsers.length && sortedUsers.length > 0} /></th>
-              <th>#</th>
-              <th onClick={() => requestSort('name')} className="sortable-header">
-                Name
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th>Email Notification</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th onClick={() => requestSort('createdAt')} className="sortable-header">
-                Joined on
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedUsers.length > 0 ? (
-              sortedUsers.map((user, index) => (
-                <tr key={user._id} className={selectedUsers.includes(user._id) ? 'row-selected' : ''}>
-                  <td><input type="checkbox" checked={selectedUsers.includes(user._id)} onChange={(e) => handleSelectOne(e, user._id)} onClick={(e) => e.stopPropagation()} /></td>
-                  <td>{index + 1}</td>
-                  <td>
-                    <div className="user-name-cell">
-                      <img src={user.avatar} alt={user.name} className="user-avatar" />
-                      <div>
-                        <div className="user-name">{user.name}</div>
-                        <div className="user-email">{user.email}</div>
+        <div className="users-table-scrollable">
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length === sortedUsers.length && sortedUsers.length > 0} /></th>
+                <th>#</th>
+                <th onClick={() => requestSort('name')} className="sortable-header">
+                  Name
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th>Email Notification</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th onClick={() => requestSort('createdAt')} className="sortable-header">
+                  Joined on
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedUsers.length > 0 ? (
+                sortedUsers.map((user, index) => (
+                  <tr key={user._id} className={selectedUsers.includes(user._id) ? 'row-selected' : ''}>
+                    <td><input type="checkbox" checked={selectedUsers.includes(user._id)} onChange={(e) => handleSelectOne(e, user._id)} onClick={(e) => e.stopPropagation()} /></td>
+                    <td>{index + 1}</td>
+                    <td>
+                      <div className="user-name-cell">
+                        <img src={user.avatar} alt={user.name} className="user-avatar" />
+                        <div>
+                          <div className="user-name">{user.name}</div>
+                          <div className="user-email">{user.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={user.emailNotification}
-                        onChange={(e) => handleUserUpdate(user._id, 'emailNotification', e.target.checked)}
-                      />
-                      <span className="slider round"></span>
-                    </label>
-                  </td>
-                  <td>
-                    <select
-                      className={`role-select role-${user.role.toLowerCase()}`}
-                      value={user.role}
-                      onChange={(e) => {
-                        const select = e.target;
-                        select.className = `role-select role-${select.value.toLowerCase()}`;
-                        handleUserUpdate(user._id, 'role', e.target.value);
-                      }}
-                    >
-                      <option>Admin</option>
-                      <option>Manager</option>
-                      <option>Staff</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select
-                      className={`status-select status-${user.status.toLowerCase()}`}
-                      value={user.status}
-                      onChange={(e) => {
-                        const select = e.target;
-                        select.className = `status-select status-${select.value.toLowerCase()}`;
-                        handleUserUpdate(user._id, 'status', e.target.value);
-                      }}
-                    >
-                      <option>Active</option>
-                      <option>Inactive</option>
-                    </select>
-                  </td>
-                  <td>{formatDate(user.createdAt)}</td>
-                  <td className="actions-cell">
-                    <div className="actions-wrapper">
-                      <button className="action-btn edit-btn" onClick={(e) => { e.stopPropagation(); toast.info("Edit feature coming soon"); }} title="Edit user">
-                        <FaEdit />
-                      </button>
-                      <button className="action-btn delete-btn" onClick={() => handleDelete(user)} title="Delete user">
-                        <FaTrash />
-                      </button>
+                    </td>
+                    <td>
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={user.emailNotification}
+                          onChange={(e) => handleUserUpdate(user._id, 'emailNotification', e.target.checked)}
+                        />
+                        <span className="slider round"></span>
+                      </label>
+                    </td>
+                    <td>
+                      <select
+                        className={`role-select role-${user.role.toLowerCase()}`}
+                        value={user.role}
+                        onChange={(e) => {
+                          const select = e.target;
+                          select.className = `role-select role-${select.value.toLowerCase()}`;
+                          handleUserUpdate(user._id, 'role', e.target.value);
+                        }}
+                      >
+                        <option>Admin</option>
+                        <option>Manager</option>
+                        <option>Staff</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        className={`status-select status-${user.status.toLowerCase()}`}
+                        value={user.status}
+                        onChange={(e) => {
+                          const select = e.target;
+                          select.className = `status-select status-${select.value.toLowerCase()}`;
+                          handleUserUpdate(user._id, 'status', e.target.value);
+                        }}
+                      >
+                        <option>Active</option>
+                        <option>Inactive</option>
+                      </select>
+                    </td>
+                    <td>{formatDate(user.createdAt)}</td>
+                    <td className="actions-cell">
+                      <div className="actions-wrapper">
+                        <button className="action-btn edit-btn" onClick={(e) => { e.stopPropagation(); toast.info("Edit feature coming soon"); }} title="Edit user">
+                          <FaEdit />
+                        </button>
+                        <button className="action-btn delete-btn" onClick={() => handleDelete(user)} title="Delete user">
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="no-data-cell">
+                    <div className="no-data-content">
+                      <FaInbox className="no-data-icon" />
+                      <span>No data available</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="no-data-cell">
-                  <div className="no-data-content">
-                    <FaInbox className="no-data-icon" />
-                    <span>No data available</span>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
         <div className="table-footer">
           <div className="showing-results">
             Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedUsers.length}</span> of <span className="text-bold">24</span> results
