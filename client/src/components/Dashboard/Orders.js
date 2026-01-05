@@ -1,850 +1,750 @@
-import React, { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { subDays, format, startOfToday, subMonths, startOfYear } from 'date-fns';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
+import {
+    FaSearch, FaArrowUp, FaArrowDown, FaTrash, FaPrint,
+    FaFileExport, FaInbox, FaChevronLeft, FaChevronRight,
+    FaCalendarAlt, FaFilter, FaTag, FaCreditCard, FaHistory,
+    FaPlus, FaFileExcel, FaChevronDown, FaCheck, FaWallet, FaTimes, FaEdit
+} from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import OrderDetailsModal from './OrderDetailsModal';
-import ConfirmationModal from './ConfirmationModal';
-import LabelsModal from './LabelsModal';
-import { FaArrowUp, FaArrowDown, FaEdit, FaTrashAlt, FaStar, FaFilter, FaListUl, FaChartLine, FaFileInvoice, FaTruck, FaSlidersH, FaSearch, FaPlus, FaFileExport, FaInbox, FaChevronLeft, FaChevronRight, FaPrint } from 'react-icons/fa';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import './Customers.css'; // Reusing customer styles for now
-import './OrderDetailsModal.css'; // Import modal styles for consistent dropdowns
+import DeleteConfirmModal from './DeleteConfirmModal';
+import API_URL from '../../apiConfig';
+import './Orders.css';
 
 const Orders = () => {
-  const [orders, setOrders] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [labelFilter, setLabelFilter] = useState('All');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState('All');
-  const [startDate, setStartDate] = useState(subDays(new Date(), 7));
-  const [endDate, setEndDate] = useState(new Date());
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState(null);
-  const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
-  const [orderToEditLabels, setOrderToEditLabels] = useState(null);
-  const [selectedOrderIds, setSelectedOrderIds] = useState([]);
-  const [uniqueLabels, setUniqueLabels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [filteredOrders, setFilteredOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'placedOn', direction: 'descending' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [selectedOrders, setSelectedOrders] = useState(new Set());
+    const [isAllSelected, setIsAllSelected] = useState(false);
+    const [statusEditId, setStatusEditId] = useState(null);
+    const [payStatusEditId, setPayStatusEditId] = useState(null);
 
-  // Use relative URL to go through proxy in development
-  const ordersUrl = '/api/orders';
+    // Filter states
+    const [statusFilter, setStatusFilter] = useState('All Statuses');
+    const [labelFilter, setLabelFilter] = useState('All Labels');
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState('All Methods');
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState('All Statuses');
+    const [timeframeFilter, setTimeframeFilter] = useState('All Time');
 
-  // Helper function to extract order number from orderId
-  const getOrderNumber = (orderId) => {
-    if (!orderId) return 'N/A';
-    const match = orderId.match(/ORD-(\d+)/);
-    if (match && match[1]) {
-      const number = match[1];
-      // If it's a timestamp (more than 10 digits), show only last 4 digits
-      // Otherwise show the full number for sequential IDs (1000, 1001, etc.)
-      if (number.length > 10) {
-        return `#${number.slice(-4)}`;
-      }
-      return `#${number}`;
-    }
-    return orderId;
-  };
+    // Custom Date Range
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [isDateRangeActive, setIsDateRangeActive] = useState(false);
 
-  const handleDeleteClick = (order) => {
-    setOrderToDelete(order._id);
-    setIsConfirmOpen(true);
-  };
+    // Dropdown visibility
+    const [activeDropdown, setActiveDropdown] = useState(null);
+    const dropdownRef = useRef(null);
 
-  const handleLabelsClick = (order) => {
-    setOrderToEditLabels(order);
-    setIsLabelsModalOpen(true);
-  };
+    const statusOptions = ['All Statuses', 'Pending', 'Processing', 'Shipping', 'Delivered', 'Cancelled', 'Refunded'];
+    const paymentMethodOptions = ['All Methods', 'QR', 'COD'];
+    const paymentStatusOptions = ['All Statuses', 'Paid', 'Unpaid', 'Partial', 'Refunded'];
+    const timeframeOptions = ['All Time', 'Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Last 3 Months', 'This Year'];
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedOrderIds(orders.map(order => order.orderId));
-    } else {
-      setSelectedOrderIds([]);
-    }
-  };
+    useEffect(() => {
+        fetchOrders();
 
-  const handleSelectOne = (e, orderId) => {
-    if (e.target.checked) {
-      setSelectedOrderIds(prev => [...prev, orderId]);
-    } else {
-      setSelectedOrderIds(prev => prev.filter(id => id !== orderId));
-    }
-  };
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setActiveDropdown(null);
+                setStatusEditId(null);
+                setPayStatusEditId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-  const handleSaveLabels = async (orderId, newLabels) => {
-    const orderToUpdate = orders.find(order => order.orderId === orderId);
-    if (!orderToUpdate) return;
-
-    const toastId = toast.loading('Saving labels...');
-
-    try {
-      const updatedOrder = {
-        ...orderToUpdate,
-        labels: newLabels
-      };
-
-      await axios.put(`/api/orders/${orderToUpdate._id}`, updatedOrder);
-
-      const updatedOrders = orders.map(order =>
-        order.orderId === orderId ? { ...order, labels: newLabels } : order
-      );
-      setOrders(updatedOrders);
-
-      toast.update(toastId, {
-        render: 'Labels saved successfully',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (error) {
-      console.error('Error saving labels:', error);
-      toast.update(toastId, {
-        render: 'Failed to save labels',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    const toastId = toast.loading('Deleting order...');
-
-    try {
-      await axios.delete(`/api/orders/${orderToDelete}`);
-      const updatedOrders = orders.filter(order => order._id !== orderToDelete);
-      setOrders(updatedOrders);
-      setIsConfirmOpen(false);
-      setOrderToDelete(null);
-
-      toast.update(toastId, {
-        render: 'Order deleted successfully',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (err) {
-      console.error('Error deleting order:', err);
-      toast.update(toastId, {
-        render: 'Failed to delete order. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  // Bulk delete orders
-  const handleBulkDelete = async () => {
-    if (selectedOrderIds.length === 0) {
-      toast.warning('No orders selected');
-      return;
-    }
-
-    const confirmed = window.confirm(`Are you sure you want to delete ${selectedOrderIds.length} order(s)? This action cannot be undone.`);
-    if (!confirmed) return;
-
-    const toastId = toast.loading('Deleting orders...');
-
-    try {
-      // Get the _id for each selected orderId
-      const ordersToDelete = orders.filter(order => selectedOrderIds.includes(order.orderId));
-      const deletePromises = ordersToDelete.map(order =>
-        axios.delete(`/api/orders/${order._id}`)
-      );
-
-      await Promise.all(deletePromises);
-
-      // Update local state
-      const updatedOrders = orders.filter(order => !selectedOrderIds.includes(order.orderId));
-      setOrders(updatedOrders);
-      setSelectedOrderIds([]);
-
-      toast.update(toastId, {
-        render: `Successfully deleted ${ordersToDelete.length} order(s)`,
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (err) {
-      console.error('Error deleting orders:', err);
-      toast.update(toastId, {
-        render: 'Failed to delete some orders. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  // Bulk update payment status
-  const handleBulkPaymentStatus = async (newStatus) => {
-    if (selectedOrderIds.length === 0) {
-      toast.warning('No orders selected');
-      return;
-    }
-
-    const toastId = toast.loading('Updating payment status...');
-
-    try {
-      // Update each order's payment status (and order status if payment is Refunded)
-      const updatePromises = orders
-        .filter(order => selectedOrderIds.includes(order.orderId))
-        .map(order => {
-          const updatedInvoices = order.invoices && order.invoices.length > 0
-            ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
-            : [{ status: newStatus }];
-
-          const updateData = { invoices: updatedInvoices };
-          if (newStatus === 'Refunded') {
-            updateData.status = 'refunded';
-          }
-
-          return axios.put(`/api/orders/${order._id}`, updateData);
-        });
-
-      await Promise.all(updatePromises);
-
-      // Update local state
-      const updatedOrders = orders.map(order => {
-        if (selectedOrderIds.includes(order.orderId)) {
-          const updatedInvoices = order.invoices && order.invoices.length > 0
-            ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
-            : [{ status: newStatus }];
-
-          return {
-            ...order,
-            status: newStatus === 'Refunded' ? 'refunded' : order.status,
-            invoices: updatedInvoices
-          };
-        }
-        return order;
-      });
-
-      setOrders(updatedOrders);
-      setSelectedOrderIds([]);
-
-      const message = newStatus === 'Refunded'
-        ? `Successfully updated payment status to "Refunded" and order status to "refunded" for ${selectedOrderIds.length} order(s)`
-        : `Successfully updated payment status to "${newStatus}" for ${selectedOrderIds.length} order(s) (order status unchanged)`;
-
-      toast.update(toastId, {
-        render: message,
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (err) {
-      console.error('Error updating payment status:', err);
-      toast.update(toastId, {
-        render: 'Failed to update payment status. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  // Bulk update order status
-  const handleBulkOrderStatus = async (newStatus) => {
-    if (selectedOrderIds.length === 0) {
-      toast.warning('No orders selected');
-      return;
-    }
-
-    const toastId = toast.loading('Updating order status...');
-
-    try {
-      // Update each order's status (and payment status if order is refunded)
-      const updatePromises = orders
-        .filter(order => selectedOrderIds.includes(order.orderId))
-        .map(order => {
-          return axios.put(`/api/orders/${order._id}`, { status: newStatus });
-        });
-
-      await Promise.all(updatePromises);
-
-      // Update local state
-      const updatedOrders = orders.map(order => {
-        if (selectedOrderIds.includes(order.orderId)) {
-          return {
-            ...order,
-            status: newStatus
-          };
-        }
-        return order;
-      });
-
-      setOrders(updatedOrders);
-      setSelectedOrderIds([]);
-
-      const message = `Successfully updated order status to "${newStatus}" for ${selectedOrderIds.length} order(s)`;
-
-      toast.update(toastId, {
-        render: message,
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (err) {
-      console.error('Error updating order status:', err);
-      toast.update(toastId, {
-        render: 'Failed to update order status. Please try again.',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  const handleOrderUpdate = (updatedOrder) => {
-    setOrders(orders.map(order => order.orderId === updatedOrder.orderId ? updatedOrder : order));
-  };
-
-  const getTotalQuantity = (items) => {
-    return items.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const getStatusClass = (status) => {
-    if (!status) return '';
-    return `status-${status.toLowerCase().replace(/ /g, '-')}`;
-  };
-
-  const getPaymentStatus = (invoices) => {
-    if (!invoices || invoices.length === 0) return 'Unpaid';
-    const allRefunded = invoices.every(inv => inv.status === 'Refunded');
-    if (allRefunded) return 'Refunded';
-    const allPaid = invoices.every(inv => inv.status === 'Paid');
-    if (allPaid) return 'Paid';
-    const somePaid = invoices.some(inv => inv.status === 'Paid');
-    if (somePaid) return 'Paid';
-    return 'Unpaid';
-  };
-
-  useEffect(() => {
     const fetchOrders = async () => {
-      try {
-        const res = await axios.get(ordersUrl);
-        console.log('Orders fetched:', res.data);
-        setOrders(res.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to fetch orders: ' + (err.response?.status || err.message));
-      }
-      setLoading(false);
+        try {
+            setLoading(true);
+            const response = await axios.get(`${API_URL}/api/orders`, { withCredentials: true });
+            setOrders(response.data || []);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            toast.error('Failed to load orders');
+            setLoading(false);
+        }
     };
 
-    fetchOrders();
-  }, [ordersUrl]);
+    // Extract unique labels
+    const availableLabels = useMemo(() => {
+        const labels = new Set();
+        orders.forEach(order => {
+            if (order.labels && Array.isArray(order.labels)) {
+                order.labels.forEach(l => {
+                    if (l.text) labels.add(l.text);
+                });
+            }
+        });
+        return ['All Labels', ...Array.from(labels)];
+    }, [orders]);
 
-  useEffect(() => {
-    if (orders.length > 0) {
-      // localStorage.setItem('mockOrders', JSON.stringify(orders)); // No longer needed
-      const allLabels = orders.flatMap(order => order.labels || []);
-      const allLabelTexts = allLabels.map(label => label.text);
-      const uniqueLabelTexts = [...new Set(allLabelTexts)];
-      setUniqueLabels(uniqueLabelTexts);
-    }
-  }, [orders]);
+    // Track last filter state to avoid resetting page on data updates
+    const lastFilters = useRef('');
 
-  const handleRowClick = (e, order) => {
-    // Do not open modal if the click is on an interactive element like the dropdown
-    if (e.target.closest('.status-badge') || e.target.type === 'checkbox') {
-      return;
-    }
-    setSelectedOrder(order);
-  };
+    useEffect(() => {
+        const currentFilterString = JSON.stringify({ searchTerm, statusFilter, labelFilter, paymentMethodFilter, paymentStatusFilter, timeframeFilter, startDate, endDate });
+        const filtersChanged = lastFilters.current !== currentFilterString;
+        lastFilters.current = currentFilterString;
 
-  const handlePaymentStatusChange = async (orderId, newStatus) => {
-    const orderToUpdate = orders.find(order => order.orderId === orderId);
-    if (!orderToUpdate) return;
+        const filtered = orders.filter(order => {
+            // 1. Search filter
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = (
+                order.orderId?.toLowerCase().includes(searchLower) ||
+                order.customerDetails?.name?.toLowerCase().includes(searchLower) ||
+                order.customerDetails?.email?.toLowerCase().includes(searchLower) ||
+                order.customerDetails?.phone?.toLowerCase().includes(searchLower)
+            );
 
-    const toastId = toast.loading('Updating payment status...');
+            // 2. Status filter
+            const matchesStatus = statusFilter === 'All Statuses' || order.status === statusFilter.toLowerCase();
 
-    try {
-      const updatedInvoices = orderToUpdate.invoices && orderToUpdate.invoices.length > 0
-        ? orderToUpdate.invoices.map(inv => ({ ...inv, status: newStatus }))
-        : [{ status: newStatus }];
+            // 3. Label filter
+            const matchesLabel = labelFilter === 'All Labels' ||
+                (order.labels && order.labels.some(l => l.text === labelFilter));
 
-      const updateData = {
-        invoices: updatedInvoices
-      };
+            // 4. Payment Method filter
+            const matchesMethod = paymentMethodFilter === 'All Methods' ||
+                order.customerDetails?.paymentTerms === paymentMethodFilter;
 
-      if (newStatus === 'Refunded') {
-        updateData.status = 'refunded';
-      }
+            // 5. Payment Status filter
+            const matchesPayStatus = paymentStatusFilter === 'All Statuses' ||
+                getPaymentStatus(order.invoices) === paymentStatusFilter;
 
-      await axios.put(`/api/orders/${orderToUpdate._id}`, updateData);
+            // 6. Timeframe filter
+            let matchesTimeframe = true;
+            if (timeframeFilter !== 'All Time') {
+                const now = new Date();
+                const placedAt = new Date(order.placedOn);
+                const diffTime = Math.abs(now - placedAt);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      const updatedOrders = orders.map(order => {
-        if (order.orderId === orderId) {
-          return {
-            ...order,
-            status: newStatus === 'Refunded' ? 'refunded' : order.status,
-            invoices: updatedInvoices
-          };
+                if (timeframeFilter === 'Today') {
+                    matchesTimeframe = placedAt.toDateString() === now.toDateString();
+                } else if (timeframeFilter === 'Yesterday') {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    matchesTimeframe = placedAt.toDateString() === yesterday.toDateString();
+                } else if (timeframeFilter === 'Last 7 Days') {
+                    matchesTimeframe = diffDays <= 7;
+                } else if (timeframeFilter === 'Last 30 Days') {
+                    matchesTimeframe = diffDays <= 30;
+                } else if (timeframeFilter === 'Last 3 Months') {
+                    matchesTimeframe = diffDays <= 90;
+                } else if (timeframeFilter === 'This Year') {
+                    matchesTimeframe = placedAt.getFullYear() === now.getFullYear();
+                }
+            }
+
+            // 7. Date Range filter
+            let matchesDateRange = true;
+            if (startDate || endDate) {
+                const orderDate = new Date(order.placedOn);
+                orderDate.setHours(0, 0, 0, 0);
+
+                if (startDate) {
+                    const start = new Date(startDate);
+                    start.setHours(0, 0, 0, 0);
+                    if (orderDate < start) matchesDateRange = false;
+                }
+
+                if (endDate) {
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999);
+                    if (orderDate > end) matchesDateRange = false;
+                }
+            }
+
+            return matchesSearch && matchesStatus && matchesLabel &&
+                matchesMethod && matchesPayStatus &&
+                matchesTimeframe && matchesDateRange;
+        });
+
+        setFilteredOrders(filtered);
+        if (filtersChanged) {
+            setCurrentPage(1);
         }
-        return order;
-      });
+    }, [orders, searchTerm, statusFilter, labelFilter, paymentMethodFilter, paymentStatusFilter, timeframeFilter, startDate, endDate]);
 
-      setOrders(updatedOrders);
-
-      const message = newStatus === 'Refunded'
-        ? `Payment status updated to "Refunded" and order status set to "refunded"`
-        : `Payment status updated to "${newStatus}" (order status unchanged)`;
-
-      toast.update(toastId, {
-        render: message,
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (error) {
-      console.error('Error updating payment status:', error);
-      toast.update(toastId, {
-        render: 'Failed to update payment status',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-
-
-  const handleStatusChange = async (orderId, newStatus) => {
-    const orderToUpdate = orders.find(order => order.orderId === orderId);
-    if (!orderToUpdate) return;
-
-    const toastId = toast.loading('Updating order status...');
-
-    try {
-      await axios.put(`/api/orders/${orderToUpdate._id}`, { status: newStatus });
-
-      setOrders(orders.map(order =>
-        order.orderId === orderId ? { ...order, status: newStatus } : order
-      ));
-
-      const message = `Order status updated to "${newStatus}"`;
-
-      toast.update(toastId, {
-        render: message,
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      toast.update(toastId, {
-        render: 'Failed to update order status',
-        type: 'error',
-        isLoading: false,
-        autoClose: 3000
-      });
-    }
-  };
-
-  const sortedOrders = React.useMemo(() => {
-    let filteredOrders = orders;
-
-    if (statusFilter !== 'All') {
-      filteredOrders = filteredOrders.filter(o => o.status === statusFilter);
-    }
-
-    if (labelFilter !== 'All') {
-      filteredOrders = filteredOrders.filter(o => o.labels && o.labels.some(label => label.text === labelFilter));
-    }
-
-    if (paymentMethodFilter !== 'All') {
-      filteredOrders = filteredOrders.filter(o => o.customerDetails.paymentTerms === paymentMethodFilter);
-    }
-
-    if (startDate && endDate) {
-      filteredOrders = filteredOrders.filter(o => {
-        const orderDate = new Date(o.placedOn);
-        return orderDate >= startDate && orderDate <= endDate;
-      });
-    }
-
-    let sortableOrders = filteredOrders.filter(order => {
-      if (!searchTerm) return true;
-      const searchTermLower = searchTerm.toLowerCase();
-      const customerName = order.customerDetails?.name?.toLowerCase() || '';
-      const customerEmail = order.customerDetails?.email?.toLowerCase() || '';
-      const orderId = order.orderId?.toString() || '';
-
-      return (
-        customerName.includes(searchTermLower) ||
-        customerEmail.includes(searchTermLower) ||
-        orderId.includes(searchTermLower)
-      );
-    });
-    if (sortConfig.key !== null) {
-      sortableOrders.sort((a, b) => {
-        const aValue = sortConfig.key === 'customer.name' ? a.customerDetails.name : sortConfig.key.split('.').reduce((o, i) => o[i], a);
-        const bValue = sortConfig.key === 'customer.name' ? b.customerDetails.name : sortConfig.key.split('.').reduce((o, i) => o[i], b);
-
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+    const sortedOrders = useMemo(() => {
+        let sortableOrders = [...filteredOrders];
+        if (sortConfig.key !== null) {
+            sortableOrders.sort((a, b) => {
+                let valA = a[sortConfig.key];
+                let valB = b[sortConfig.key];
+                if (sortConfig.key.includes('.')) {
+                    const keys = sortConfig.key.split('.');
+                    valA = keys.reduce((obj, k) => obj?.[k], a);
+                    valB = keys.reduce((obj, k) => obj?.[k], b);
+                }
+                if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            });
         }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableOrders;
-  }, [orders, sortConfig, searchTerm, statusFilter, labelFilter, paymentMethodFilter, startDate, endDate]);
+        return sortableOrders;
+    }, [filteredOrders, sortConfig]);
 
-  const requestSort = (key) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const dateOptions = {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    };
-    const timeOptions = {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    };
-    const datePart = date.toLocaleDateString('en-US', dateOptions).replace(',', '');
-    const timePart = date.toLocaleTimeString('en-US', timeOptions);
-    return (
-      <>
-        {datePart}
-        <br />
-        {timePart}
-      </>
+    const currentItems = sortedOrders.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
     );
-  };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+    const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
 
-  return (
-    <div className="orders-container">
-      <div className="customers-page-header">
-        <div className="header-title-section">
-          <h1 className="page-title">Orders</h1>
-          <p className="page-description">Manage and track your store orders efficiently.</p>
-        </div>
-        <div className="header-actions">
-          <button className="export-btn">
-            <FaPrint />
-            <span>Print</span>
-          </button>
-          <button className="export-btn" onClick={() => { /* Export logic */ }}>
-            <FaFileExport />
-            <span>Export</span>
-          </button>
-          <button className="add-customer-btn">
-            <FaPlus />
-            <span>Create Order</span>
-          </button>
-        </div>
-      </div>
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
 
-      <div className="customers-toolbar">
-        <div className="status-filters-pills">
-          <button
-            className={`pill-tab ${statusFilter === 'All' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('All')}
-          >
-            All
-          </button>
-          <button
-            className={`pill-tab ${statusFilter === 'pending' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('pending')}
-          >
-            Pending
-          </button>
-          <button
-            className={`pill-tab ${statusFilter === 'processing' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('processing')}
-          >
-            Processing
-          </button>
-          <button
-            className={`pill-tab ${statusFilter === 'delivered' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('delivered')}
-          >
-            Delivered
-          </button>
-          <button
-            className={`pill-tab ${statusFilter === 'cancelled' ? 'active' : ''}`}
-            onClick={() => setStatusFilter('cancelled')}
-          >
-            Cancelled
-          </button>
-        </div>
+    const getPaymentStatus = (invoices) => {
+        if (!invoices || invoices.length === 0) return 'Unpaid';
 
-        <div className="toolbar-right-section">
-          <div className="filter-group date-filter-group" style={{ margin: 0, border: 'none', background: 'none' }}>
-            <DatePicker
-              selectsRange={true}
-              startDate={startDate}
-              endDate={endDate}
-              onChange={(update) => {
-                const [start, end] = update;
-                setStartDate(start);
-                setEndDate(end);
-              }}
-              dateFormat="MMM d, yyyy"
-              className="date-range-display"
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={15}
-              customInput={
-                <button className="filter-btn-square" style={{ width: 'auto', padding: '0 12px', gap: '8px', fontSize: '0.85rem' }}>
-                  <FaSlidersH />
-                  {`${format(startDate, 'MMM d')} - ${endDate ? format(endDate, 'MMM d') : ''}`}
-                </button>
-              }
-            />
-          </div>
+        const statuses = invoices.map(inv => inv.status);
 
-          <div className="search-wrapper-compact">
-            <FaSearch className="search-icon-compact" />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input-compact"
-            />
-          </div>
+        if (statuses.every(s => s === 'Refunded')) return 'Refunded';
+        if (statuses.every(s => s === 'Paid')) return 'Paid';
+        if (statuses.every(s => s === 'Unpaid')) return 'Unpaid';
 
-          <div className="filter-group" style={{ margin: 0 }}>
-            <button className="filter-btn-square">
-              <FaFilter />
-            </button>
-          </div>
-        </div>
-      </div>
+        // If there's any 'Partial' or a mix of Paid/Unpaid, return 'Partial'
+        return 'Partial';
+    };
 
-      {/* Bulk Actions Bar */}
-      {selectedOrderIds.length > 0 && (
-        <div className="bulk-actions-bar">
-          <div className="bulk-actions-left">
-            <span className="bulk-count">{selectedOrderIds.length} order(s) selected</span>
-            <button
-              className="bulk-action-btn clear-btn"
-              onClick={() => setSelectedOrderIds([])}
-            >
-              Clear Selection
-            </button>
-          </div>
-          <div className="bulk-actions-right">
-            <div className="bulk-payment-dropdown">
-              <label>Order Status:</label>
-              <select
-                className="bulk-select"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleBulkOrderStatus(e.target.value);
-                    e.target.value = '';
-                  }
-                }}
-                defaultValue=""
-              >
-                <option value="" disabled>Select Status</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipping">Shipping</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="refunded">Refunded</option>
-              </select>
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
+    const handleDelete = (e, order) => {
+        e.stopPropagation();
+        setOrderToDelete(order);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await axios.delete(`${API_URL}/api/orders/${orderToDelete._id}`, { withCredentials: true });
+            toast.success(`Order ${orderToDelete.orderId} deleted`);
+            setOrders(prevOrders => prevOrders.filter(o => o._id !== orderToDelete._id));
+            setOrderToDelete(null);
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            toast.error('Failed to delete order');
+        }
+    };
+
+    const handleOrderUpdate = (updatedOrder) => {
+        setOrders(prevOrders => prevOrders.map(o => o._id === updatedOrder._id ? updatedOrder : o));
+    };
+
+    const updateOrderStatus = async (order, newStatus) => {
+        try {
+            const response = await axios.put(
+                `${API_URL}/api/orders/${order._id}`,
+                { status: newStatus.toLowerCase() },
+                { withCredentials: true }
+            );
+            handleOrderUpdate(response.data);
+            toast.success(`Order status updated to ${newStatus}`);
+            setStatusEditId(null);
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error(error.response?.data?.message || 'Failed to update status');
+        }
+    };
+
+    const updatePayStatus = async (order, newStatus) => {
+        try {
+
+            // Follow the same logic as OrderDetailsModal for updating invoices
+            const updatedInvoices = order.invoices && order.invoices.length > 0
+                ? order.invoices.map(inv => ({ ...inv, status: newStatus }))
+                : [{ status: newStatus }];
+
+            const updateData = { invoices: updatedInvoices };
+
+            // If payment status is set to Refunded, automatically set order status to refunded
+            if (newStatus === 'Refunded') {
+                updateData.status = 'refunded';
+            }
+
+            const response = await axios.put(
+                `${API_URL}/api/orders/${order._id}`,
+                updateData,
+                { withCredentials: true }
+            );
+            handleOrderUpdate(response.data);
+            toast.success(`Payment status updated to ${newStatus}`);
+            setPayStatusEditId(null);
+        } catch (error) {
+            console.error('Error updating pay status:', error);
+            toast.error(error.response?.data?.message || 'Failed to update payment status');
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedOrders(new Set());
+            setIsAllSelected(false);
+        } else {
+            const allIds = currentItems.map(order => order._id);
+            setSelectedOrders(new Set(allIds));
+            setIsAllSelected(true);
+        }
+    };
+
+    const toggleSelectOrder = (e, orderId) => {
+        e.stopPropagation();
+        const newSelected = new Set(selectedOrders);
+        if (newSelected.has(orderId)) {
+            newSelected.delete(orderId);
+        } else {
+            newSelected.add(orderId);
+        }
+        setSelectedOrders(newSelected);
+    };
+
+    // Keep "Select All" checkbox in sync with current page items
+    useEffect(() => {
+        if (currentItems.length === 0) {
+            setIsAllSelected(false);
+            return;
+        }
+        const allIds = currentItems.map(order => order._id);
+        const allOnPageSelected = allIds.every(id => selectedOrders.has(id));
+        setIsAllSelected(allOnPageSelected);
+    }, [currentItems, selectedOrders]);
+
+    const toggleDropdown = (name) => {
+        setActiveDropdown(activeDropdown === name ? null : name);
+    };
+
+    const clearDateRange = (e) => {
+        e.stopPropagation();
+        setStartDate(null);
+        setEndDate(null);
+    };
+
+    if (loading && orders.length === 0) {
+        return <div className="loading-fade">Loading orders...</div>;
+    }
+
+    return (
+        <div className="orders-page" ref={dropdownRef}>
+            <div className="orders-page-header">
+                <div className="header-title-section">
+                    <h2>Orders Management</h2>
+                    <p className="page-description">Manage, filter and track all customer orders efficiently.</p>
+                </div>
             </div>
-            <div className="bulk-payment-dropdown">
-              <label>Payment Status:</label>
-              <select
-                className="bulk-select"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleBulkPaymentStatus(e.target.value);
-                    e.target.value = '';
-                  }
-                }}
-                defaultValue=""
-              >
-                <option value="" disabled>Select Status</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-                <option value="Refunded">Refunded</option>
-              </select>
-            </div>
-            <button
-              className="bulk-action-btn delete-btn"
-              onClick={handleBulkDelete}
-            >
-              <FaTrashAlt /> Delete Selected
-            </button>
-          </div>
-        </div>
-      )}
 
-      <div className="customers-table-container">
-        <OrderDetailsModal
-          isOpen={!!selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          order={selectedOrder}
-          onOrderUpdate={handleOrderUpdate}
-        />
-        <ConfirmationModal
-          isOpen={isConfirmOpen}
-          onClose={() => setIsConfirmOpen(false)}
-          onConfirm={handleConfirmDelete}
-          title="Confirm Deletion"
-        >
-          Are you sure you want to delete this order? This action cannot be undone.
-        </ConfirmationModal>
-        <LabelsModal
-          isOpen={isLabelsModalOpen}
-          onClose={() => setIsLabelsModalOpen(false)}
-          order={orderToEditLabels}
-          onSaveLabels={handleSaveLabels}
-        />
-        <table className="customers-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={orders.length > 0 && selectedOrderIds.length === orders.length}
-                />
-              </th>
-              <th onClick={() => requestSort('orderId')} className="sortable-header">#<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('customerDetails.name')} className="sortable-header"> Name<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('items')} className="sortable-header">Quantity<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'items' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'items' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('payment.total')} className="sortable-header">Total<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('labels')} className="sortable-header">Labels<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'labels' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'labels' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('customerDetails.paymentTerms')} className="sortable-header">Pay Method<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'customerDetails.paymentTerms' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'customerDetails.paymentTerms' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('status')} className="sortable-header">Order / Pay Status<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('placedOn')} className="sortable-header">Created<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th onClick={() => requestSort('updatedOn')} className="sortable-header">Modified<span className="sort-icon-group"><FaArrowUp className={`sort-icon ${sortConfig.key === 'updatedOn' && sortConfig.direction === 'ascending' ? 'active' : ''}`} /><FaArrowDown className={`sort-icon ${sortConfig.key === 'updatedOn' && sortConfig.direction === 'descending' ? 'active' : ''}`} /></span></th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedOrders.length > 0 ? (
-              sortedOrders.map((order) => (
-                <tr key={order.orderId} onClick={(e) => handleRowClick(e, order)} className="customer-row">
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedOrderIds.includes(order.orderId)}
-                      onChange={(e) => handleSelectOne(e, order.orderId)}
-                    />
-                  </td>
-                  <td>{getOrderNumber(order.orderId)}</td>
-                  <td>{order.customerDetails.name}</td>
-                  <td>{getTotalQuantity(order.items)}</td>
-                  <td>NPR {order.payment && order.payment.total ? order.payment.total.toFixed() : 'N/A'}</td>
-                  <td>
-                    <div className="labels-cell">
-                      {order.labels && order.labels.map((label, index) => (
-                        <span key={index} className="label-tag-small" style={{ backgroundColor: label.color }}>{label.text}</span>
-                      ))}
-                      <button className="action-btn" onClick={(e) => { e.stopPropagation(); handleLabelsClick(order); }}>
-                        <FaEdit />
-                      </button>
+            <div className="filter-card">
+                <div className="filter-grid">
+                    {/* Status Filter */}
+                    <div className="filter-item">
+                        <span className="filter-label">Status</span>
+                        <div className={`dropdown-box ${activeDropdown === 'status' ? 'active' : ''}`} onClick={() => toggleDropdown('status')}>
+                            <FaFilter className="dropdown-icon" />
+                            <span>{statusFilter}</span>
+                            <FaChevronDown className="chevron-icon" />
+                            {activeDropdown === 'status' && (
+                                <div className="dropdown-menu">
+                                    {statusOptions.map(opt => (
+                                        <div key={opt} className={`dropdown-option ${statusFilter === opt ? 'selected' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); setStatusFilter(opt); setActiveDropdown(null); }}>
+                                            {opt} {statusFilter === opt && <FaCheck className="check-icon" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                  </td>
-                  <td>{order.customerDetails.paymentTerms}</td>
-                  <td>
-                    <div className="status-cell">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                        className={`status-badge ${getStatusClass(order.status)}`}
-                      >
-                        <option value="pending">PENDING</option>
-                        <option value="processing">PROCESSING</option>
-                        <option value="shipping">SHIPPING</option>
-                        <option value="delivered">DELIVERED</option>
-                        <option value="cancelled">CANCELLED</option>
-                        <option value="refunded">REFUNDED</option>
-                      </select>
-                      <span className="status-separator">&</span>
-                      <select
-                        value={getPaymentStatus(order.invoices)}
-                        onChange={(e) => handlePaymentStatusChange(order.orderId, e.target.value)}
-                        className={`status-badge ${getStatusClass(getPaymentStatus(order.invoices))}`}>
-                        <option value="Paid">PAID</option>
-                        <option value="Unpaid">UNPAID</option>
-                        <option value="Refunded">REFUNDED</option>
-                      </select>
+
+                    {/* Label Filter */}
+                    <div className="filter-item">
+                        <span className="filter-label">Label</span>
+                        <div className={`dropdown-box ${activeDropdown === 'label' ? 'active' : ''}`} onClick={() => toggleDropdown('label')}>
+                            <FaTag className="dropdown-icon" />
+                            <div className="label-pills">
+                                {labelFilter === 'All Labels' ? (<span>All Labels</span>) : (<span className="pill-urgent">{labelFilter}</span>)}
+                            </div>
+                            <FaChevronDown className="chevron-icon" />
+                            {activeDropdown === 'label' && (
+                                <div className="dropdown-menu">
+                                    {availableLabels.map(opt => (
+                                        <div key={opt} className={`dropdown-option ${labelFilter === opt ? 'selected' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); setLabelFilter(opt); setActiveDropdown(null); }}>
+                                            {opt} {labelFilter === opt && <FaCheck className="check-icon" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                  </td>
-                  <td>{formatDate(order.placedOn)}</td>
-                  <td>{formatDate(order.updatedOn)}</td>
-                  <td>
-                    <button className="action-btn delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteClick(order); }}>
-                      <FaTrashAlt />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="12" className="no-data-cell">
-                  <div className="no-data-content">
-                    <FaInbox className="no-data-icon" />
-                    <span>No data available</span>
-                  </div>
-                </td>
-              </tr>
+
+                    {/* Payment Method Filter */}
+                    <div className="filter-item">
+                        <span className="filter-label">Payment Method</span>
+                        <div className={`dropdown-box ${activeDropdown === 'method' ? 'active' : ''}`} onClick={() => toggleDropdown('method')}>
+                            <FaCreditCard className="dropdown-icon" />
+                            <span>{paymentMethodFilter}</span>
+                            <FaChevronDown className="chevron-icon" />
+                            {activeDropdown === 'method' && (
+                                <div className="dropdown-menu">
+                                    {paymentMethodOptions.map(opt => (
+                                        <div key={opt} className={`dropdown-option ${paymentMethodFilter === opt ? 'selected' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); setPaymentMethodFilter(opt); setActiveDropdown(null); }}>
+                                            {opt} {paymentMethodFilter === opt && <FaCheck className="check-icon" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Payment Status Filter */}
+                    <div className="filter-item">
+                        <span className="filter-label">Payment Status</span>
+                        <div className={`dropdown-box ${activeDropdown === 'paystatus' ? 'active' : ''}`} onClick={() => toggleDropdown('paystatus')}>
+                            <FaWallet className="dropdown-icon" />
+                            <span>{paymentStatusFilter}</span>
+                            <FaChevronDown className="chevron-icon" />
+                            {activeDropdown === 'paystatus' && (
+                                <div className="dropdown-menu">
+                                    {paymentStatusOptions.map(opt => (
+                                        <div key={opt} className={`dropdown-option ${paymentStatusFilter === opt ? 'selected' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); setPaymentStatusFilter(opt); setActiveDropdown(null); }}>
+                                            {opt} {paymentStatusFilter === opt && <FaCheck className="check-icon" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Timeframe Filter */}
+                    <div className="filter-item">
+                        <span className="filter-label">Timeframe</span>
+                        <div className={`dropdown-box ${activeDropdown === 'timeframe' ? 'active' : ''}`} onClick={() => toggleDropdown('timeframe')}>
+                            <FaHistory className="dropdown-icon" />
+                            <span>{timeframeFilter}</span>
+                            <FaChevronDown className="chevron-icon" />
+                            {activeDropdown === 'timeframe' && (
+                                <div className="dropdown-menu">
+                                    {timeframeOptions.map(opt => (
+                                        <div key={opt} className={`dropdown-option ${timeframeFilter === opt ? 'selected' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); setTimeframeFilter(opt); setActiveDropdown(null); }}>
+                                            {opt} {timeframeFilter === opt && <FaCheck className="check-icon" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Advanced Date Range */}
+                    <div className="filter-item">
+                        <span className="filter-label">Date Range</span>
+                        <div className={`advanced-date-picker-trigger ${activeDropdown === 'daterange' ? 'active' : ''}`} onClick={() => toggleDropdown('daterange')}>
+                            <FaCalendarAlt className="date-icon-inline" />
+                            <span>
+                                {startDate && endDate
+                                    ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+                                    : 'Select Range'}
+                            </span>
+                            <FaChevronDown className="chevron-icon" />
+
+                            {activeDropdown === 'daterange' && (
+                                <div className="advanced-date-picker-popover" onClick={(e) => e.stopPropagation()}>
+                                    <DatePicker
+                                        selected={startDate}
+                                        onChange={(update) => {
+                                            const [start, end] = update;
+                                            setStartDate(start);
+                                            setEndDate(end);
+                                        }}
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        selectsRange
+                                        monthsShown={2}
+                                        showPreviousMonths
+                                        maxDate={new Date()}
+                                        inline
+                                    />
+                                    <div className="date-picker-footer">
+                                        <div className="time-select-row">
+                                            <div className="time-block">
+                                                <span className="time-label">START</span>
+                                                <div className="time-input-group">
+                                                    <input type="text" className="time-input" defaultValue="10" />
+                                                    <span className="time-divider">:</span>
+                                                    <input type="text" className="time-input" defaultValue="00" />
+                                                    <select className="ampm-select">
+                                                        <option>AM</option>
+                                                        <option>PM</option>
+                                                    </select>
+                                                </div>
+                                                <span className="time-date-label">{startDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
+                                            </div>
+                                            <div className="time-block">
+                                                <span className="time-label">END</span>
+                                                <div className="time-input-group">
+                                                    <input type="text" className="time-input" defaultValue="06" />
+                                                    <span className="time-divider">:</span>
+                                                    <input type="text" className="time-input" defaultValue="00" />
+                                                    <select className="ampm-select">
+                                                        <option>AM</option>
+                                                        <option selected>PM</option>
+                                                    </select>
+                                                </div>
+                                                <span className="time-date-label">{endDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
+                                            </div>
+                                        </div>
+                                        <div className="footer-actions">
+                                            <div className="range-summary">
+                                                {startDate && endDate && (
+                                                    <>
+                                                        <span>{startDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 10:00 AM</span>
+                                                        <span className="arrow">→</span>
+                                                        <span>{endDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 06:00 PM</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="footer-buttons">
+                                                <button className="btn-cancel" onClick={() => setActiveDropdown(null)}>Cancel</button>
+                                                <button className="btn-apply" onClick={() => setActiveDropdown(null)}>Apply Range</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="actions-row">
+                    <div className="orders-search-container">
+                        <FaSearch className="orders-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by order ID, name, email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="orders-search-input"
+                        />
+                    </div>
+                    <div className="btn-group">
+                        <button className="export-excel-btn">
+                            <FaFileExcel className="excel-icon" />
+                            Export Excel
+                        </button>
+                        <button className="create-order-btn">
+                            <FaPlus className="plus-icon" />
+                            Create Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="orders-table-container">
+                <table className="orders-table">
+                    <thead>
+                        <tr>
+                            <th className="checkbox-column">
+                                <div className="header-checkbox-wrapper">
+                                    <input
+                                        type="checkbox"
+                                        className="custom-checkbox"
+                                        checked={isAllSelected && currentItems.length > 0}
+                                        onChange={toggleSelectAll}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <span className="hash-symbol">#</span>
+                                </div>
+                            </th>
+                            <th onClick={() => requestSort('orderId')} className="sortable-header">
+                                Order ID <span className="sort-icon-group">
+                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                </span>
+                            </th>
+                            <th onClick={() => requestSort('customerDetails.name')} className="sortable-header">
+                                Customer <span className="sort-icon-group">
+                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                </span>
+                            </th>
+                            <th onClick={() => requestSort('payment.total')} className="sortable-header">
+                                Amount <span className="sort-icon-group">
+                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                </span>
+                            </th>
+                            <th onClick={() => requestSort('status')} className="sortable-header">
+                                Order Status <span className="sort-icon-group">
+                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                </span>
+                            </th>
+                            <th>Pay Status</th>
+                            <th onClick={() => requestSort('placedOn')} className="sortable-header">
+                                Date <span className="sort-icon-group">
+                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                </span>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {currentItems.length > 0 ? (
+                            currentItems.map((order, index) => (
+                                <tr key={order._id} className={`order-row ${selectedOrders.has(order._id) ? 'row-selected' : ''}`} onClick={() => setSelectedOrder(order)}>
+                                    <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
+                                        <div className="cell-checkbox-wrapper">
+                                            <input
+                                                type="checkbox"
+                                                className="custom-checkbox"
+                                                checked={selectedOrders.has(order._id)}
+                                                onChange={(e) => toggleSelectOrder(e, order._id)}
+                                            />
+                                            <span className="row-number">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                                        </div>
+                                    </td>
+                                    <td className="text-bold">{order.orderId}</td>
+                                    <td>
+                                        <div className="customer-info">
+                                            <span className="customer-name">{order.customerDetails?.name || 'Guest'}</span>
+                                            <span className="customer-email">{order.customerDetails?.email}</span>
+                                        </div>
+                                    </td>
+                                    <td>Rs. {order.payment?.total?.toFixed(2) || '0.00'}</td>
+                                    <td>
+                                        <div className="status-badge-container"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
+                                            <span
+                                                className={`ord-status-badge ord-status-${order.status?.toLowerCase()} clickable-status`}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    setStatusEditId(statusEditId === order._id ? null : order._id);
+                                                }}
+                                            >
+                                                {order.status}
+                                                <FaChevronDown className="status-chevron" />
+                                            </span>
+                                            {statusEditId === order._id && (
+                                                <div className="status-dropdown-menu">
+                                                    {statusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
+                                                        <div
+                                                            key={opt}
+                                                            className={`status-dropdown-option ${order.status?.toLowerCase() === opt.toLowerCase() ? 'selected' : ''}`}
+                                                            onMouseDown={(e) => {
+                                                                e.stopPropagation();
+                                                                updateOrderStatus(order, opt);
+                                                            }}
+                                                        >
+                                                            {opt}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="status-badge-container"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
+                                            <span
+                                                className={`ord-status-badge ord-status-${getPaymentStatus(order.invoices).toLowerCase()} clickable-status`}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    setPayStatusEditId(payStatusEditId === order._id ? null : order._id);
+                                                }}
+                                            >
+                                                {getPaymentStatus(order.invoices)}
+                                                <FaChevronDown className="status-chevron" />
+                                            </span>
+                                            {payStatusEditId === order._id && (
+                                                <div className="status-dropdown-menu">
+                                                    {paymentStatusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
+                                                        <div
+                                                            key={opt}
+                                                            className={`status-dropdown-option ${getPaymentStatus(order.invoices) === opt ? 'selected' : ''}`}
+                                                            onMouseDown={(e) => {
+                                                                e.stopPropagation();
+                                                                updatePayStatus(order, opt);
+                                                            }}
+                                                        >
+                                                            {opt}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>{formatDate(order.placedOn)}</td>
+                                    <td className="actions-cell">
+                                        <div className="actions-wrapper">
+                                            <button className="edit-btn" onClick={() => setSelectedOrder(order)}><FaEdit /></button>
+                                            <button className="delete-btn" onClick={(e) => handleDelete(e, order)}><FaTrash /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="8" className="no-data-cell"><div className="no-data-content"><FaInbox className="no-data-icon" /><span>No orders found</span></div></td></tr>
+                        )}
+                    </tbody>
+                </table>
+
+                {sortedOrders.length > 0 && (
+                    <div className="table-footer">
+                        <div className="showing-results">
+                            Showing <span className="text-bold">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, sortedOrders.length)}</span> of <span className="text-bold">{sortedOrders.length}</span> results
+                        </div>
+                        <div className="pagination-controls">
+                            <button className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}><FaChevronLeft /></button>
+                            <button className="pagination-btn active">{currentPage}</button>
+                            <button className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}><FaChevronRight /></button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {selectedOrder && (
+                <OrderDetailsModal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} order={selectedOrder} onOrderUpdate={handleOrderUpdate} />
             )}
-          </tbody>
-        </table>
-        <div className="table-footer">
-          <div className="showing-results">
-            Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedOrders.length > 3 ? 3 : sortedOrders.length}</span> of <span className="text-bold">{sortedOrders.length}</span> results
-          </div>
-          <div className="pagination-controls">
-            <button className="pagination-btn disabled">
-              <FaChevronLeft />
-            </button>
-            <button className="pagination-btn active">1</button>
-            <button className="pagination-btn">2</button>
-            <button className="pagination-btn">3</button>
-            <button className="pagination-btn">
-              <FaChevronRight />
-            </button>
-          </div>
+
+            {orderToDelete && (
+                <DeleteConfirmModal isOpen={!!orderToDelete} onClose={() => setOrderToDelete(null)} onConfirm={confirmDelete} itemName={orderToDelete.orderId} itemType="order" />
+            )}
         </div>
-      </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </div>
-  );
+    );
 };
 
 export default Orders;

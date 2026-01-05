@@ -12,19 +12,19 @@
   max-width: 500px;
 }
 
-h1 {
+.under-construction-container h1 {
   font-size: 4rem;
   font-weight: bold;
   margin: 0;
 }
 
-p {
+.under-construction-container p {
   font-size: 1.5rem;
   color: #555;
   margin: 20px 0;
 }
 
-button,
+.under-construction-container button,
 .contact-button {
   background-color: #0052cc;
   color: white;
@@ -40,12 +40,12 @@ button,
   transition: background-color 0.3s ease;
 }
 
-button:hover,
+.under-construction-container button:hover,
 .contact-button:hover {
   background-color: #0041a8;
 }
 
-button:active,
+.under-construction-container button:active,
 .contact-button:active {
   transform: scale(0.98);
 }

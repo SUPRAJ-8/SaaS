@@ -20,12 +20,12 @@
 }
 
 .modal-content {
-    animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.3s ease-out;
   background-color: white;
   padding: 2rem;
   border-radius: 8px;
-  width: 100%;
-  max-width: 300px;
+  width: 90%;
+  max-width: 350px;
   /* Further reduced width */
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   transform: translateY(-150%);
@@ -33,8 +33,15 @@
   transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+}
+
 .modal-overlay.open .modal-content {
-    animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.3s ease-out;
   transform: translateY(0);
   opacity: 1;
 }

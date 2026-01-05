@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import './Customers.css'; // Reusing customer styles for now
+import './Products.css';
 import { ProductModal } from './ProductModal.js';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { getProducts } from '../../services/productService';
@@ -281,7 +281,7 @@ const Products = () => {
   };
 
   return (
-    <div className="customers-page">
+    <div className="products-page">
       <ToastContainer />
       <ProductModal
         isOpen={isEditModalOpen}
@@ -302,7 +302,7 @@ const Products = () => {
         itemName={`${selectedProducts.length} products`}
       />
       {/* Top Header: Title & Actions */}
-      <div className="customers-page-header">
+      <div className="products-page-header">
         <div className="header-title-section">
           <h2 className="page-title">Products</h2>
           <p className="page-description">Manage your product catalog, inventory, and pricing.</p>
@@ -314,14 +314,14 @@ const Products = () => {
           <button className="btn-outline-white icon-text-btn">
             <FaFileExport /> Export
           </button>
-          <button className="btn btn-primary add-customer-btn" onClick={handleAddClick}>
+          <button className="btn btn-primary add-product-btn" onClick={handleAddClick}>
             <FaPlus /> Add Product
           </button>
         </div>
       </div>
 
       {/* Toolbar: Tabs & Search */}
-      <div className="customers-toolbar">
+      <div className="products-toolbar">
         {/* Left Side: Pill Tabs */}
         <div className="status-filters-pills">
           {['All', 'Active', 'Draft', 'Archived'].map(status => (
@@ -347,15 +347,19 @@ const Products = () => {
 
       {/* Conditional Bulk Actions */}
       {selectedProducts.length > 0 && (
-        <div className="bulk-actions-bar" style={{ marginTop: 0, marginBottom: '20px' }}>
-          <span className="bulk-count" style={{ color: 'white', marginRight: '1rem', fontWeight: 'bold' }}>{selectedProducts.length} selected</span>
-          <button className="btn btn-danger" onClick={handleBulkDelete} style={{ marginRight: '8px' }}>Delete</button>
-          <button className="btn btn-warning" onClick={() => handleBulkUpdateStatus('Draft')} style={{ marginRight: '8px' }}>Move to Draft</button>
-          <button className="btn btn-success" onClick={() => handleBulkUpdateStatus('Archived')}>Move to Archive</button>
+        <div className="bulk-actions-bar">
+          <div className="bulk-actions-left">
+            <span className="bulk-count">{selectedProducts.length} selected</span>
+          </div>
+          <div className="bulk-actions-right">
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Draft')}>Move to Draft</button>
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Archived')}>Archive</button>
+            <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
+          </div>
         </div>
       )}
-      <div className="customers-table-container">
-        <table className="customers-table">
+      <div className="products-table-container">
+        <table className="products-table">
           <thead>
             <tr>
               <th className="checkbox-cell"><input type="checkbox" onChange={handleSelectAll} checked={selectedProducts.length === products.length && products.length > 0} /></th>
@@ -423,8 +427,10 @@ const Products = () => {
                   <td>{formatDate(product.createdAt)}</td>
                   <td>{formatDate(product.updatedAt)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <button className="action-btn edit-btn" onClick={() => handleEditClick(product)}><FaEdit /></button>
-                    <button className="action-btn delete-btn" onClick={() => handleDeleteClick(product)}><FaTrashAlt /></button>
+                    <div className="actions-wrapper">
+                      <button className="action-btn edit-btn" onClick={() => handleEditClick(product)} title="Edit product"><FaEdit /></button>
+                      <button className="action-btn delete-btn" onClick={() => handleDeleteClick(product)} title="Delete product"><FaTrashAlt /></button>
+                    </div>
                   </td>
                 </tr>
               ))

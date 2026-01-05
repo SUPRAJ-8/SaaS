@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FaTimes, FaStore, FaPlus, FaExternalLinkAlt, FaEdit, FaCheckCircle, FaRocket, FaChevronRight, FaTrash } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import './StoresModal.css';
 
 const StoresModal = ({ isOpen, onClose }) => {
@@ -12,6 +13,8 @@ const StoresModal = ({ isOpen, onClose }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newStore, setNewStore] = useState({ name: '' });
   const [currentClientId, setCurrentClientId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [storeToDelete, setStoreToDelete] = useState(null);
 
   // Generate subdomain preview from store name
   const getSubdomainPreview = (storeName) => {
@@ -110,19 +113,27 @@ const StoresModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleDeleteStore = async (e, storeId) => {
+  const handleDeleteStore = (e, store) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this store? All products and data associated with it will be permanently removed.')) {
-      try {
-        await axios.delete(`${API_URL}/api/auth/delete-store/${storeId}`, {
-          withCredentials: true
-        });
-        toast.success('Store deleted successfully');
-        fetchStores(); // Refresh list
-      } catch (error) {
-        console.error('Error deleting store:', error);
-        toast.error('Failed to delete store');
-      }
+    setStoreToDelete(store);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!storeToDelete) return;
+
+    try {
+      await axios.delete(`${API_URL}/api/auth/delete-store/${storeToDelete._id}`, {
+        withCredentials: true
+      });
+      toast.success('Store deleted successfully');
+      fetchStores(); // Refresh list
+    } catch (error) {
+      console.error('Error deleting store:', error);
+      toast.error('Failed to delete store');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setStoreToDelete(null);
     }
   };
 
@@ -226,7 +237,7 @@ const StoresModal = ({ isOpen, onClose }) => {
                       <div className="premium-store-actions">
                         <button
                           className="premium-delete-btn"
-                          onClick={(e) => handleDeleteStore(e, store._id)}
+                          onClick={(e) => handleDeleteStore(e, store)}
                           title="Delete Store"
                         >
                           <FaTrash />
@@ -321,6 +332,12 @@ const StoresModal = ({ isOpen, onClose }) => {
           </div>
         )}
       </div>
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        itemName={storeToDelete ? storeToDelete.name : ''}
+      />
     </div>
   );
 };

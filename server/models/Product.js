@@ -29,6 +29,9 @@ const ProductSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'category'
   },
+  subcategory: {
+    type: String
+  },
   hasVariants: {
     type: Boolean,
     default: false

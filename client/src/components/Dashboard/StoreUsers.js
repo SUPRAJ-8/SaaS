@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaUsers, FaSignal, FaEnvelope, FaPlus, FaFilter, FaChevronLeft, FaChevronRight, FaPrint } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaUsers, FaSignal, FaEnvelope, FaPlus, FaFilter, FaChevronLeft, FaChevronRight, FaPrint } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import AddUserModal from './AddUserModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -176,7 +176,7 @@ const StoreUsers = () => {
 
   return (
     <div className="store-users-page">
-      <div className="customers-page-header">
+      <div className="users-page-header">
         <div className="header-title-section">
           <h1 className="page-title">Store Users</h1>
           <p className="page-description">Manage access, roles, and permissions for your team.</p>
@@ -190,7 +190,7 @@ const StoreUsers = () => {
             <FaSignal />
             <span>Active Log</span>
           </button>
-          <button onClick={() => setIsModalOpen(true)} className="add-customer-btn">
+          <button onClick={() => setIsModalOpen(true)} className="add-user-btn">
             <FaPlus />
             <span>Invite User</span>
           </button>
@@ -228,7 +228,7 @@ const StoreUsers = () => {
         </div>
       </div>
 
-      <div className="customers-toolbar">
+      <div className="users-toolbar">
         <div className="status-filters-pills">
           <button className="pill-tab active">All Users</button>
           <button className="pill-tab">Admins</button>
@@ -237,7 +237,7 @@ const StoreUsers = () => {
 
         <div className="toolbar-right-section">
           <div className="search-wrapper-compact">
-            <FaSearch className="search-icon-compact" />
+            <FaSearch className="search-icon-grey" />
             <input
               type="text"
               placeholder="Search team members..."
@@ -245,12 +245,6 @@ const StoreUsers = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input-compact"
             />
-          </div>
-
-          <div className="filter-group" style={{ margin: 0 }}>
-            <button className="filter-btn-square">
-              <FaFilter />
-            </button>
           </div>
         </div>
       </div>
@@ -345,9 +339,14 @@ const StoreUsers = () => {
                   </td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td className="actions-cell">
-                    <button className="action-btn delete-btn" onClick={() => handleDelete(user)}>
-                      <FaTrash />
-                    </button>
+                    <div className="actions-wrapper">
+                      <button className="action-btn edit-btn" onClick={(e) => { e.stopPropagation(); toast.info("Edit feature coming soon"); }} title="Edit user">
+                        <FaEdit />
+                      </button>
+                      <button className="action-btn delete-btn" onClick={() => handleDelete(user)} title="Delete user">
+                        <FaTrash />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

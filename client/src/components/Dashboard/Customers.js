@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaTrash, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaChevronLeft, FaChevronRight, FaPrint, FaFileExport, FaPlus, FaStar } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaChevronLeft, FaChevronRight, FaPrint, FaFileExport, FaPlus, FaStar } from 'react-icons/fa';
 import CustomerAvatar from './CustomerAvatar';
 import { toast } from 'react-toastify';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -271,16 +271,28 @@ const Customers = () => {
                     <td>{formatCurrency(customer.totalSpent)}</td>
                     <td>{formatDate(customer.lastOrder)}</td>
                     <td className="actions-cell">
-                      <button
-                        className="delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(customer);
-                        }}
-                        title="Delete customer"
-                      >
-                        <FaTrash />
-                      </button>
+                      <div className="actions-wrapper">
+                        <button
+                          className="edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast.info("Edit customer feature coming soon");
+                          }}
+                          title="Edit customer"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(customer);
+                          }}
+                          title="Delete customer"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </React.Fragment>

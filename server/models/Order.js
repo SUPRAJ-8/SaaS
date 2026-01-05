@@ -43,6 +43,7 @@ const OrderSchema = new mongoose.Schema({
     default: 'pending',
   },
   invoices: [InvoiceSchema],
+  internalNote: String,
   placedOn: { type: Date, default: Date.now },
   updatedOn: { type: Date, default: Date.now },
   // Keeping clientId for multi-tenancy

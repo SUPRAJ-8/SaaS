@@ -16,6 +16,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
     costPrice: '',
     quantity: '',
     category: '',
+    subcategory: '',
     section: 'None',
     images: [],
     hasVariants: false,
@@ -69,6 +70,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
         costPrice: '',
         quantity: '',
         category: '',
+        subcategory: '',
         section: 'None',
         images: [],
         hasVariants: false,
@@ -84,7 +86,11 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'category') {
+      setFormData(prev => ({ ...prev, [name]: value, subcategory: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -484,6 +490,17 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                     ))}
                   </select>
                 </div>
+                {formData.category && categories.find(c => c._id === formData.category)?.subcategories?.length > 0 && (
+                  <div className="form-group">
+                    <label>Product Sub-Category</label>
+                    <select name="subcategory" value={formData.subcategory} onChange={handleInputChange}>
+                      <option value="">Select a sub-category</option>
+                      {categories.find(c => c._id === formData.category).subcategories.map(sub => (
+                        <option key={sub._id || sub.name} value={sub.name}>{sub.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {/* Only show Choose Section if Ecommerce Theme is enabled */}
                 {(localStorage.getItem('themeId') || 'ecommerce') === 'ecommerce' && (
                   <div className="form-group">
@@ -495,7 +512,6 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                     </select>
                   </div>
                 )}
-                <button type="button" className="btn btn-secondary">Add Category</button>
               </div>
             </div>
           </div>

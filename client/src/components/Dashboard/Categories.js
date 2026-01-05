@@ -275,6 +275,13 @@ const Categories = () => {
         onSave={handleSaveCategory}
       />
 
+      {/* Header */}
+      <div className="categories-header">
+        <div className="header-left">
+          <h2>Categories</h2>
+        </div>
+      </div>
+
       {/* Stats Cards Row */}
       <div className="category-stats-row">
         <div className="category-stat-card">
@@ -303,13 +310,6 @@ const Categories = () => {
           <div className="category-stat-icon-wrapper green">
             <FaBoxOpen />
           </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="categories-header">
-        <div className="header-left">
-          <h2>Categories</h2>
         </div>
       </div>
 
@@ -374,7 +374,7 @@ const Categories = () => {
                     </span>
                   </div>
                   <div>
-                    <span className={`status-badge ${category.status === 'Active' ? 'active' : 'draft'}`}>
+                    <span className={`cat-status-badge ${category.status === 'Active' ? 'active' : 'draft'}`}>
                       {category.status || 'Active'}
                     </span>
                   </div>

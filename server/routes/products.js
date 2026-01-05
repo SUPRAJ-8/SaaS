@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
     // Multi-tenancy isolation
     // Priority: 1. tenantClient (for shop subdomain), 2. authenticated user's clientId (for dashboard), 3. query param
     let clientId = req.tenantClient?._id;
-    
+
     // If no tenantClient (we're on app subdomain/dashboard), require authentication
     if (!clientId) {
       if (req.user && req.user.clientId) {
@@ -79,7 +79,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
   try {
     const {
       name, shortDescription, longDescription, gender,
-      crossedPrice, sellingPrice, costPrice, quantity, category, sku, status, section,
+      crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section,
       variantColors, variantSizes, samePriceForAllVariants
     } = req.body;
 
@@ -141,6 +141,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       costPrice: costPrice ? Number(costPrice) : 0,
       quantity: quantity ? Number(quantity) : 0,
       category: category || null,
+      subcategory: subcategory || null,
       sku: productSku,
       status: status || 'Active',
       section: section || 'None',
@@ -167,7 +168,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 router.put('/:id', upload.array('images', 10), async (req, res) => {
   const {
     name, shortDescription, longDescription, gender,
-    crossedPrice, sellingPrice, costPrice, quantity, category, sku, status, section
+    crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section
   } = req.body;
 
   // Build product object
@@ -182,6 +183,7 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
   if (req.body.variantSizes) productFields.variantSizes = JSON.parse(req.body.variantSizes);
   if (req.body.samePriceForAllVariants !== undefined) productFields.samePriceForAllVariants = JSON.parse(req.body.samePriceForAllVariants);
   if (category) productFields.category = category;
+  if (subcategory !== undefined) productFields.subcategory = subcategory;
   if (sku) productFields.sku = sku;
   if (crossedPrice) productFields.crossedPrice = crossedPrice;
   if (sellingPrice) productFields.sellingPrice = sellingPrice;
