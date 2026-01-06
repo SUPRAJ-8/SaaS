@@ -155,6 +155,61 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// BULK DELETE customers
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const clientId = req.user.clientId;
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ message: 'IDs must be an array' });
+    }
+
+    // Verify all customers belong to this client first
+    const customers = await Customer.find({ _id: { $in: ids }, clientId });
+    if (customers.length !== ids.length) {
+      return res.status(403).json({ message: 'Some customers do not belong to you or were not found' });
+    }
+
+    // Delete associated orders
+    await Order.deleteMany({ customer: { $in: ids } });
+
+    // Delete customers
+    await Customer.deleteMany({ _id: { $in: ids } });
+
+    res.json({ message: `Successfully deleted ${ids.length} customers and their orders` });
+  } catch (err) {
+    console.error('Error bulk deleting customers:', err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// BULK UPDATE customer status
+router.post('/bulk-update-status', async (req, res) => {
+  try {
+    const { ids, status } = req.body;
+    const clientId = req.user.clientId;
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ message: 'IDs must be an array' });
+    }
+
+    if (!['Active', 'Inactive'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    await Customer.updateMany(
+      { _id: { $in: ids }, clientId },
+      { $set: { status } }
+    );
+
+    res.json({ message: `Successfully updated ${ids.length} customers to ${status}` });
+  } catch (err) {
+    console.error('Error bulk updating customer status:', err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // Middleware to find a customer by ID and verify ownership
 async function getCustomer(req, res, next) {
   try {

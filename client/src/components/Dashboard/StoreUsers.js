@@ -3,67 +3,47 @@ import { FaTrash, FaEdit, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaUsers, Fa
 import { toast } from 'react-toastify';
 import AddUserModal from './AddUserModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import API_URL from '../../apiConfig';
+import axios from 'axios';
 import './StoreUsers.css';
 import './Switch.css'; // Styles for the toggle switch
 
 const StoreUsers = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [userToDelete, setUserToDelete] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'descending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: 'single', user: null });
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const savedUsers = localStorage.getItem('users');
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
-    } else {
-      const mockUsers = [
-        {
-          _id: '1',
-          name: 'John Doe',
-          gender: 'male',
-          avatar: 'https://www.w3schools.com/howto/img_avatar.png',
-          email: 'john.doe@example.com',
-          role: 'Admin',
-          status: 'Active',
-          emailNotification: true,
-          createdAt: '2025-12-09T14:00:00.000Z',
-        },
-        {
-          _id: '2',
-          name: 'Jane Smith',
-          gender: 'female',
-          avatar: 'https://www.w3schools.com/howto/img_avatar2.png',
-          email: 'jane.smith@example.com',
-          role: 'Manager',
-          status: 'Active',
-          emailNotification: false,
-          createdAt: '2025-12-08T11:30:00.000Z',
-        },
-        {
-          _id: '3',
-          name: 'Peter Jones',
-          gender: 'male',
-          avatar: 'https://www.w3schools.com/howto/img_avatar.png',
-          email: 'peter.jones@example.com',
-          role: 'Staff',
-          status: 'Inactive',
-          emailNotification: true,
-          createdAt: '2025-12-07T09:00:00.000Z',
-        },
-      ];
-      setUsers(mockUsers);
-    }
+    fetchUsers();
+    fetchCurrentUser();
   }, []);
 
-  // Save users to localStorage whenever the list changes
-  useEffect(() => {
-    if (users.length > 0) {
-      localStorage.setItem('users', JSON.stringify(users));
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/users`, { withCredentials: true });
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load team members');
+    } finally {
+      setLoading(false);
     }
-  }, [users]);
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const sortedUsers = React.useMemo(() => {
     const filteredUsers = users.filter((user) => {
@@ -102,20 +82,41 @@ const StoreUsers = () => {
   };
 
   const handleDelete = (user) => {
-    setUserToDelete(user);
+    setDeleteModal({ isOpen: true, type: 'single', user });
   };
 
-  const confirmDelete = () => {
-    if (userToDelete) {
-      setUsers(users.filter((user) => user._id !== userToDelete._id));
-      toast.success(`User ${userToDelete.name} deleted successfully`);
-      setUserToDelete(null); // Close modal and clear user
+  const handleBulkDelete = () => {
+    setDeleteModal({ isOpen: true, type: 'bulk', user: null });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      if (deleteModal.type === 'single') {
+        const user = deleteModal.user;
+        if (user) {
+          await axios.delete(`${API_URL}/api/users/${user._id}`, { withCredentials: true });
+          setUsers(users.filter((u) => u._id !== user._id));
+          toast.success(`User ${user.name} removed`);
+        }
+      } else if (deleteModal.type === 'bulk') {
+        await axios.post(`${API_URL}/api/users/bulk-delete`, { ids: selectedUsers }, { withCredentials: true });
+        setUsers(users.filter((u) => !selectedUsers.includes(u._id)));
+        toast.success(`${selectedUsers.length} users removed`);
+        setSelectedUsers([]);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
+    setDeleteModal({ isOpen: false, type: 'single', user: null });
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allUserIds = sortedUsers.map(u => u._id);
+      // Don't select the current user in bulk actions to prevent accidental deletion
+      const allUserIds = sortedUsers
+        .filter(u => !(currentUser && (currentUser._id === u._id || currentUser.id === u._id)))
+        .map(u => u._id);
       setSelectedUsers(allUserIds);
     } else {
       setSelectedUsers([]);
@@ -131,30 +132,40 @@ const StoreUsers = () => {
     }
   };
 
-  const handleUserUpdate = (userId, field, value) => {
-    const updatedUsers = users.map((user) => {
-      if (user._id === userId) {
-        return { ...user, [field]: value };
-      }
-      return user;
-    });
-    setUsers(updatedUsers);
-    toast.success(`User's ${field.replace('emailNotification', 'notification setting')} updated successfully`);
+  const handleBulkUpdateStatus = async (status) => {
+    try {
+      await axios.post(`${API_URL}/api/users/bulk-status`, { ids: selectedUsers, status }, { withCredentials: true });
+      const updatedUsers = users.map(user =>
+        selectedUsers.includes(user._id) ? { ...user, status } : user
+      );
+      setUsers(updatedUsers);
+      setSelectedUsers([]);
+      toast.success(`Updated status for ${selectedUsers.length} users`);
+    } catch (error) {
+      console.error('Error bulk updating status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleUserUpdate = async (userId, field, value) => {
+    try {
+      await axios.put(`${API_URL}/api/users/${userId}`, { [field]: value }, { withCredentials: true });
+      const updatedUsers = users.map((user) => {
+        if (user._id === userId) {
+          return { ...user, [field]: value };
+        }
+        return user;
+      });
+      setUsers(updatedUsers);
+      toast.success(`Updated ${field.replace('emailNotification', 'notification setting')}`);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error('Failed to update user');
+    }
   };
 
   const handleUserAdded = (newUser) => {
-    const avatar = newUser.gender === 'male'
-      ? 'https://www.w3schools.com/howto/img_avatar.png'
-      : 'https://www.w3schools.com/howto/img_avatar2.png';
-
-    const userWithDefaults = {
-      ...newUser,
-      avatar,
-      emailNotification: true,
-      status: 'Active',
-      createdAt: new Date().toISOString(),
-    };
-    setUsers((prevUsers) => [userWithDefaults, ...prevUsers]);
+    setUsers((prevUsers) => [newUser, ...prevUsers]);
   };
 
   const formatDate = (dateString) => {
@@ -172,7 +183,7 @@ const StoreUsers = () => {
   // Metrics calculations
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
-  const pendingInvites = 3; // Mocked as per request/image since we don't have a status for this yet
+  const pendingInvites = users.filter(u => u.status === 'Pending').length;
 
   return (
     <div className="store-users-page">
@@ -232,8 +243,6 @@ const StoreUsers = () => {
       </div>
 
       <div className="users-toolbar">
-
-
         <div className="toolbar-right-section">
           <div className="search-wrapper-compact">
             <FaSearch className="search-icon-grey" />
@@ -248,12 +257,39 @@ const StoreUsers = () => {
         </div>
       </div>
 
+      {/* Conditional Bulk Actions */}
+      {selectedUsers.length > 0 && (
+        <div className="bulk-actions-bar">
+          <div className="bulk-actions-left">
+            <span className="bulk-count">{selectedUsers.length} selected</span>
+            <button className="bulk-action-btn clear-btn" onClick={() => setSelectedUsers([])}>Deselect All</button>
+          </div>
+          <div className="bulk-actions-right">
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Active')}>Mark Active</button>
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Inactive')}>Mark Inactive</button>
+            <div className="bulk-divider" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.3)' }}></div>
+            <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
+          </div>
+        </div>
+      )}
+
       <div className="users-table-container">
         <div className="users-table-scrollable">
           <table className="users-table">
             <thead>
               <tr>
-                <th><input type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length === sortedUsers.length && sortedUsers.length > 0} /></th>
+                <th className="checkbox-cell">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={
+                      sortedUsers.length > 0 &&
+                      sortedUsers
+                        .filter(u => !(currentUser && (currentUser._id === u._id || currentUser.id === u._id)))
+                        .every(u => selectedUsers.includes(u._id))
+                    }
+                  />
+                </th>
                 <th>#</th>
                 <th onClick={() => requestSort('name')} className="sortable-header">
                   Name
@@ -284,78 +320,113 @@ const StoreUsers = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedUsers.length > 0 ? (
-                sortedUsers.map((user, index) => (
-                  <tr key={user._id} className={selectedUsers.includes(user._id) ? 'row-selected' : ''}>
-                    <td><input type="checkbox" checked={selectedUsers.includes(user._id)} onChange={(e) => handleSelectOne(e, user._id)} onClick={(e) => e.stopPropagation()} /></td>
-                    <td>{index + 1}</td>
-                    <td>
-                      <div className="user-name-cell">
-                        <img src={user.avatar} alt={user.name} className="user-avatar" />
-                        <div>
-                          <div className="user-name">{user.name}</div>
-                          <div className="user-email">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <label className="switch">
+              {loading ? (
+                <tr>
+                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center' }}>
+                    <div style={{ color: '#4f46e5' }}>Loading team members...</div>
+                  </td>
+                </tr>
+              ) : sortedUsers.length > 0 ? (
+                sortedUsers.map((user, index) => {
+                  const isSelf = currentUser && (currentUser._id === user._id || currentUser.id === user._id);
+                  return (
+                    <tr key={user._id} className={selectedUsers.includes(user._id) ? 'row-selected' : ''}>
+                      <td className="checkbox-cell">
                         <input
                           type="checkbox"
-                          checked={user.emailNotification}
-                          onChange={(e) => handleUserUpdate(user._id, 'emailNotification', e.target.checked)}
+                          checked={selectedUsers.includes(user._id)}
+                          onChange={(e) => handleSelectOne(e, user._id)}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isSelf}
                         />
-                        <span className="slider round"></span>
-                      </label>
-                    </td>
-                    <td>
-                      <select
-                        className={`role-select role-${user.role.toLowerCase()}`}
-                        value={user.role}
-                        onChange={(e) => {
-                          const select = e.target;
-                          select.className = `role-select role-${select.value.toLowerCase()}`;
-                          handleUserUpdate(user._id, 'role', e.target.value);
-                        }}
-                      >
-                        <option>Admin</option>
-                        <option>Manager</option>
-                        <option>Staff</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select
-                        className={`status-select status-${user.status.toLowerCase()}`}
-                        value={user.status}
-                        onChange={(e) => {
-                          const select = e.target;
-                          select.className = `status-select status-${select.value.toLowerCase()}`;
-                          handleUserUpdate(user._id, 'status', e.target.value);
-                        }}
-                      >
-                        <option>Active</option>
-                        <option>Inactive</option>
-                      </select>
-                    </td>
-                    <td>{formatDate(user.createdAt)}</td>
-                    <td className="actions-cell">
-                      <div className="actions-wrapper">
-                        <button className="action-btn edit-btn" onClick={(e) => { e.stopPropagation(); toast.info("Edit feature coming soon"); }} title="Edit user">
-                          <FaEdit />
-                        </button>
-                        <button className="action-btn delete-btn" onClick={() => handleDelete(user)} title="Delete user">
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td>{index + 1}</td>
+                      <td>
+                        <div className="user-name-cell">
+                          <div className="user-avatar" style={{ backgroundColor: user.gender === 'female' ? '#fdf2f8' : '#eff6ff', color: user.gender === 'female' ? '#db2777' : '#2563eb' }}>
+                            {user.avatar ? <img src={user.avatar} alt={user.name} className="user-avatar" /> : (user.name ? user.name.charAt(0).toUpperCase() : 'U')}
+                          </div>
+                          <div>
+                            <div className="user-name">
+                              {user.name}
+                              {isSelf && <span className="admin-badge-self">You</span>}
+                            </div>
+                            <div className="user-email">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={user.emailNotification}
+                            onChange={(e) => handleUserUpdate(user._id, 'emailNotification', e.target.checked)}
+                          />
+                          <span className="slider round"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <select
+                          className={`role-select role-${user.role ? user.role.toLowerCase() : 'admin'}`}
+                          value={user.role || 'Admin'}
+                          disabled={isSelf}
+                          onChange={(e) => {
+                            const select = e.target;
+                            select.className = `role-select role-${select.value.toLowerCase()}`;
+                            handleUserUpdate(user._id, 'role', e.target.value);
+                          }}
+                        >
+                          <option>Admin</option>
+                          <option>Manager</option>
+                          <option>Staff</option>
+                        </select>
+                      </td>
+                      <td>
+                        {user.status === 'Pending' ? (
+                          <span className="invitation-pending-badge">
+                            Invitation Pending
+                          </span>
+                        ) : (
+                          <select
+                            className={`status-select status-${user.status ? user.status.toLowerCase() : 'active'}`}
+                            value={user.status || 'Active'}
+                            disabled={isSelf}
+                            onChange={(e) => {
+                              const select = e.target;
+                              select.className = `status-select status-${select.value.toLowerCase()}`;
+                              handleUserUpdate(user._id, 'status', e.target.value);
+                            }}
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
+                        )}
+                      </td>
+                      <td>{formatDate(user.createdAt)}</td>
+                      <td className="actions-cell">
+                        <div className="actions-wrapper">
+                          <button className="action-btn edit-btn" onClick={(e) => { e.stopPropagation(); toast.info("Edit feature coming soon"); }} title="Edit user">
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="action-btn delete-btn"
+                            onClick={() => handleDelete(user)}
+                            title={isSelf ? "Cannot delete yourself" : "Delete user"}
+                            disabled={isSelf}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan="7" className="no-data-cell">
+                  <td colSpan="8" className="no-data-cell">
                     <div className="no-data-content">
                       <FaInbox className="no-data-icon" />
-                      <span>No data available</span>
+                      <span>No members found</span>
                     </div>
                   </td>
                 </tr>
@@ -365,15 +436,13 @@ const StoreUsers = () => {
         </div>
         <div className="table-footer">
           <div className="showing-results">
-            Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedUsers.length}</span> of <span className="text-bold">24</span> results
+            Showing <span className="text-bold">1</span> to <span className="text-bold">{sortedUsers.length}</span> of <span className="text-bold">{sortedUsers.length}</span> results
           </div>
           <div className="pagination-controls">
             <button className="pagination-btn disabled">
               <FaChevronLeft />
             </button>
             <button className="pagination-btn active">1</button>
-            <button className="pagination-btn">2</button>
-            <button className="pagination-btn">3</button>
             <button className="pagination-btn">
               <FaChevronRight />
             </button>
@@ -382,10 +451,10 @@ const StoreUsers = () => {
       </div>
       <AddUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUserAdded={handleUserAdded} />
       <DeleteConfirmModal
-        isOpen={!!userToDelete}
-        onClose={() => setUserToDelete(null)}
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
         onConfirm={confirmDelete}
-        userName={userToDelete?.name}
+        userName={deleteModal.user?.name || (deleteModal.type === 'bulk' ? `${selectedUsers.length} users` : '')}
       />
     </div>
   );

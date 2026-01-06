@@ -31,6 +31,37 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  isOnboarded: {
+    type: Boolean,
+    default: false
+  },
+  role: {
+    type: String,
+    enum: ['Admin', 'Manager', 'Staff', 'SuperAdmin'],
+    default: 'Admin'
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive', 'Pending'],
+    default: 'Active'
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    required: false
+  },
+  avatar: {
+    type: String,
+    required: false
+  },
+  emailNotification: {
+    type: Boolean,
+    default: true
+  },
+  hasSelectedPlan: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 // To ensure that a user's email is unique within the scope of a single client

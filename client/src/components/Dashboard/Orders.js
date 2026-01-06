@@ -26,6 +26,7 @@ const Orders = () => {
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [selectedOrders, setSelectedOrders] = useState(new Set());
     const [isAllSelected, setIsAllSelected] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [statusEditId, setStatusEditId] = useState(null);
     const [payStatusEditId, setPayStatusEditId] = useState(null);
 
@@ -241,17 +242,73 @@ const Orders = () => {
     const handleDelete = (e, order) => {
         e.stopPropagation();
         setOrderToDelete(order);
+        setIsDeleteModalOpen(true);
     };
 
     const confirmDelete = async () => {
+        if (orderToDelete) {
+            // Single delete
+            try {
+                await axios.delete(`${API_URL}/api/orders/${orderToDelete._id}`, { withCredentials: true });
+                toast.success(`Order ${orderToDelete.orderId} deleted`);
+                setOrders(prevOrders => prevOrders.filter(o => o._id !== orderToDelete._id));
+                setOrderToDelete(null);
+                setIsDeleteModalOpen(false);
+            } catch (error) {
+                console.error('Error deleting order:', error);
+                toast.error('Failed to delete order');
+            }
+        } else {
+            // Bulk delete
+            try {
+                const ids = Array.from(selectedOrders);
+                await axios.post(`${API_URL}/api/orders/bulk-delete`, { ids }, { withCredentials: true });
+                toast.success(`${ids.length} orders deleted`);
+                setOrders(prevOrders => prevOrders.filter(o => !ids.includes(o._id)));
+                setSelectedOrders(new Set());
+                setIsAllSelected(false);
+                setIsDeleteModalOpen(false);
+            } catch (error) {
+                console.error('Error bulk deleting orders:', error);
+                toast.error('Failed to delete orders');
+            }
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedOrders.size === 0) return;
+        setOrderToDelete(null);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleBulkUpdateStatus = async (status, type = 'order') => {
+        console.log(`Bulk update triggered: status=${status}, type=${type}, selected=${selectedOrders.size}`);
+        if (selectedOrders.size === 0) return;
         try {
-            await axios.delete(`${API_URL}/api/orders/${orderToDelete._id}`, { withCredentials: true });
-            toast.success(`Order ${orderToDelete.orderId} deleted`);
-            setOrders(prevOrders => prevOrders.filter(o => o._id !== orderToDelete._id));
-            setOrderToDelete(null);
+            const ids = Array.from(selectedOrders);
+            console.log('IDs for bulk update:', ids);
+            const response = await axios.post(`${API_URL}/api/orders/bulk-status`, { ids, status, type }, { withCredentials: true });
+            console.log('Bulk update response:', response.data);
+
+            // Local state update
+            if (type === 'payment') {
+                setOrders(prevOrders => prevOrders.map(order =>
+                    ids.includes(order._id)
+                        ? { ...order, invoices: order.invoices?.map(inv => ({ ...inv, status })) || [{ status }], status: status === 'Refunded' ? 'refunded' : order.status }
+                        : order
+                ));
+            } else {
+                setOrders(prevOrders => prevOrders.map(order =>
+                    ids.includes(order._id) ? { ...order, status: status.toLowerCase() } : order
+                ));
+            }
+
+            toast.success(`Updated ${ids.length} orders to ${status}`);
+            setSelectedOrders(new Set());
+            setIsAllSelected(false);
         } catch (error) {
-            console.error('Error deleting order:', error);
-            toast.error('Failed to delete order');
+            console.error('Error bulk updating status:', error);
+            toast.error(error.response?.data?.msg || 'Failed to update orders');
         }
     };
 
@@ -568,6 +625,65 @@ const Orders = () => {
                 </div>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedOrders.size > 0 && (
+                <div className="bulk-actions-bar">
+                    <div className="bulk-actions-left">
+                        <span className="bulk-count">{selectedOrders.size} selected</span>
+                        <button className="deselect-all-btn" onClick={() => { setSelectedOrders(new Set()); setIsAllSelected(false); }}>
+                            <FaTimes /> Deselect All
+                        </button>
+                    </div>
+                    <div className="bulk-actions-right">
+                        <div className="bulk-action-group">
+                            <span className="group-label">Mark As:</span>
+                            <select
+                                className="bulk-select-input"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val) {
+                                        handleBulkUpdateStatus(val);
+                                        e.target.value = "";
+                                    }
+                                }}
+                            >
+                                <option value="">Update Status...</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipping">Shipping</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Refunded">Refunded</option>
+                            </select>
+                        </div>
+                        <div className="bulk-divider"></div>
+                        <div className="bulk-action-group">
+                            <span className="group-label">Payment:</span>
+                            <select
+                                className="bulk-select-input"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val) {
+                                        handleBulkUpdateStatus(val, 'payment');
+                                        e.target.value = "";
+                                    }
+                                }}
+                            >
+                                <option value="">Set Payment...</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Unpaid">Unpaid</option>
+                                <option value="Partial">Partial</option>
+                                <option value="Refunded">Refunded</option>
+                            </select>
+                        </div>
+                        <div className="bulk-divider"></div>
+                        <button className="bulk-delete-btn" onClick={handleBulkDelete}>
+                            <FaTrash /> Delete
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="orders-table-container">
                 <table className="orders-table">
                     <thead>
@@ -637,7 +753,7 @@ const Orders = () => {
                                     <td>
                                         <div className="customer-info">
                                             <span className="customer-name">{order.customerDetails?.name || 'Guest'}</span>
-                                            <span className="customer-email">{order.customerDetails?.email}</span>
+                                            <span className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b' }}>{order.customerDetails?.phone}</span>
                                         </div>
                                     </td>
                                     <td>Rs. {order.payment?.total?.toFixed(2) || '0.00'}</td>
@@ -740,8 +856,14 @@ const Orders = () => {
                 <OrderDetailsModal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} order={selectedOrder} onOrderUpdate={handleOrderUpdate} />
             )}
 
-            {orderToDelete && (
-                <DeleteConfirmModal isOpen={!!orderToDelete} onClose={() => setOrderToDelete(null)} onConfirm={confirmDelete} itemName={orderToDelete.orderId} itemType="order" />
+            {isDeleteModalOpen && (
+                <DeleteConfirmModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => { setIsDeleteModalOpen(false); setOrderToDelete(null); }}
+                    onConfirm={confirmDelete}
+                    itemName={orderToDelete ? orderToDelete.orderId : `${selectedOrders.size} orders`}
+                    itemType="order"
+                />
             )}
         </div>
     );

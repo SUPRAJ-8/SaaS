@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaEdit, FaArrowUp, FaArrowDown, FaSearch, FaInbox, FaChevronLeft, FaChevronRight, FaPrint, FaFileExport, FaPlus, FaStar } from 'react-icons/fa';
 import CustomerAvatar from './CustomerAvatar';
-import { toast } from 'react-toastify';
-import DeleteConfirmModal from './DeleteConfirmModal';
+import { toast, ToastContainer } from 'react-toastify';
+import ConfirmationModal from './ConfirmationModal.js';
 import API_URL from '../../apiConfig';
 import './Customers.css';
 import './Switch.css'; // Reuse the same switch styles
@@ -14,12 +14,12 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: 'single', customer: null });
 
   // Fetch customers from API
   useEffect(() => {
@@ -59,10 +59,17 @@ const Customers = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allCustomerIds = sortedCustomers.map(c => c._id);
-      setSelectedCustomers(allCustomerIds);
+      const currentIds = currentItems.map(c => c._id);
+      setSelectedCustomers(prev => {
+        const newSelected = [...prev];
+        currentIds.forEach(id => {
+          if (!newSelected.includes(id)) newSelected.push(id);
+        });
+        return newSelected;
+      });
     } else {
-      setSelectedCustomers([]);
+      const currentIds = currentItems.map(c => c._id);
+      setSelectedCustomers(prev => prev.filter(id => !currentIds.includes(id)));
     }
   };
 
@@ -111,27 +118,65 @@ const Customers = () => {
   };
 
   const handleDelete = (customer) => {
-    setCustomerToDelete(customer);
+    setDeleteModal({ isOpen: true, type: 'single', customer });
+  };
+
+  const handleBulkDelete = () => {
+    setDeleteModal({ isOpen: true, type: 'bulk', customer: null });
   };
 
   const confirmDelete = async () => {
-    if (customerToDelete) {
+    if (deleteModal.type === 'single') {
+      const customer = deleteModal.customer;
+      if (!customer) return;
       try {
-        const response = await axios.delete(`${API_URL}/api/customers/${customerToDelete._id}`);
-        setCustomers(customers.filter((customer) => customer._id !== customerToDelete._id));
+        const response = await axios.delete(`${API_URL}/api/customers/${customer._id}`);
+        setCustomers(customers.filter((c) => c._id !== customer._id));
 
         const deletedOrdersCount = response.data.deletedOrdersCount || 0;
         const message = deletedOrdersCount > 0
-          ? `Customer ${customerToDelete.name} and ${deletedOrdersCount} order(s) deleted successfully`
-          : `Customer ${customerToDelete.name} deleted successfully`;
+          ? `Customer ${customer.name} and ${deletedOrdersCount} order(s) deleted successfully`
+          : `Customer ${customer.name} deleted successfully`;
 
         toast.success(message);
-        setCustomerToDelete(null);
       } catch (error) {
         console.error('Error deleting customer:', error);
         toast.error('Failed to delete customer. Please try again.');
-        setCustomerToDelete(null);
       }
+    } else if (deleteModal.type === 'bulk') {
+      try {
+        await axios.post(`${API_URL}/api/customers/bulk-delete`, { ids: selectedCustomers });
+        setCustomers(customers.filter(c => !selectedCustomers.includes(c._id)));
+        setSelectedCustomers([]);
+        toast.success(`${selectedCustomers.length} customers deleted successfully`);
+      } catch (error) {
+        console.error('Error bulk deleting customers:', error);
+        toast.error('Failed to bulk delete customers');
+      }
+    }
+    setDeleteModal({ isOpen: false, type: 'single', customer: null });
+  };
+
+  const handleBulkUpdateStatus = async (status) => {
+    try {
+      await axios.post(`${API_URL}/api/customers/bulk-update-status`, { ids: selectedCustomers, status });
+      setCustomers(customers.map(c => selectedCustomers.includes(c._id) ? { ...c, status } : c));
+      setSelectedCustomers([]);
+      toast.success(`Selected customers marked as ${status}`);
+    } catch (error) {
+      console.error('Error updating customer status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleStatusChange = async (customerId, newStatus) => {
+    try {
+      await axios.patch(`${API_URL}/api/customers/${customerId}`, { status: newStatus });
+      setCustomers(customers.map(c => c._id === customerId ? { ...c, status: newStatus } : c));
+      toast.success('Status updated');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -186,11 +231,33 @@ const Customers = () => {
           </button>
         </div>
       </div>
+
+      {/* Conditional Bulk Actions */}
+      {selectedCustomers.length > 0 && (
+        <div className="bulk-actions-bar">
+          <div className="bulk-actions-left">
+            <span className="bulk-count">{selectedCustomers.length} selected</span>
+            <button className="bulk-action-btn clear-btn" onClick={() => setSelectedCustomers([])}>Deselect All</button>
+          </div>
+          <div className="bulk-actions-right">
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Active')}>Mark Active</button>
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Inactive')}>Mark Inactive</button>
+            <div className="bulk-divider" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.3)' }}></div>
+            <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
+          </div>
+        </div>
+      )}
       <div className="customers-table-container">
         <table className="customers-table">
           <thead>
             <tr>
-              <th><input type="checkbox" onChange={handleSelectAll} checked={selectedCustomers.length === sortedCustomers.length && sortedCustomers.length > 0} /></th>
+              <th className="checkbox-cell">
+                <input
+                  type="checkbox"
+                  onChange={handleSelectAll}
+                  checked={currentItems.length > 0 && currentItems.every(c => selectedCustomers.includes(c._id))}
+                />
+              </th>
               <th>#</th>
               <th onClick={() => requestSort('name')} className="sortable-header">
                 Customer
@@ -200,17 +267,6 @@ const Customers = () => {
                   />
                   <FaArrowDown
                     className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th onClick={() => requestSort('phone')} className="sortable-header">
-                Phone
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'phone' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'phone' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
                   />
                 </span>
               </th>
@@ -247,6 +303,7 @@ const Customers = () => {
                   />
                 </span>
               </th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -255,7 +312,7 @@ const Customers = () => {
               currentItems.map((customer, index) => (
                 <React.Fragment key={customer._id}>
                   <tr className={`customer-row ${selectedCustomers.includes(customer._id) ? 'row-selected' : ''}`} onClick={() => handleRowClick(customer)} >
-                    <td><input type="checkbox" checked={selectedCustomers.includes(customer._id)} onChange={(e) => handleSelectOne(e, customer._id)} onClick={(e) => e.stopPropagation()} /></td>
+                    <td className="checkbox-cell"><input type="checkbox" checked={selectedCustomers.includes(customer._id)} onChange={(e) => handleSelectOne(e, customer._id)} onClick={(e) => e.stopPropagation()} /></td>
                     <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td>
                       <div className="customer-name-cell">
@@ -263,13 +320,24 @@ const Customers = () => {
                         <div>
                           <div className="customer-name">{customer.name}</div>
                           <div className="customer-email">{customer.email}</div>
+                          <div className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{customer.phone}</div>
                         </div>
                       </div>
                     </td>
-                    <td>{customer.phone}</td>
                     <td>{customer.totalOrders}</td>
                     <td>{formatCurrency(customer.totalSpent)}</td>
                     <td>{formatDate(customer.lastOrder)}</td>
+                    <td>
+                      <select
+                        className={`status-select status-${(customer.status || 'Active').toLowerCase()}`}
+                        value={customer.status || 'Active'}
+                        onChange={(e) => handleStatusChange(customer._id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </td>
                     <td className="actions-cell">
                       <div className="actions-wrapper">
                         <button
@@ -333,16 +401,21 @@ const Customers = () => {
         </div>
       </div>
 
-      {customerToDelete && (
-        <DeleteConfirmModal
-          isOpen={!!customerToDelete}
-          onClose={() => setCustomerToDelete(null)}
-          onConfirm={confirmDelete}
-          itemName={customerToDelete?.name}
-          itemType="customer"
-          ordersCount={customerToDelete?.totalOrders || 0}
-        />
-      )}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={confirmDelete}
+        title={deleteModal.type === 'bulk' ? 'Bulk Delete Customers' : 'Delete Customer'}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+      >
+        {deleteModal.type === 'bulk' ? (
+          <>Are you sure you want to delete <strong>{selectedCustomers.length}</strong> customers? This will also delete all their associated orders. This action cannot be undone.</>
+        ) : (
+          <>Are you sure you want to delete <strong>{deleteModal.customer?.name}</strong>? This will also delete their {deleteModal.customer?.totalOrders || 0} associated order(s). This action cannot be undone.</>
+        )}
+      </ConfirmationModal>
+      <ToastContainer />
     </div>
   );
 };

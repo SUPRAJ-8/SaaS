@@ -480,4 +480,84 @@ router.get('/track/:orderId', async (req, res) => {
   }
 });
 
+// @route   POST api/orders/bulk-delete
+// @desc    Delete multiple orders
+// @access  Private
+router.post('/bulk-delete', ensureAuthenticated, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const clientId = req.user.clientId;
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ msg: 'Invalid IDs' });
+    }
+
+    // Delete orders that belong to this client
+    const result = await Order.deleteMany({
+      _id: { $in: ids },
+      clientId: clientId
+    });
+
+    res.json({ msg: `${result.deletedCount} orders deleted` });
+  } catch (err) {
+    console.error('Error bulk deleting orders:', err);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   POST api/orders/bulk-status
+// @desc    Update status for multiple orders
+// @access  Private
+router.post('/bulk-status', ensureAuthenticated, async (req, res) => {
+  try {
+    const { ids, status, type } = req.body; // type: 'order' or 'payment'
+    const clientId = req.user.clientId;
+
+    if (!ids || !Array.isArray(ids) || !status) {
+      return res.status(400).json({ msg: 'Invalid request' });
+    }
+
+    if (type === 'payment') {
+      const orders = await Order.find({ _id: { $in: ids }, clientId });
+
+      for (const order of orders) {
+        // Build update object
+        const updatedInvoices = order.invoices && order.invoices.length > 0
+          ? order.invoices.map(inv => ({ ...inv, status }))
+          : [{ status }];
+
+        const updateData = { invoices: updatedInvoices, updatedOn: Date.now() };
+
+        // If payment status is set to Refunded, automatically set order status to refunded
+        if (status === 'Refunded') {
+          updateData.status = 'refunded';
+        }
+
+        await Order.findByIdAndUpdate(order._id, { $set: updateData });
+      }
+    } else {
+      // Standard order status update
+      const orders = await Order.find({ _id: { $in: ids }, clientId });
+
+      for (const order of orders) {
+        const previousStatus = order.status;
+        order.status = status.toLowerCase();
+        order.updatedOn = Date.now();
+
+        await order.save();
+
+        // If status changed to 'delivered', reduce inventory
+        if (status.toLowerCase() === 'delivered' && previousStatus !== 'delivered') {
+          await reduceProductInventory(order.items);
+        }
+      }
+    }
+
+    res.json({ msg: 'Orders status updated' });
+  } catch (err) {
+    console.error('Error bulk updating order status:', err);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
 module.exports = router;

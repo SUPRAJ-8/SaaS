@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint } from 'react-icons/fa';
+import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint, FaArchive, FaCheck, FaTimes, FaFileAlt } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Products.css';
 import { ProductModal } from './ProductModal.js';
-import DeleteConfirmModal from './DeleteConfirmModal';
+import ConfirmationModal from './ConfirmationModal.js';
 import { getProducts } from '../../services/productService';
 import API_URL from '../../apiConfig';
 import { resolveImageUrl } from '../../themeUtils';
@@ -19,9 +19,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
-  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: 'single', product: null });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -46,10 +44,17 @@ const Products = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allProductIds = products.map(p => p._id);
-      setSelectedProducts(allProductIds);
+      const currentIds = currentItems.map(p => p._id);
+      setSelectedProducts(prev => {
+        const newSelected = [...prev];
+        currentIds.forEach(id => {
+          if (!newSelected.includes(id)) newSelected.push(id);
+        });
+        return newSelected;
+      });
     } else {
-      setSelectedProducts([]);
+      const currentIds = currentItems.map(p => p._id);
+      setSelectedProducts(prev => prev.filter(id => !currentIds.includes(id)));
     }
   };
 
@@ -86,54 +91,56 @@ const Products = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!productToDelete) return;
+    if (deleteModal.type === 'single') {
+      const product = deleteModal.product;
+      if (!product) return;
 
-    try {
-      const response = await fetch(`${API_URL}/api/products/${productToDelete._id}`, {
-        method: 'DELETE',
-      });
+      try {
+        const response = await fetch(`${API_URL}/api/products/${product._id}`, {
+          method: 'DELETE',
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete product');
+        if (!response.ok) {
+          throw new Error('Failed to delete product');
+        }
+
+        setProducts(products.filter(p => p._id !== product._id));
+        toast.success('Product deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Failed to delete product.');
       }
+    } else if (deleteModal.type === 'bulk') {
+      try {
+        const response = await fetch(`${API_URL}/api/products/bulk-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: selectedProducts }),
+        });
 
-      setProducts(products.filter(p => p._id !== productToDelete._id));
-      toast.success('Product deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Failed to delete product.');
-    } finally {
-      setIsDeleteModalOpen(false);
-      setProductToDelete(null);
+        if (!response.ok) {
+          throw new Error('Failed to delete products');
+        }
+
+        setProducts(products.filter(p => !selectedProducts.includes(p._id)));
+        setSelectedProducts([]);
+        toast.success(`${selectedProducts.length} products deleted successfully!`);
+      } catch (error) {
+        console.error('Error deleting products:', error);
+        toast.error('Failed to delete products.');
+      }
     }
+    setDeleteModal({ isOpen: false, type: 'single', product: null });
   };
 
   const handleBulkDelete = () => {
-    setIsBulkDeleteModalOpen(true);
+    setDeleteModal({ isOpen: true, type: 'bulk', product: null });
   };
 
-  const handleConfirmBulkDelete = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/products/bulk-delete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ids: selectedProducts }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete products');
-      }
-
-      setProducts(products.filter(p => !selectedProducts.includes(p._id)));
-      setSelectedProducts([]);
-      toast.success(`${selectedProducts.length} products deleted successfully!`);
-    } catch (error) {
-      console.error('Error deleting products:', error);
-      toast.error('Failed to delete products.');
-    }
-    setIsBulkDeleteModalOpen(false);
+  const handleDeleteClick = (product) => {
+    setDeleteModal({ isOpen: true, type: 'single', product });
   };
 
   const handleBulkUpdateStatus = async (status) => {
@@ -161,11 +168,6 @@ const Products = () => {
       console.error('Error updating products:', error);
       toast.error(error.message || 'Failed to update products.');
     }
-  };
-
-  const handleDeleteClick = (product) => {
-    setProductToDelete(product);
-    setIsDeleteModalOpen(true);
   };
 
   const handleProductUpdate = async (productId, field, value) => {
@@ -289,18 +291,20 @@ const Products = () => {
         product={productToEdit}
         onSave={handleSaveProduct}
       />
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
         onConfirm={handleConfirmDelete}
-        itemName={productToDelete ? productToDelete.name : ''}
-      />
-      <DeleteConfirmModal
-        isOpen={isBulkDeleteModalOpen}
-        onClose={() => setIsBulkDeleteModalOpen(false)}
-        onConfirm={handleConfirmBulkDelete}
-        itemName={`${selectedProducts.length} products`}
-      />
+        title={deleteModal.type === 'bulk' ? 'Bulk Delete Products' : 'Delete Product'}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+      >
+        {deleteModal.type === 'bulk' ? (
+          <>Are you sure you want to delete <strong>{selectedProducts.length}</strong> products? This action cannot be undone.</>
+        ) : (
+          <>Are you sure you want to delete <strong>{deleteModal.product?.name}</strong>? This action cannot be undone.</>
+        )}
+      </ConfirmationModal>
       {/* Top Header: Title & Actions */}
       <div className="products-page-header">
         <div className="header-title-section">
@@ -340,7 +344,22 @@ const Products = () => {
         <div className="toolbar-right-section">
           <div className="search-wrapper-compact">
             <FaSearch className="search-icon-grey" />
-            <input type="text" placeholder="Search product name" className="search-input-compact" />
+            <input
+              type="text"
+              placeholder="Search product name"
+              className="search-input-compact"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                className="search-clear-btn"
+                onClick={() => setSearchTerm('')}
+                title="Clear search"
+              >
+                <FaTimes />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -350,11 +369,19 @@ const Products = () => {
         <div className="bulk-actions-bar">
           <div className="bulk-actions-left">
             <span className="bulk-count">{selectedProducts.length} selected</span>
+            <button className="deselect-all-btn" onClick={() => setSelectedProducts([])}>Deselect All</button>
           </div>
           <div className="bulk-actions-right">
-            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Draft')}>Move to Draft</button>
-            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Archived')}>Archive</button>
-            <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Draft')}>
+              <FaFileAlt /> Draft
+            </button>
+            <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Archived')}>
+              <FaArchive /> Archive
+            </button>
+            <div className="bulk-divider"></div>
+            <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>
+              <FaTrashAlt /> Delete
+            </button>
           </div>
         </div>
       )}
@@ -362,7 +389,13 @@ const Products = () => {
         <table className="products-table">
           <thead>
             <tr>
-              <th className="checkbox-cell"><input type="checkbox" onChange={handleSelectAll} checked={selectedProducts.length === products.length && products.length > 0} /></th>
+              <th className="checkbox-cell">
+                <input
+                  type="checkbox"
+                  onChange={handleSelectAll}
+                  checked={currentItems.length > 0 && currentItems.every(p => selectedProducts.includes(p._id))}
+                />
+              </th>
               <th>#</th>
               <th>Image</th>
               <th>Name</th>
@@ -379,11 +412,11 @@ const Products = () => {
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center' }}>Loading...</td>
               </tr>
-            ) : products.length > 0 ? (
-              products.filter(p => statusFilter === 'All' || p.status === statusFilter).map((product, index) => (
+            ) : currentItems.length > 0 ? (
+              currentItems.map((product, index) => (
                 <tr key={product._id} onClick={() => handleEditClick(product)} className={selectedProducts.includes(product._id) ? 'row-selected' : ''} style={{ cursor: 'pointer' }}>
                   <td className="checkbox-cell"><input type="checkbox" checked={selectedProducts.includes(product._id)} onChange={(e) => handleSelectOne(e, product._id)} onClick={(e) => e.stopPropagation()} /></td>
-                  <td>{index + 1}</td>
+                  <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td>
                     <div style={{ position: 'relative', width: '40px', height: '40px' }}>
                       <img
@@ -448,16 +481,32 @@ const Products = () => {
         </table>
         <div className="table-footer">
           <div className="showing-results">
-            Showing <span className="text-bold">1</span> to <span className="text-bold">{products.length > 3 ? 3 : products.length}</span> of <span className="text-bold">{products.length}</span> results
+            Showing <span className="text-bold">{filteredProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> of <span className="text-bold">{filteredProducts.length}</span> results
           </div>
           <div className="pagination-controls">
-            <button className="pagination-btn disabled">
+            <button
+              className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
               <FaChevronLeft />
             </button>
-            <button className="pagination-btn active">1</button>
-            <button className="pagination-btn">2</button>
-            <button className="pagination-btn">3</button>
-            <button className="pagination-btn">
+
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                className={`pagination-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+
+            <button
+              className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
               <FaChevronRight />
             </button>
           </div>

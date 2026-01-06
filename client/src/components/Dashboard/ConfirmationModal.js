@@ -17,7 +17,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, confir
           <button onClick={onClose} className="btn-cancel">
             {cancelText}
           </button>
-          <button onClick={onConfirm} className="btn-confirm-remove">
+          <button onClick={onConfirm} className="btn-confirm-delete">
             {confirmText}
           </button>
         </div>

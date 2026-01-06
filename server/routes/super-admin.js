@@ -245,4 +245,62 @@ router.get('/dashboard-stats', async (req, res) => {
     }
 });
 
+// @route   POST api/super-admin/bulk-delete
+// @desc    Bulk delete tenants and all their associated data
+router.post('/bulk-delete', async (req, res) => {
+    const { ids } = req.body;
+    console.log(`🗑️ Bulk delete request received for ${ids?.length} tenants:`, ids);
+    try {
+        if (!ids || !Array.isArray(ids)) {
+            return res.status(400).json({ msg: 'Invalid IDs provided' });
+        }
+
+        // For each client ID, delete associated data
+        console.log('🔄 Bulk Deleting sub-data (Users, Products, Orders)...');
+        const results = await Promise.all(ids.map(async (clientId) => {
+            const u = await User.deleteMany({ clientId });
+            const p = await Product.deleteMany({ clientId });
+            const o = await Order.deleteMany({ clientId });
+            return { clientId, users: u.deletedCount, products: p.deletedCount, orders: o.deletedCount };
+        }));
+        console.log('📊 Bulk Sub-data deletion results:', results);
+
+        // Finally delete the clients
+        console.log('🔄 Deleting Client records from DB...');
+        const clientDeleteResult = await Client.deleteMany({ _id: { $in: ids } });
+        console.log(`✅ Bulk Delete Complete. Deleted ${clientDeleteResult.deletedCount} clients.`);
+
+        res.json({ msg: `${ids.length} tenants and associated data deleted successfully` });
+    } catch (err) {
+        console.error('Error bulk deleting tenants:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/super-admin/bulk-plan
+// @desc    Bulk update subscription plans for tenants
+router.post('/bulk-plan', async (req, res) => {
+    const { ids, plan } = req.body;
+    console.log(`📈 Bulk plan update request received for ${ids?.length} tenants to plan: ${plan}`);
+    try {
+        if (!ids || !Array.isArray(ids) || !plan) {
+            return res.status(400).json({ msg: 'Invalid request data' });
+        }
+
+        const updateResult = await Client.updateMany(
+            { _id: { $in: ids } },
+            { $set: { subscriptionPlan: plan } }
+        );
+        console.log(`✅ Bulk Plan Update Complete. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`);
+
+        res.json({
+            msg: `Successfully updated ${updateResult.modifiedCount} tenants to ${plan} plan`,
+            details: updateResult
+        });
+    } catch (err) {
+        console.error('Error bulk updating plans:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

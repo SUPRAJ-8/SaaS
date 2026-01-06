@@ -138,4 +138,56 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// @route   POST api/categories/bulk-delete
+// @desc    Delete multiple categories
+// @access  Private
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const clientId = req.user?.clientId || req.body.clientId;
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ msg: 'Invalid IDs' });
+    }
+
+    if (!clientId) {
+      return res.status(401).json({ msg: 'Unauthorized' });
+    }
+
+    await Category.deleteMany({ _id: { $in: ids }, clientId });
+    res.json({ msg: 'Categories deleted' });
+  } catch (err) {
+    console.error('Error bulk deleting categories:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   POST api/categories/bulk-status
+// @desc    Update status for multiple categories
+// @access  Private
+router.post('/bulk-status', async (req, res) => {
+  try {
+    const { ids, status } = req.body;
+    const clientId = req.user?.clientId || req.body.clientId;
+
+    if (!ids || !Array.isArray(ids) || !status) {
+      return res.status(400).json({ msg: 'Invalid request' });
+    }
+
+    if (!clientId) {
+      return res.status(401).json({ msg: 'Unauthorized' });
+    }
+
+    await Category.updateMany(
+      { _id: { $in: ids }, clientId },
+      { $set: { status } }
+    );
+
+    res.json({ msg: 'Categories status updated' });
+  } catch (err) {
+    console.error('Error bulk updating categories status:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

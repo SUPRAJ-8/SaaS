@@ -512,6 +512,21 @@
   vertical-align: middle;
 }
 
+.customers-page .checkbox-cell {
+  width: 64px !important;
+  min-width: 64px !important;
+  text-align: center !important;
+  padding: 0 !important;
+  vertical-align: middle;
+}
+
+.customers-page .checkbox-cell input {
+  margin: 0 !important;
+  vertical-align: middle;
+  cursor: pointer;
+  display: inline-block;
+}
+
 .customers-page .customer-row {
   cursor: pointer;
   transition: background-color 0.2s;

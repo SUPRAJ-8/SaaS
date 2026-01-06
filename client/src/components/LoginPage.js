@@ -21,26 +21,26 @@ const LoginPage = () => {
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const loginUrl = API_URL ? `${API_URL}/api/auth/login` : '/api/auth/login';
     console.log('🔐 Login attempt:', { email, url: loginUrl, API_URL });
-    
+
     const performLogin = async (url) => {
       const response = await axios.post(url, { email, password }, { withCredentials: true });
       console.log('✅ Login response:', response.data);
-      
+
       if (response.data.success) {
         console.log('✅ Login successful, preparing redirect...');
         console.log('User data:', response.data.user);
         toast.success('Successfully logged in! Redirecting...');
-        
+
         // Wait a moment for session cookie to be set, then redirect
         // Use window.location.href for full page reload to ensure ProtectedRoute picks up session
         setTimeout(() => {
           console.log('🔄 Redirecting to dashboard...');
           console.log('Current location:', window.location.href);
           console.log('Cookies before redirect:', document.cookie);
-          
+
           // Force redirect - try multiple methods to ensure it works
           try {
             window.location.href = '/dashboard';
@@ -49,12 +49,12 @@ const LoginPage = () => {
             window.location.replace('/dashboard');
           }
         }, 500); // Wait for session to be saved
-        
+
         return true;
       }
       return false;
     };
-    
+
     try {
       const success = await performLogin(loginUrl);
       if (success) {
@@ -73,9 +73,10 @@ const LoginPage = () => {
         data: error.response?.data,
         url: error.config?.url
       });
-      
+
       // If it's a 404, try direct backend URL as fallback
-      if (error.response?.status === 404 && !API_URL) {
+      // BUT only if there's no msg in the response (meaning it's likely a routing issue, not a 'user not found' response)
+      if (error.response?.status === 404 && !API_URL && !error.response?.data?.msg) {
         console.log('🔄 Trying direct backend URL as fallback...');
         try {
           const fallbackUrl = 'http://localhost:5002/api/auth/login';
@@ -94,7 +95,7 @@ const LoginPage = () => {
           return;
         }
       }
-      
+
       // Show specific error message
       const errorMessage = error.response?.data?.msg || error.message || 'Invalid Credentials';
       toast.error(errorMessage);

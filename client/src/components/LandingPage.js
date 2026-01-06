@@ -534,7 +534,7 @@ const LandingPage = () => {
                                 <span className="amount">Custom</span>
                             </div>
                             <p>FOR MORE CUSTOMIZATION</p>
-                            <button className="btn-outline full-width">Contact Sales</button>
+                            <Link to="/contact" className="btn-outline full-width">Contact Sales</Link>
                         </div>
                         <div className="divider"></div>
                         <ul className="features-list">

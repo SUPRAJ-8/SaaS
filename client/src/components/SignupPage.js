@@ -13,8 +13,6 @@ const SignupPage = () => {
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
-        phoneNumber: '',
-        storeName: '',
         password: ''
     });
 
@@ -105,34 +103,6 @@ const SignupPage = () => {
                                         type="email"
                                         placeholder="Email Address"
                                         value={formData.email}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="premium-input-group">
-                                <label>Phone Number</label>
-                                <div className="input-with-icon">
-                                    <input
-                                        name="phoneNumber"
-                                        type="tel"
-                                        placeholder="Phone Number"
-                                        value={formData.phoneNumber}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="premium-input-group">
-                                <label>Store Name</label>
-                                <div className="input-with-icon">
-                                    <input
-                                        name="storeName"
-                                        type="text"
-                                        placeholder="Store Name"
-                                        value={formData.storeName}
                                         onChange={handleInputChange}
                                         required
                                     />

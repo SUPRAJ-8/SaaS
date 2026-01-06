@@ -210,6 +210,7 @@ app.use('/api/store-settings', require('./routes/store-settings'));
 app.use('/api/client-pages', require('./routes/client-pages'));
 app.use('/api/public-settings', require('./routes/public-settings'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/users', require('./routes/users'));
 
 const port = process.env.PORT || 5002;
 

@@ -15,9 +15,23 @@ passport.use(new GoogleStrategy({
       let user = await User.findOne({ googleId: profile.id });
 
       if (user) {
-        // If user exists, pass the user object to the next step
+        // If user exists by googleId, pass the user object
         return done(null, user);
       } else {
+        // Check if there is an invited user with this email (status: 'Pending')
+        let emailUser = await User.findOne({ email: profile.emails[0].value.toLowerCase() });
+
+        if (emailUser) {
+          console.log('🔗 Linking invited/existing user to Google ID:', emailUser.email);
+          // If they were invited (Pending) or just have an email without Google ID
+          emailUser.googleId = profile.id;
+          emailUser.status = 'Active'; // Automatically accept invitation
+          if (!emailUser.name) emailUser.name = profile.displayName;
+
+          const updatedUser = await emailUser.save();
+          return done(null, updatedUser);
+        }
+
         // AUTO-REGISTRATION: Create a new Client and User for new signups
         const Client = require('../models/Client');
 

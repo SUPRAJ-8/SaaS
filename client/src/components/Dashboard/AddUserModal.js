@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
+import API_URL from '../../apiConfig';
 import './AddUserModal.css';
 
 const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
@@ -9,6 +11,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
   const [gender, setGender] = useState(''); // Default to empty for placeholder
   const [error, setError] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,22 +27,33 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
     }, 300);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
+    setLoading(true);
 
-    // Simulate API call
-    const newUser = {
-      _id: new Date().getTime().toString(), // Create a unique ID
-      name: fullName,
-      email,
-      role,
-      gender,
-    };
+    try {
+      const payload = {
+        name: fullName,
+        email,
+        role,
+        gender: gender.toLowerCase()
+      };
 
-    onUserAdded(newUser);
-    toast.success(`Invitation sent to ${fullName}`);
-    handleClose();
+      const response = await axios.post(`${API_URL}/api/users`, payload, { withCredentials: true });
+
+      onUserAdded(response.data);
+      toast.success(`Invitation sent to ${fullName}`);
+      handleClose();
+    } catch (err) {
+      console.error('Error inviting user:', err);
+      const errorMsg = err.response?.data?.msg || 'Failed to send invitation';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -89,7 +103,9 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
             </select>
           </div>
           <div className="add-user-modal-actions">
-            <button type="submit" className="add-user-btn-submit">Send invitation</button>
+            <button type="submit" className="add-user-btn-submit" disabled={loading}>
+              {loading ? 'Sending...' : 'Send invitation'}
+            </button>
           </div>
         </form>
       </div>

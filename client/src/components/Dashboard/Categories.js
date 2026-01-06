@@ -18,12 +18,13 @@ const Categories = () => {
   const [categoryToEdit, setCategoryToEdit] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]); // For checkboxes
+  const [selectedSubCategories, setSelectedSubCategories] = useState([]); // For sub-checkboxes
   const [loading, setLoading] = useState(true);
   const [selectedCategoryPanel, setSelectedCategoryPanel] = useState(null); // For Right Panel
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [subcategoryToEdit, setSubcategoryToEdit] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, data: null });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, data: null, selectedCount: 0 });
 
   const requestSort = (key) => {
     let direction = 'asc';
@@ -117,6 +118,24 @@ const Categories = () => {
     }
   };
 
+  const handleSelectAllSub = (e) => {
+    if (e.target.checked && selectedCategoryPanel) {
+      const allSubIds = selectedCategoryPanel.subcategories.map(s => s._id);
+      setSelectedSubCategories(allSubIds);
+    } else {
+      setSelectedSubCategories([]);
+    }
+  };
+
+  const handleSelectOneSub = (e, id) => {
+    e.stopPropagation();
+    if (e.target.checked) {
+      setSelectedSubCategories(prev => [...prev, id]);
+    } else {
+      setSelectedSubCategories(prev => prev.filter(sid => sid !== id));
+    }
+  };
+
   const handleEditClick = (category) => {
     setCategoryToEdit(category);
     setIsEditModalOpen(true);
@@ -167,9 +186,41 @@ const Categories = () => {
     setDeleteModal({ isOpen: true, type: 'category', data: category });
   };
 
+  const handleBulkDelete = () => {
+    setDeleteModal({ isOpen: true, type: 'bulk-category', data: null, selectedCount: selectedCategories.length });
+  };
+
+  const handleBulkUpdateStatus = async (status) => {
+    const clientId = categories[0]?.clientId;
+    if (!clientId) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/categories/bulk-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: selectedCategories, status, clientId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update status');
+
+      setCategories(categories.map(c => selectedCategories.includes(c._id) ? { ...c, status } : c));
+      setSelectedCategories([]);
+      toast.success(`Selected categories marked as ${status}`);
+    } catch (error) {
+      console.error('Error bulk updating status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleBulkDeleteSub = () => {
+    setDeleteModal({ isOpen: true, type: 'bulk-subcategory', data: null, selectedCount: selectedSubCategories.length });
+  };
+
   const handleConfirmDelete = async () => {
     const { type, data } = deleteModal;
-    if (!data) return;
+    const clientId = categories[0]?.clientId;
 
     try {
       if (type === 'category') {
@@ -179,6 +230,42 @@ const Categories = () => {
         setCategories(categories.filter(c => c._id !== data._id));
         if (selectedCategoryPanel?._id === data._id) setSelectedCategoryPanel(null);
         toast.success('Category deleted successfully');
+      } else if (type === 'bulk-category') {
+        const response = await fetch(`${API_URL}/api/categories/bulk-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: selectedCategories, clientId }),
+        });
+
+        if (!response.ok) throw new Error('Failed to bulk delete categories');
+
+        setCategories(categories.filter(c => !selectedCategories.includes(c._id)));
+        setSelectedCategories([]);
+        if (selectedCategoryPanel && selectedCategories.includes(selectedCategoryPanel._id)) {
+          setSelectedCategoryPanel(null);
+        }
+        toast.success(`${deleteModal.selectedCount} categories deleted successfully`);
+      } else if (type === 'bulk-subcategory') {
+        if (!selectedCategoryPanel) return;
+        const remainingSubcategories = selectedCategoryPanel.subcategories.filter(s => !selectedSubCategories.includes(s._id));
+
+        const response = await fetch(`${API_URL}/api/categories/${selectedCategoryPanel._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ subcategories: remainingSubcategories }),
+        });
+
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.msg || 'Failed to bulk delete sub-categories');
+
+        setCategories(categories.map(c => (c._id === resData._id ? resData : c)));
+        setSelectedCategoryPanel(resData);
+        setSelectedSubCategories([]);
+        toast.success(`${deleteModal.selectedCount} sub-categories deleted!`);
       } else if (type === 'subcategory') {
         if (!selectedCategoryPanel) return;
         const updatedSubcategories = selectedCategoryPanel.subcategories.filter(s => s._id !== data._id);
@@ -202,7 +289,7 @@ const Categories = () => {
       console.error(`Error deleting ${type}:`, error);
       toast.error(error.message);
     } finally {
-      setDeleteModal({ isOpen: false, type: null, data: null });
+      setDeleteModal({ isOpen: false, type: null, data: null, selectedCount: 0 });
     }
   };
 
@@ -329,10 +416,26 @@ const Categories = () => {
             </button>
           </div>
 
+          {/* Conditional Bulk Actions */}
+          {selectedCategories.length > 0 && (
+            <div className="bulk-actions-bar" style={{ marginBottom: '16px' }}>
+              <div className="bulk-actions-left">
+                <span className="bulk-count">{selectedCategories.length} selected</span>
+                <button className="deselect-all-btn" onClick={() => setSelectedCategories([])}>Deselect All</button>
+              </div>
+              <div className="bulk-actions-right">
+                <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Active')}>Mark Active</button>
+                <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Inactive')}>Mark Inactive</button>
+                <div className="bulk-divider" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.3)' }}></div>
+                <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
+              </div>
+            </div>
+          )}
+
           {/* List Card */}
           <div className="categories-list-card">
             <div className="category-list-header">
-              <div><input type="checkbox" onChange={handleSelectAll} checked={categories.length > 0 && selectedCategories.length === categories.length} /></div>
+              <div className="checkbox-cell"><input type="checkbox" onChange={handleSelectAll} checked={categories.length > 0 && selectedCategories.length === categories.length} /></div>
               <div>#</div>
               <div onClick={() => requestSort('name')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                 CATEGORY DETAILS {getSortIcon('name')}
@@ -353,10 +456,10 @@ const Categories = () => {
               {sortedCategories.map((category, index) => (
                 <div
                   key={category._id}
-                  className={`category-list-item ${selectedCategoryPanel?._id === category._id ? 'selected' : ''}`}
+                  className={`category-list-item ${selectedCategoryPanel?._id === category._id ? 'selected' : ''} ${selectedCategories.includes(category._id) ? 'row-selected' : ''}`}
                   onClick={() => handleRowClick(category)}
                 >
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={selectedCategories.includes(category._id)} onChange={(e) => handleSelectOne(e, category._id)} />
                   </div>
                   <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{index + 1}</div>
@@ -395,7 +498,12 @@ const Categories = () => {
                   </div>
                 </div>
               ))}
-              {categories.length === 0 && <div style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>No categories found.</div>}
+              {categories.length === 0 && (
+                <div className="no-data-content">
+                  <FaInbox className="no-data-icon" />
+                  <span className="no-data-text">No categories found</span>
+                </div>
+              )}
             </div>
 
             {/* Footer Pagination */}
@@ -448,9 +556,23 @@ const Categories = () => {
                 <div className="btn-small-square btn-icon-filled" onClick={() => setIsSubModalOpen(true)}><FaPlus size={12} /></div>
               </div>
 
+              {selectedSubCategories.length > 0 && (
+                <div className="bulk-actions-bar-mini">
+                  <span className="bulk-count-mini">{selectedSubCategories.length} selected</span>
+                  <div className="bulk-actions-mini">
+                    <button className="bulk-action-btn-mini delete-btn" onClick={handleBulkDeleteSub}>
+                      <FaTrashAlt size={12} /> Delete
+                    </button>
+                    <button className="deselect-btn-mini" onClick={() => setSelectedSubCategories([])}>
+                      <FaTimes size={12} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="subcategory-table">
                 <div className="subcategory-table-header">
-                  <div><input type="checkbox" /></div>
+                  <div><input type="checkbox" onChange={handleSelectAllSub} checked={selectedCategoryPanel.subcategories?.length > 0 && selectedSubCategories.length === selectedCategoryPanel.subcategories.length} /></div>
                   <div>#</div>
                   <div>NAME</div>
                   <div style={{ textAlign: 'right' }}>ACTION</div>
@@ -458,8 +580,8 @@ const Categories = () => {
                 <div className="subcategory-table-body">
                   {(selectedCategoryPanel.subcategories && selectedCategoryPanel.subcategories.length > 0) ? (
                     selectedCategoryPanel.subcategories.map((sub, idx) => (
-                      <div className="subcategory-table-row" key={sub._id || idx}>
-                        <div><input type="checkbox" /></div>
+                      <div className={`subcategory-table-row ${selectedSubCategories.includes(sub._id) ? 'row-selected' : ''}`} key={sub._id || idx}>
+                        <div><input type="checkbox" checked={selectedSubCategories.includes(sub._id)} onChange={(e) => handleSelectOneSub(e, sub._id)} /></div>
                         <div className="sub-index">{idx + 1}</div>
                         <div className="sub-name">{sub.name}</div>
                         <div className="sub-actions">
@@ -475,7 +597,10 @@ const Categories = () => {
                       </div>
                     ))
                   ) : (
-                    <div className="no-subs">No sub-categories found.</div>
+                    <div className="no-subs">
+                      <FaInbox className="no-subs-icon" />
+                      <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>No sub-categories yet</div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -506,13 +631,19 @@ const Categories = () => {
       />
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, type: null, data: null })}
+        onClose={() => setDeleteModal({ isOpen: false, type: null, data: null, selectedCount: 0 })}
         onConfirm={handleConfirmDelete}
-        title={deleteModal.type === 'category' ? 'Delete Category' : 'Delete Sub-category'}
+        title={deleteModal.type === 'bulk-category' ? 'Bulk Delete Categories' : (deleteModal.type === 'bulk-subcategory' ? 'Bulk Delete Sub-categories' : (deleteModal.type === 'category' ? 'Delete Category' : 'Delete Sub-category'))}
         confirmText="Yes, Delete"
         cancelText="Cancel"
       >
-        Are you sure you want to delete the {deleteModal.type === 'category' ? 'category' : 'sub-category'} <strong>"{deleteModal.data?.name}"</strong>? This action cannot be undone.
+        {deleteModal.type === 'bulk-category' ? (
+          <>Are you sure you want to delete <strong>{deleteModal.selectedCount}</strong> categories? This will also remove them from all associated products. This action cannot be undone.</>
+        ) : deleteModal.type === 'bulk-subcategory' ? (
+          <>Are you sure you want to delete <strong>{deleteModal.selectedCount}</strong> sub-categories from this category? This action cannot be undone.</>
+        ) : (
+          <>Are you sure you want to delete the {deleteModal.type === 'category' ? 'category' : 'sub-category'} <strong>"{deleteModal.data?.name}"</strong>? This action cannot be undone.</>
+        )}
       </ConfirmationModal>
     </div>
   );

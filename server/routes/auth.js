@@ -36,7 +36,14 @@ const generateSubdomain = async (storeName) => {
 // @access  Public
 router.post('/register', async (req, res) => {
     console.log('📝 Registration request body:', req.body);
-    const { fullName, email, storeName, password, phoneNumber } = req.body;
+    const { fullName, email, password } = req.body;
+    let { storeName, phoneNumber } = req.body; // Allow modification
+
+    // Set default if storeName is missing
+    if (!storeName || !storeName.trim()) {
+        storeName = "Untitled Store";
+    }
+
     console.log('Extracted fields:', { fullName, email, storeName, phoneNumber, hasPassword: !!password });
 
     try {
@@ -103,8 +110,8 @@ router.post('/register', async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        console.error('❌ Registration Error:', err);
+        res.status(500).json({ msg: 'Server Error', error: err.message, stack: process.env.NODE_ENV === 'production' ? null : err.stack });
     }
 });
 
@@ -123,15 +130,15 @@ router.post('/login', async (req, res) => {
 
         let user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            console.log('❌ Login failed: User not found for email:', email.toLowerCase());
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            console.log('❌ Login failed: Email not found:', email.toLowerCase());
+            return res.status(404).json({ msg: 'User not found' });
         }
 
         console.log('✅ User found:', user.email, 'Checking password...');
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.log('❌ Login failed: Password mismatch for user:', user.email);
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            console.log('❌ Login failed: Password incorrect for:', user.email);
+            return res.status(401).json({ msg: 'Incorrect password' });
         }
 
         console.log('✅ Password match! Creating session for user:', user.email);
@@ -305,22 +312,131 @@ router.delete('/delete-store/:id', ensureAuthenticated, async (req, res) => {
             return res.status(401).json({ msg: 'Unauthorized: You can only delete your own stores' });
         }
 
+        console.log(`🗑️ Initiating deletion for store "${client.name}" (ID: ${client._id}) by owner "${req.user.email}"`);
+
         // 1. Delete all products for this client
         const Product = require('../models/Product');
-        await Product.deleteMany({ clientId: client._id });
+        const productDeleteResult = await Product.deleteMany({ clientId: client._id });
+        console.log(`   - Deleted ${productDeleteResult.deletedCount} products for client ${client._id}`);
 
         // 2. Delete all orders for this client
         const Order = require('../models/Order');
-        await Order.deleteMany({ clientId: client._id });
+        const orderDeleteResult = await Order.deleteMany({ clientId: client._id });
+        console.log(`   - Deleted ${orderDeleteResult.deletedCount} orders for client ${client._id}`);
 
         // 3. Delete the client itself
-        await Client.findByIdAndDelete(req.params.id);
+        const clientDeleteResult = await Client.findByIdAndDelete(req.params.id);
+        console.log(`   - Deleted client record for ${client._id}`);
 
-        console.log(`🗑️ Store "${client.name}" deleted by owner "${req.user.email}"`);
+        console.log(`✅ Store "${client.name}" and all associated data deleted successfully.`);
         res.json({ msg: 'Store deleted successfully' });
     } catch (err) {
         console.error('Error deleting store:', err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/auth/onboarding
+// @desc    Update user and store details after initial signup
+// @access  Private
+router.post('/onboarding', ensureAuthenticated, async (req, res) => {
+    try {
+        const { storeName, storeType, phoneNumber } = req.body;
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+
+        // 1. Update User Details
+        if (phoneNumber) {
+            user.phoneNumber = phoneNumber;
+        }
+
+        // Mark as onboarded
+        user.isOnboarded = true;
+        await user.save();
+
+        // 2. Update Client (Store) Details
+        if (user.clientId) {
+            const client = await Client.findById(user.clientId);
+            if (client) {
+                // Determine if we should update subdomain
+                // Only update subdomain if it looks like a generated default OR if we want to enforce sync
+                // For onboarding, it's safer to sync it to the new name if possible
+
+                let newSubdomain = client.subdomain;
+                if (storeName && storeName !== client.name) {
+                    client.name = storeName;
+                    // Generate new subdomain for the new name
+                    try {
+                        const potentialSubdomain = await generateSubdomain(storeName);
+                        // Check if this new subdomain is different and valid
+                        if (potentialSubdomain !== client.subdomain) {
+                            newSubdomain = potentialSubdomain;
+                            client.subdomain = newSubdomain;
+                        }
+                    } catch (subErr) {
+                        console.warn("Could not generate new subdomain:", subErr);
+                    }
+                }
+
+                if (storeType) {
+                    client.storeType = storeType;
+                }
+
+                await client.save();
+
+                // Return the updated data
+                return res.json({
+                    success: true,
+                    msg: 'Onboarding completed successfully',
+                    user,
+                    client
+                });
+            }
+        }
+
+        res.json({ success: true, msg: 'User updated' });
+
+    } catch (err) {
+        console.error('Onboarding error:', err);
+        res.status(500).json({ msg: 'Server Error during onboarding' });
+    }
+});
+
+// @route   POST api/auth/plan-selection
+// @desc    Update user's plan selection status
+// @access  Private
+router.post('/plan-selection', ensureAuthenticated, async (req, res) => {
+    try {
+        const { plan } = req.body; // e.g., 'free', 'pro', 'platinum'
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        user.hasSelectedPlan = true;
+        await user.save();
+
+        // Optionally update client subscription plan if provided
+        if (plan && user.clientId) {
+            const client = await Client.findById(user.clientId);
+            if (client) {
+                // Map 'starter' to 'free' if needed, or just store what's passed
+                client.subscriptionPlan = plan.toLowerCase();
+                await client.save();
+            }
+        }
+
+        res.json({ success: true, msg: 'Plan selection saved', user });
+    } catch (err) {
+        console.error('Plan selection error:', err);
+        res.status(500).json({ msg: 'Server Error during plan selection' });
     }
 });
 

@@ -4,6 +4,8 @@ import StatCard from './StatCard';
 import { FaExternalLinkAlt, FaMoneyBillWave, FaShoppingCart, FaCalendarDay, FaPaintBrush } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import API_URL from '../../apiConfig';
+import OnboardingModal from './OnboardingModal';
+import PricingModal from './PricingModal';
 import './DashboardHome.css';
 
 const DashboardHome = () => {
@@ -14,12 +16,15 @@ const DashboardHome = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         // Fetch current user and their client details
         const userRes = await axios.get(`${API_URL}/auth/current_user`);
-        
+
         if (!userRes.data || !userRes.data.clientId) {
           console.error('User not authenticated or missing clientId');
           setLoading(false);
@@ -39,36 +44,49 @@ const DashboardHome = () => {
         }
 
         // If client doesn't have subdomain, try to get stores or generate one
+        let finalClient = null;
         if (!fetchedClient || !fetchedClient.subdomain) {
           try {
             const storesRes = await axios.get(`${API_URL}/api/auth/my-stores`, { withCredentials: true });
             const stores = Array.isArray(storesRes.data) ? storesRes.data : [];
             console.log('Fetched stores:', stores);
-            
+
             // Find first store with subdomain
             const storeWithSubdomain = stores.find(s => s && s.subdomain);
             if (storeWithSubdomain) {
               console.log('Using store with subdomain:', storeWithSubdomain.name, storeWithSubdomain.subdomain);
-              setClient(storeWithSubdomain);
+              finalClient = storeWithSubdomain;
             } else if (fetchedClient) {
               // Use the fetched client even without subdomain
               console.log('Using client without subdomain:', fetchedClient.name);
-              setClient(fetchedClient);
+              finalClient = fetchedClient;
             } else if (stores.length > 0) {
               // Use first store even without subdomain
               console.log('Using first store without subdomain:', stores[0].name);
-              setClient(stores[0]);
+              finalClient = stores[0];
             }
           } catch (storesError) {
             console.error('Error fetching stores:', storesError);
             // Use the fetched client if available
             if (fetchedClient) {
-              setClient(fetchedClient);
+              finalClient = fetchedClient;
             }
           }
         } else {
           // Client has subdomain, use it
-          setClient(fetchedClient);
+          finalClient = fetchedClient;
+        }
+
+        setClient(finalClient);
+
+        // Check for onboarding and pricing status
+        if (!userRes.data.isOnboarded) {
+          console.log('Onboarding needed: User has not completed onboarding');
+          setShowOnboarding(true);
+        } else if (!userRes.data.hasSelectedPlan) {
+          // If onboarded but hasn't selected a plan, show pricing
+          console.log('Plan selection needed');
+          setShowPricing(true);
         }
 
         // Fetch real counts for this tenant (these will be filtered by clientId on the backend)
@@ -96,17 +114,32 @@ const DashboardHome = () => {
     fetchDashboardData();
   }, []);
 
+  const handleOnboardingComplete = (updatedUser, updatedClient) => {
+    setUser(updatedUser);
+    setClient(updatedClient);
+    setShowOnboarding(false);
+    // Show pricing modal immediately after onboarding
+    setShowPricing(true);
+  };
+
+  const handlePricingComplete = (updatedUser) => {
+    if (updatedUser) {
+      setUser(updatedUser);
+    }
+    setShowPricing(false);
+  };
+
   // Build the shop link
   const getShopLink = () => {
     if (!client || !client.subdomain) {
       return null;
     }
-    
+
     const hostname = window.location.hostname;
     let protocol = window.location.protocol;
     let port = window.location.port ? `:${window.location.port}` : '';
     let baseDomain = 'localhost';
-    
+
     // Determine base domain and protocol based on environment
     if (hostname.includes('nepostore.xyz')) {
       // Production
@@ -118,7 +151,7 @@ const DashboardHome = () => {
       baseDomain = 'localhost';
       protocol = 'http:';
     }
-    
+
     const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
     return shopUrl;
   };
@@ -156,7 +189,27 @@ const DashboardHome = () => {
   // Empty chart data for now
   const chartData = [];
 
-  if (loading) return <div className="loading-fade">Loading Dashboard...</div>;
+  if (loading) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#F4F6F8', // Same background color as modals
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999999, // Higher than everything
+        color: '#5E6C84',
+        fontSize: '1.2rem',
+        fontWeight: 500
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   // Debug logging
   console.log('DashboardHome render - client:', client);
@@ -179,7 +232,7 @@ const DashboardHome = () => {
             <FaPaintBrush /> Customize Shop
           </button>
           {client && client.subdomain ? (
-            <button 
+            <button
               onClick={handleVisitStore}
               className="website-link-btn"
               title={`Visit ${client.subdomain}.${window.location.hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost:3000'}`}
@@ -188,7 +241,7 @@ const DashboardHome = () => {
               <FaExternalLinkAlt />
             </button>
           ) : (
-            <button 
+            <button
               className="website-link-btn"
               disabled
               title="No store subdomain available. Click on 'NEPO OWNER' in the sidebar to create a store."
@@ -217,6 +270,16 @@ const DashboardHome = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      {showOnboarding && (
+        <OnboardingModal
+          user={user}
+          client={client}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+      {showPricing && (
+        <PricingModal onClose={handlePricingComplete} />
+      )}
     </div>
   );
 };

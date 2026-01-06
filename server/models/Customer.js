@@ -10,6 +10,7 @@ const customerSchema = new mongoose.Schema({
   email: { type: String, required: false }, // Email is optional
   phone: { type: String, required: true }, // Phone is required
   address: String,
+  status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' }
 }, { timestamps: true });
 
 // Ensure that the combination of name, phone, and email is unique per client

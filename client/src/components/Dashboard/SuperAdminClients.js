@@ -20,7 +20,9 @@ import {
     FaComments,
     FaCheckCircle,
     FaFilter,
-    FaArrowUp
+    FaArrowUp,
+    FaSun,
+    FaMoon
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import API_URL from '../../apiConfig';
@@ -50,6 +52,9 @@ const SuperAdminClients = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeletingFromModal, setIsDeletingFromModal] = useState(false);
+    const [deleteType, setDeleteType] = useState('single'); // 'single' or 'bulk'
+
+    const [selectedClients, setSelectedClients] = useState([]);
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stats, setStats] = useState({
@@ -67,6 +72,13 @@ const SuperAdminClients = () => {
     const [tawkId, setTawkId] = useState('');
     const [whatsAppNum, setWhatsAppNum] = useState('');
     const [isSavingChat, setIsSavingChat] = useState(false);
+
+    // Theme State
+    const [theme, setTheme] = useState(localStorage.getItem('saas-theme') || 'dark');
+
+    useEffect(() => {
+        localStorage.setItem('saas-theme', theme);
+    }, [theme]);
 
     // Helper function to handle API calls with fallback
     const apiCall = useCallback(async (method, endpoint, data = null, config = {}) => {
@@ -223,26 +235,72 @@ const SuperAdminClients = () => {
     };
 
     const deleteClient = (id, isFromModal = false) => {
+        setDeleteType('single');
         setItemToDelete(id);
         setIsDeletingFromModal(isFromModal);
         setIsConfirmOpen(true);
     };
 
-    const handleConfirmDelete = async () => {
-        if (!itemToDelete) return;
+    const handleBulkDelete = () => {
+        setDeleteType('bulk');
+        setIsConfirmOpen(true);
+    };
 
+    const handleBulkUpdatePlan = async (plan) => {
+        if (!selectedClients.length) {
+            toast.warning('No tenants selected');
+            return;
+        }
+
+        console.log(`Bulk updating ${selectedClients.length} tenants to plan: ${plan}`);
         try {
-            await apiCall('delete', `/api/super-admin/clients/${itemToDelete}`);
-            toast.success('Tenant deleted successfully');
+            const res = await apiCall('post', '/api/super-admin/bulk-plan', { ids: selectedClients, plan });
+            console.log('Bulk plan update response:', res.data);
+            toast.success(`Successfully updated ${selectedClients.length} tenants to ${plan}`);
+            setSelectedClients([]);
+            fetchClients();
+        } catch (error) {
+            console.error('Error bulk updating plans:', error);
+            const msg = error.response?.data?.msg || 'Failed to update plans';
+            toast.error(msg);
+        }
+    };
 
-            if (isDeletingFromModal) {
-                // Update user stores list if delete happened inside modal
-                setUserStores(prev => prev.filter(s => s._id !== itemToDelete));
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allIds = filteredClients.map(c => c._id);
+            setSelectedClients(allIds);
+        } else {
+            setSelectedClients([]);
+        }
+    };
+
+    const handleSelectOne = (e, id) => {
+        e.stopPropagation();
+        if (e.target.checked) {
+            setSelectedClients(prev => [...prev, id]);
+        } else {
+            setSelectedClients(prev => prev.filter(clientId => clientId !== id));
+        }
+    };
+
+    const handleConfirmDelete = async () => {
+        try {
+            if (deleteType === 'single') {
+                if (!itemToDelete) return;
+                await apiCall('delete', `/api/super-admin/clients/${itemToDelete}`);
+                toast.success('Tenant deleted successfully');
+                if (isDeletingFromModal) {
+                    setUserStores(prev => prev.filter(s => s._id !== itemToDelete));
+                }
+            } else {
+                await apiCall('post', '/api/super-admin/bulk-delete', { ids: selectedClients });
+                toast.success(`${selectedClients.length} tenants deleted successfully`);
+                setSelectedClients([]);
             }
 
             // Always refresh main list
             fetchClients();
-
             setIsConfirmOpen(false);
             setItemToDelete(null);
         } catch (error) {
@@ -264,7 +322,7 @@ const SuperAdminClients = () => {
     );
 
     return (
-        <div className="saas-admin-container">
+        <div className={`saas-admin-container ${theme === 'light' ? 'light-mode' : ''}`}>
             {/* Sidebar */}
             <aside className="saas-sidebar">
                 <div className="saas-logo">
@@ -312,6 +370,9 @@ const SuperAdminClients = () => {
                                 <p>Platform overview and business performance</p>
                             </div>
                             <div className="top-actions">
+                                <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
+                                    {theme === 'dark' ? <FaSun /> : <FaMoon style={{ color: '#3b82f6' }} />}
+                                </button>
                                 <div className="notification-btn">
                                     <FaBell />
                                 </div>
@@ -389,7 +450,7 @@ const SuperAdminClients = () => {
                                                     </div>
                                                 </td>
                                                 <td>{store.ownerEmail}</td>
-                                                <td><span className="plan-pill">{store.subscriptionPlan}</span></td>
+                                                <td><span className={`plan-pill plan-${store.subscriptionPlan}`}>{store.subscriptionPlan}</span></td>
                                                 <td>{new Date(store.createdAt).toLocaleDateString()}</td>
                                             </tr>
                                         ))}
@@ -460,6 +521,9 @@ const SuperAdminClients = () => {
                                 <p>Overview and controls for all SaaS stores</p>
                             </div>
                             <div className="top-actions">
+                                <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
+                                    {theme === 'dark' ? <FaSun /> : <FaMoon style={{ color: '#3b82f6' }} />}
+                                </button>
                                 <div className="notification-btn">
                                     <FaBell />
                                 </div>
@@ -528,11 +592,54 @@ const SuperAdminClients = () => {
                                 </div>
                             </div>
 
+                            {/* Bulk Actions Bar - Top Positioned */}
+                            {selectedClients.length > 0 && (
+                                <div className="orders-bulk-actions-bar top-bar active">
+                                    <div className="bulk-actions-content">
+                                        <div className="bulk-selection-info">
+                                            <span className="selection-count">{selectedClients.length} tenants selected</span>
+                                            <button className="clear-selection-btn" onClick={() => setSelectedClients([])}>Deselect All</button>
+                                        </div>
+                                        <div className="bulk-action-groups">
+                                            <div className="bulk-action-group">
+                                                <span className="group-label">Update Plan:</span>
+                                                <select
+                                                    className="bulk-select plan-dropdown"
+                                                    onChange={(e) => {
+                                                        if (e.target.value) {
+                                                            handleBulkUpdatePlan(e.target.value);
+                                                            e.target.value = ''; // Reset after use
+                                                        }
+                                                    }}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="" disabled>Choose Plan...</option>
+                                                    <option value="free">Free</option>
+                                                    <option value="basic">Basic</option>
+                                                    <option value="pro">Pro</option>
+                                                    <option value="platinum">Platinum</option>
+                                                    <option value="enterprise">Enterprise</option>
+                                                </select>
+                                            </div>
+                                            <div className="bulk-divider"></div>
+                                            <button className="orders-bulk-delete-btn" onClick={handleBulkDelete}>
+                                                <FaTrash /> Bulk Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <table className="tenants-table">
                                 <thead>
                                     <tr>
                                         <th style={{ width: '40px' }}>
-                                            <input type="checkbox" className="saas-checkbox" onClick={(e) => e.stopPropagation()} />
+                                            <input
+                                                type="checkbox"
+                                                className="saas-checkbox"
+                                                onChange={handleSelectAll}
+                                                checked={filteredClients.length > 0 && filteredClients.every(c => selectedClients.includes(c._id))}
+                                            />
                                         </th>
                                         <th style={{ width: '80px' }}>#</th>
                                         <th>Store Owner</th>
@@ -544,9 +651,18 @@ const SuperAdminClients = () => {
                                 </thead>
                                 <tbody>
                                     {filteredClients.map(client => (
-                                        <tr key={client._id} className="tenant-row" onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)}>
+                                        <tr
+                                            key={client._id}
+                                            className={`tenant-row ${selectedClients.includes(client._id) ? 'row-selected' : ''}`}
+                                            onClick={() => fetchUserStores(client.ownerEmail, client.ownerName)}
+                                        >
                                             <td onClick={(e) => e.stopPropagation()}>
-                                                <input type="checkbox" className="saas-checkbox" />
+                                                <input
+                                                    type="checkbox"
+                                                    className="saas-checkbox"
+                                                    checked={selectedClients.includes(client._id)}
+                                                    onChange={(e) => handleSelectOne(e, client._id)}
+                                                />
                                             </td>
                                             <td>
                                                 <div className="id-badge">ID: #{client._id.slice(-4).toUpperCase()}</div>
@@ -579,11 +695,12 @@ const SuperAdminClients = () => {
                                                     value={client.subscriptionPlan}
                                                     onChange={(e) => updateStatus(client._id, 'subscriptionPlan', e.target.value)}
                                                     onClick={(e) => e.stopPropagation()} // Prevent modal when choosing plan
-                                                    className="plan-pill"
+                                                    className={`plan-pill plan-${client.subscriptionPlan}`}
                                                 >
                                                     <option value="free">Free</option>
                                                     <option value="basic">Basic</option>
                                                     <option value="pro">Pro</option>
+                                                    <option value="platinum">Platinum</option>
                                                     <option value="enterprise">Enterprise</option>
                                                 </select>
                                             </td>
@@ -641,6 +758,11 @@ const SuperAdminClients = () => {
                             <div className="page-title-section">
                                 <h2>Plugin Configuration</h2>
                                 <p>Manage tawk.to and WhatsApp integration for the platform</p>
+                            </div>
+                            <div className="top-actions">
+                                <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
+                                    {theme === 'dark' ? <FaSun /> : <FaMoon style={{ color: '#3b82f6' }} />}
+                                </button>
                             </div>
                         </header>
 
@@ -714,6 +836,11 @@ const SuperAdminClients = () => {
                             <div className="page-title-section">
                                 <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
                                 <p>Section coming soon</p>
+                            </div>
+                            <div className="top-actions">
+                                <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
+                                    {theme === 'dark' ? <FaSun /> : <FaMoon style={{ color: '#3b82f6' }} />}
+                                </button>
                             </div>
                         </header>
                     </div>
@@ -818,15 +945,20 @@ const SuperAdminClients = () => {
                 )
             }
 
+            {/* Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Confirm Deletion"
+                title={deleteType === 'single' ? "Delete Tenant?" : "Delete Multiple Tenants?"}
+                confirmText="Yes, Delete"
+                cancelText="No, Keep"
             >
-                Are you sure you want to delete this tenant? This action is irreversible and will remove all associated data.
+                {deleteType === 'single'
+                    ? "Are you sure you want to delete this tenant and all their associated data? This action cannot be undone."
+                    : `Are you sure you want to delete ${selectedClients.length} selected tenants and all their data? This action is permanent.`}
             </ConfirmationModal>
-        </div >
+        </div>
     );
 };
 

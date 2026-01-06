@@ -6,6 +6,10 @@ const clientSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  storeType: {
+    type: String,
+    required: false
+  },
   ownerEmail: {
     type: String,
     required: true,
@@ -22,7 +26,7 @@ const clientSchema = new mongoose.Schema({
   },
   subscriptionPlan: {
     type: String,
-    enum: ['free', 'basic', 'pro', 'enterprise'],
+    enum: ['free', 'basic', 'pro', 'platinum', 'enterprise'],
     default: 'free'
   },
   subscriptionStatus: {
