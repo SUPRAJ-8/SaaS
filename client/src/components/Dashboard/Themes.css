@@ -1,262 +1,255 @@
 .themes-page {
-  padding: 40px;
-  background-color: #f8fafc;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  padding: 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .themes-header {
-  margin-bottom: 48px;
-  text-align: left;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1.5rem;
 }
 
 .themes-header h1 {
-  font-size: 2.25rem;
+  font-size: 2.2rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 
 .themes-header p {
-  font-size: 1.1rem;
   color: #64748b;
-  margin: 8px 0 0 0;
+  margin-top: 0.5rem;
 }
 
 .header-badge {
-  background: white;
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #64748b;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.9rem;
   font-weight: 600;
-  font-size: 14px;
+  color: #64748b;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .header-badge svg {
   color: #7c3aed;
 }
 
+/* Grid */
 .themes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 32px;
-  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2.5rem;
 }
 
 .theme-card {
-  background: white;
+  background: #fff;
+  border-radius: 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .theme-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
   border-color: #cbd5e1;
 }
 
 .theme-card.active {
-  border: 2px solid #7c3aed;
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
-}
-
-.theme-card.active::before {
-  content: 'ACTIVE THEME';
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: #7c3aed;
-  color: white;
-  padding: 6px 14px;
-  border-radius: 30px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  z-index: 10;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  border: 2.5px solid #3b82f6;
+  box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.15);
 }
 
 .theme-preview {
-  padding: 32px;
-  background-color: #f1f5f9;
   position: relative;
   aspect-ratio: 16/10;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.theme-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.theme-card:hover .theme-thumbnail {
+  transform: scale(1.04);
+}
+
+.active-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(59, 130, 246, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-}
-
-.theme-preview::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(0, 0, 0, 0.02) 100%);
-  pointer-events: none;
-}
-
-.preview-main {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  background: white;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.theme-card:hover .preview-main {
-  transform: scale(1.05) translateY(-5px);
-}
-
-.preview-header {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 8px;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.preview-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #e2e8f0;
-}
-
-.preview-content {
-  padding: 24px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.preview-line {
-  height: 8px;
-  border-radius: 10px;
-  width: 100%;
-  background-color: #f1f5f9;
-}
-
-.preview-line.short {
-  width: 60%;
-  background-color: #f1f5f9;
+  color: #3b82f6;
+  font-weight: 800;
+  font-size: 1.1rem;
+  gap: 0.5rem;
+  backdrop-filter: blur(2px);
 }
 
 .theme-info {
-  padding: 24px;
-  background: white;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  justify-content: space-between;
+  flex: 1;
 }
 
-.theme-details h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #0f172a;
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.title-row h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.type-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.type-badge.ecommerce {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.type-badge.portfolio {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.type-badge.service {
+  background: #e0f2fe;
+  color: #075985;
 }
 
 .theme-desc {
-  margin: 0;
-  font-size: 14px;
+  font-size: 0.9rem;
   color: #64748b;
   line-height: 1.6;
+  margin-bottom: 1.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feature-dots {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
 }
 
 .theme-actions {
-  display: flex;
-  justify-content: flex-end;
+  margin-top: auto;
 }
 
-/* Button UI */
-.themes-page .btn {
-  padding: 12px 24px;
-  border-radius: 12px;
+.btn {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 14px;
   font-weight: 700;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   cursor: pointer;
   border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.themes-page .btn-primary {
+.btn-primary {
   background: #0f172a;
-  color: white;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  color: #fff;
 }
 
-.themes-page .btn-primary:hover {
+.btn-primary:hover {
   background: #1e293b;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+  transform: scale(0.98);
 }
 
-.themes-page .btn-success {
+.btn-success.disabled {
   background: #f1f5f9;
   color: #64748b;
   cursor: default;
   border: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  padding: 0.5rem;
 }
 
-.themes-page .btn-success svg {
-  color: #10b981;
+.active-theme-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-customize {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.btn-customize:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 .themes-footer {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid #e2e8f0;
+  margin-top: 3rem;
 }
 
 .info-tip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1rem;
   color: #64748b;
-  font-size: 14px;
-  background: #f8fafc;
-  padding: 16px 24px;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
+  font-size: 0.9rem;
 }
 
 .info-tip svg {
   color: #3b82f6;
-  font-size: 18px;
+  font-size: 1.2rem;
 }
 
-@media (max-width: 1024px) {
-  .themes-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-  }
+.themes-loading-container {
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
@@ -267,34 +260,6 @@
   .themes-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .themes-header h1 {
-    font-size: 1.75rem;
-  }
-
-  .themes-header p {
-    font-size: 1rem;
-  }
-
-  .themes-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .theme-preview {
-    padding: 1rem;
-  }
-
-  .theme-info {
-    padding: 1.25rem;
-  }
-
-  .themes-header h1 {
-    font-size: 1.5rem;
+    gap: 1rem;
   }
 }

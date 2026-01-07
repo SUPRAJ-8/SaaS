@@ -1,116 +1,160 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { themes } from '../../themes';
 import API_URL from '../../apiConfig';
 import './Themes.css';
-import { FaCheckCircle, FaPalette, FaInfoCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaCheckCircle, FaPalette, FaInfoCircle, FaRocket, FaEdit } from 'react-icons/fa';
 
 const Themes = () => {
-  const { theme: activeTheme, setTheme } = useContext(ThemeContext) || {};
+  const { theme: activeTheme, setTheme, setEnabledFeatures } = useContext(ThemeContext) || {};
+  const navigate = useNavigate();
+  const [themes, setThemes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [applyingId, setApplyingId] = useState(null);
+  const [homePageId, setHomePageId] = useState(null);
 
-  const handleApplyTheme = async (themeId) => {
-    const theme = themes.find(t => t.id === themeId);
-    if (!theme) return;
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        const [themesRes, websitesRes] = await Promise.all([
+          axios.get(`${API_URL}/api/themes`, { withCredentials: true }),
+          axios.get(`${API_URL}/api/websites`, { withCredentials: true })
+        ]);
 
-    // 1. Update Theme Context
-    setTheme(themeId);
+        setThemes(themesRes.data);
 
-    // 2. Sync with Store Settings in LocalStorage
-    // We only update the layout ID, preserving user's custom colors and fonts
-    const savedSettings = localStorage.getItem('storeSettings');
-    let storeData = savedSettings ? JSON.parse(savedSettings) : {};
-
-    const updatedStoreData = {
-      ...storeData,
-      selectedThemeId: themeId // ONLY update the ID to switch layout
+        // Find home page ID for customization
+        if (websitesRes.data.length > 0) {
+          const mainSite = websitesRes.data[0];
+          const homePage = mainSite.pages.find(p => p.slug === '');
+          if (homePage) {
+            setHomePageId(homePage._id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching themes/websites:', error);
+        toast.error('Failed to load available themes.');
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchThemes();
+  }, []);
+
+  const handleApplyTheme = async (themeObj) => {
+    setApplyingId(themeObj._id);
 
     try {
-      // 3. Persist to API
-      await axios.put(`${API_URL}/api/store-settings`, updatedStoreData, {
+      // 1. Call Backend to apply theme (updates settings and clones blueprint)
+      const response = await axios.post(`${API_URL}/api/themes/apply/${themeObj._id}`, {}, {
         withCredentials: true
       });
 
-      // 4. Update local storage for immediate preview
+      // 2. Update Local Context
+      if (setTheme) setTheme(themeObj.id);
+      if (setEnabledFeatures) setEnabledFeatures(themeObj.features);
+
+      // 3. Sync with LocalStorage for immediate UI feedback
+      const savedSettings = localStorage.getItem('storeSettings');
+      let storeData = savedSettings ? JSON.parse(savedSettings) : {};
+
+      const updatedStoreData = {
+        ...storeData,
+        selectedThemeId: themeObj.id,
+        themeFeatures: themeObj.features
+      };
+
       localStorage.setItem('storeSettings', JSON.stringify(updatedStoreData));
-      localStorage.setItem('themeId', themeId);
+      localStorage.setItem('themeId', themeObj.id);
+
+      // Dispatch event to notify layout components
       window.dispatchEvent(new Event('storeSettingsUpdated'));
 
-      toast.success(`'${theme.name}' layout applied!`);
+      toast.success(response.data.msg || `'${themeObj.name}' applied!`);
     } catch (error) {
-      console.error('Error saving theme:', error);
-      toast.error('Failed to save theme setting to server, but applied locally.');
-
-      // Fallback local update
-      localStorage.setItem('storeSettings', JSON.stringify(updatedStoreData));
-      localStorage.setItem('themeId', themeId);
-      window.dispatchEvent(new Event('storeSettingsUpdated'));
+      console.error('Error applying theme:', error);
+      toast.error(error.response?.data?.msg || 'Failed to apply theme.');
+    } finally {
+      setApplyingId(null);
     }
   };
+
+  if (loading) return (
+    <div className="themes-loading-container">
+      <div className="loader">Consulting with designers...</div>
+    </div>
+  );
 
   return (
     <div className="themes-page">
       <header className="themes-header">
         <div className="header-text">
-          <h1>Store Themes</h1>
-          <p>Select a professional aesthetic to define your brand's presence.</p>
+          <h1>Explore Store Templates</h1>
+          <p>Each template acts as a blueprint. Apply one to jumpstart your design.</p>
         </div>
         <div className="header-badge">
-          <FaPalette /> <span>{themes.length} Presets Available</span>
+          <FaPalette /> <span>{themes.length} Professional Layouts</span>
         </div>
       </header>
 
       <div className="themes-grid">
         {themes.map((theme) => {
-          const isActive = activeTheme && activeTheme.id === theme.id;
+          // Check if active (we compare with theme.id string like 'nexus' or 'modern-minimal')
+          const isActive = activeTheme && (activeTheme === theme.id || activeTheme.id === theme.id);
+          const isApplying = applyingId === theme._id;
+
           return (
-            <div key={theme.id} className={`theme-card ${isActive ? 'active' : ''}`}>
+            <div key={theme._id} className={`theme-card ${isActive ? 'active' : ''}`}>
               <div className="theme-preview">
-                <div className="preview-main">
-                  <div className="preview-header">
-                    <span className="preview-dot"></span>
-                    <span className="preview-dot"></span>
-                    <span className="preview-dot"></span>
+                <img src={theme.thumbnail} alt={theme.name} className="theme-thumbnail" />
+                {isActive && (
+                  <div className="active-overlay">
+                    <FaCheckCircle /> Currently Live
                   </div>
-                  <div className="preview-content">
-                    <div className="preview-line"></div>
-                    <div className="preview-line"></div>
-                    <div className="preview-line short"></div>
-                    <div className="preview-font-badge" style={{
-                      backgroundColor: 'var(--primary)',
-                      color: 'var(--primary-content)',
-                      fontSize: '10px',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      marginTop: '8px',
-                      display: 'inline-block',
-                      fontWeight: 'bold',
-                      fontFamily: theme.fontFamily
-                    }}>
-                      Aa
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
               <div className="theme-info">
                 <div className="theme-details">
-                  <h3>{theme.name}</h3>
+                  <div className="title-row">
+                    <h3>{theme.name}</h3>
+                    <span className={`type-badge ${theme.category?.toLowerCase()}`}>{theme.category}</span>
+                  </div>
                   <p className="theme-desc">{theme.description}</p>
+
+                  <div className="feature-dots">
+                    {theme.features?.ecommerce && <span title="Ecommerce Enabled">🛍️</span>}
+                    {theme.features?.checkout && <span title="Checkout Ready">💳</span>}
+                    {theme.features?.wishlist && <span title="Wishlist Support">❤️</span>}
+                  </div>
                 </div>
                 <div className="theme-actions">
-                  <button
-                    className={`btn ${isActive ? 'btn-success' : 'btn-primary'}`}
-                    onClick={() => handleApplyTheme(theme.id)}
-                    disabled={isActive}
-                  >
-                    {isActive ? (
-                      <><FaCheckCircle /> Activated</>
-                    ) : (
-                      'Apply Theme'
-                    )}
-                  </button>
+                  {isActive ? (
+                    <div className="active-theme-btns">
+                      <button className="btn btn-success disabled">
+                        <FaCheckCircle /> Active template
+                      </button>
+                      {homePageId && (
+                        <button
+                          className="btn btn-customize"
+                          onClick={() => navigate(`/dashboard/page-builder/${homePageId}`)}
+                        >
+                          <FaEdit /> Customize Theme
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      className={`btn btn-primary ${isApplying ? 'btn-loading' : ''}`}
+                      onClick={() => handleApplyTheme(theme)}
+                      disabled={isApplying}
+                    >
+                      {isApplying ? 'Setting up...' : (
+                        <><FaRocket /> Apply Template</>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -121,7 +165,7 @@ const Themes = () => {
       <footer className="themes-footer">
         <div className="info-tip">
           <FaInfoCircle />
-          <span>Applied themes update colors across your entire storefront instantly.</span>
+          <span>Switching templates updates your Home Page layout while preserving your store colors and fonts.</span>
         </div>
       </footer>
     </div>

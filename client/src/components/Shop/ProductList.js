@@ -182,7 +182,9 @@ const RecentlyViewedSection = ({ products }) => (
 
 const ProductList = () => {
   const { theme } = useContext(ThemeContext) || { theme: { id: 'ecommerce' } };
-  const isNexus = theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus';
+  const storedThemeId = localStorage.getItem('themeId');
+  const activeThemeId = theme?.id || storedThemeId || 'ecommerce';
+  const isDynamicTheme = activeThemeId !== 'ecommerce';
   const { slug } = useParams();
   const [allProducts, setAllProducts] = useState([]);
   const [popularProducts, setPopularProducts] = useState([]);
@@ -322,11 +324,11 @@ const ProductList = () => {
     fetchData();
   }, []);
 
-  const [loadingDynamic, setLoadingDynamic] = useState(isNexus);
+  const [loadingDynamic, setLoadingDynamic] = useState(isDynamicTheme);
 
-  // Load dynamic sections for Nexus Theme
+  // Load dynamic sections for Dynamic Themes
   useEffect(() => {
-    if (isNexus) {
+    if (isDynamicTheme) {
       setLoadingDynamic(true);
       const fetchDynamicContent = async () => {
         let currentSlug = slug || 'new-page'; // Default to home/new-page if no slug
@@ -412,14 +414,14 @@ const ProductList = () => {
 
       fetchDynamicContent();
     } else {
-      // If not Nexus, behavior depends on slug
+      // If not dynamic, behavior depends on slug
       if (slug && slug !== 'products') {
         setPageNotFound(true);
       } else {
         setPageNotFound(false);
       }
     }
-  }, [theme.id, slug, isNexus]);
+  }, [activeThemeId, slug, isDynamicTheme]);
 
 
   const toggleColor = (color) => {
@@ -435,8 +437,8 @@ const ProductList = () => {
     return <NotFound />;
   }
 
-  // Show loading spinner if waiting for dynamic content logic to resolve (Nexus only)
-  if (isNexus && loadingDynamic) {
+  // Show loading spinner if waiting for dynamic content logic to resolve (Dynamic themes only)
+  if (isDynamicTheme && loadingDynamic) {
     return (
       <div className="product-list-page nexus-theme">
         <div style={{ minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -447,8 +449,8 @@ const ProductList = () => {
   }
 
   return (
-    <div className={`product-list-page ${isNexus ? 'nexus-theme' : ''}`}>
-      {(theme.id === 'ecommerce' && !slug) && (
+    <div className={`product-list-page ${isDynamicTheme ? 'dynamic-theme' : ''}`}>
+      {(activeThemeId === 'ecommerce' && !slug) && (
         <>
           <ProductSection title="Popular Products" icon={<FaFire />} products={popularProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
           <ProductSection title="Featured Products" icon={<FaStar />} products={featuredProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
@@ -621,7 +623,7 @@ const ProductList = () => {
           </div>
         )}
 
-      {((theme.id === 'nexus' || localStorage.getItem('themeId') === 'nexus') && slug !== 'products' && dynamicSections.length > 0) && (
+      {((isDynamicTheme) && slug !== 'products' && dynamicSections.length > 0) && (
         <div className="nexus-dynamic-content">
           {dynamicSections.length > 0 && (
             dynamicSections.map((section, index) => {

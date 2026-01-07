@@ -222,6 +222,8 @@ app.use('/api/store-settings', require('./routes/store-settings'));
 app.use('/api/client-pages', require('./routes/client-pages'));
 app.use('/api/public-settings', require('./routes/public-settings'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/themes', require('./routes/themes'));
+app.use('/api/websites', require('./routes/websites'));
 
 // 404 Handler for API routes - Log to help debugging
 app.use('/api/*', (req, res) => {

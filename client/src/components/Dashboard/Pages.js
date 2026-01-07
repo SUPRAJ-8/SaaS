@@ -110,32 +110,6 @@ const Pages = () => {
 
     return (
         <div className="pages-management">
-            {activeThemeId !== 'nexus' && (
-                <div className="builder-restricted-overlay">
-                    <div className="restricted-content animate-fade">
-                        <div className="restricted-icon">
-                            <FaEdit />
-                        </div>
-                        <h1>Pages Management Restricted</h1>
-                        <p>
-                            Management and creation of dynamic pages is exclusively available for the <strong>Nexus Theme</strong>.
-                            Switch to Nexus to start building.
-                        </p>
-                        <div className="restricted-actions">
-                            <button className="switch-nexus-btn" onClick={() => {
-                                localStorage.setItem('themeId', 'nexus');
-                                window.dispatchEvent(new Event('storeSettingsUpdated'));
-                                window.location.reload();
-                            }}>
-                                Switch to Nexus Theme
-                            </button>
-                            <button className="back-btn-restricted" onClick={() => navigate('/dashboard/themes')}>
-                                Go Back to Themes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <div className="page-header">
                 <div className="page-header-top">

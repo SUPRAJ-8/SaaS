@@ -1,17 +1,5 @@
 export const themes = [
   {
-    name: 'Ecommerce',
-    id: 'ecommerce',
-    layout: 'shopcart',
-    description: 'Clean, modern, and high-conversion layout for any retail business.',
-    fontFamily: 'Poppins',
-    availablePages: [
-      { id: 'ec-home', title: 'Home Page', slug: '', status: 'Published', lastModified: '2025-12-20', type: 'Core' },
-      { id: 'ec-checkout', title: 'Checkout Page', slug: 'checkout', status: 'Published', lastModified: '2025-12-19', type: 'Core' },
-      { id: 'ec-products', title: 'All Products', slug: 'products', status: 'Published', lastModified: '2025-12-18', type: 'Core' }
-    ]
-  },
-  {
     name: 'Portfolio',
     id: 'portfolio',
     layout: 'portfolio',
