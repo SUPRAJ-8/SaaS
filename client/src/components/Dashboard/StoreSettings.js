@@ -12,6 +12,7 @@ const StoreSettings = () => {
     return localStorage.getItem('storeSettingsActiveTab') || 'store-details';
   });
   const [dragActive, setDragActive] = useState({ logo: false, favicon: false });
+  const [isSaving, setIsSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     branding: false,
     brandName: false,
@@ -111,6 +112,12 @@ const StoreSettings = () => {
     cardStyle: 'shadow',
     layoutStyle: 'modern',
     headerStyle: 'fixed',
+    seoSettings: {
+      metaTitle: '',
+      metaDescription: '',
+      ogImage: '',
+      keywords: []
+    }
   };
 
   const [storeData, setStoreData] = useState(defaultSettings);
@@ -185,6 +192,7 @@ const StoreSettings = () => {
 
   // Helper function to save settings to API and LocalStorage
   const saveSettingsToApi = async (newData, successMessage) => {
+    setIsSaving(true);
     try {
       // 1. Save to API
       await axios.put(`${API_URL}/api/store-settings`, newData, {
@@ -204,6 +212,8 @@ const StoreSettings = () => {
       // Fallback: still save locally
       localStorage.setItem('storeSettings', JSON.stringify(newData));
       window.dispatchEvent(new Event('storeSettingsUpdated'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -246,6 +256,11 @@ const StoreSettings = () => {
   const handleDomainsSubmit = (e) => {
     e.preventDefault();
     saveSettingsToApi(storeData, 'Domain settings saved successfully!');
+  };
+
+  const handleSeoSubmit = (e) => {
+    e.preventDefault();
+    saveSettingsToApi(storeData, 'SEO settings saved successfully!');
   };
 
   const handleBrandingSubmit = (e) => {
@@ -448,6 +463,12 @@ const StoreSettings = () => {
           onClick={() => setActiveTab('domains')}
         >
           Domains
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'seo' ? 'active' : ''}`}
+          onClick={() => setActiveTab('seo')}
+        >
+          SEO
         </button>
       </div>
 
@@ -852,8 +873,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -885,8 +906,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -921,8 +942,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -966,8 +987,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -1035,8 +1056,8 @@ const StoreSettings = () => {
                     </>
                   )}
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -1145,8 +1166,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -1221,8 +1242,8 @@ const StoreSettings = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="save-button">
-                    Save Changes
+                  <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -1334,7 +1355,7 @@ const StoreSettings = () => {
                       placeholder="eg: my-store"
                       className="subdomain-input"
                     />
-                    <span className="domain-suffix">.storecms.com</span>
+                    <span className="domain-suffix">.nepostore.xyz</span>
                   </div>
                 </div>
               </div>
@@ -1352,8 +1373,71 @@ const StoreSettings = () => {
                 </div>
               </div>
 
-              <button type="submit" className="save-button">
-                Save
+              <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === 'seo' && (
+          <div className="tab-content">
+            <form onSubmit={handleSeoSubmit} className="settings-form">
+              <h3 className="section-heading">Global SEO Settings</h3>
+              <p className="section-description">These settings will be used as defaults for your store's homepage and social sharing.</p>
+
+              <div className="form-row">
+                <div className="form-field full-width">
+                  <label>Meta Title</label>
+                  <input
+                    type="text"
+                    value={storeData.seoSettings?.metaTitle || ''}
+                    onChange={(e) => setStoreData({
+                      ...storeData,
+                      seoSettings: { ...(storeData.seoSettings || {}), metaTitle: e.target.value }
+                    })}
+                    placeholder="eg: Best Shoes in Nepal - Your Brand Name"
+                  />
+                  <small className="form-hint">Appears as the browser tab title. Recommended: 50-60 characters.</small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-field full-width">
+                  <label>Meta Description</label>
+                  <textarea
+                    rows="4"
+                    value={storeData.seoSettings?.metaDescription || ''}
+                    onChange={(e) => setStoreData({
+                      ...storeData,
+                      seoSettings: { ...(storeData.seoSettings || {}), metaDescription: e.target.value }
+                    })}
+                    placeholder="Short summary of what your store sells..."
+                  />
+                  <small className="form-hint">Appears in Google search results. Recommended: 150-160 characters.</small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-field full-width">
+                  <label>Keywords (Comma separated)</label>
+                  <input
+                    type="text"
+                    value={storeData.seoSettings?.keywords?.join(', ') || ''}
+                    onChange={(e) => setStoreData({
+                      ...storeData,
+                      seoSettings: {
+                        ...(storeData.seoSettings || {}),
+                        keywords: e.target.value.split(',').map(k => k.trim()).filter(k => k !== '')
+                      }
+                    })}
+                    placeholder="eg: shoes, fashion, nepal, online shopping"
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save SEO Settings'}
               </button>
             </form>
           </div>

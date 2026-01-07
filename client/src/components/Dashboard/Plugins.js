@@ -436,7 +436,7 @@ const Plugins = () => {
                                 <button className="cancel-pill-btn" onClick={() => setIsModalOpen(false)}>
                                     Cancel
                                 </button>
-                                <button className="save-pill-btn" onClick={handleSave} disabled={isSaving || isRemoving}>
+                                <button className={`save-pill-btn ${isSaving ? 'btn-loading' : ''}`} onClick={handleSave} disabled={isSaving || isRemoving}>
                                     {isSaving ? 'Saving...' : 'Save Configuration'}
                                 </button>
                             </div>

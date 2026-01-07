@@ -34,7 +34,14 @@ router.put('/', ensureAuthenticated, async (req, res) => {
         // Find by ID and update the settings field
         const client = await Client.findByIdAndUpdate(
             req.user.clientId,
-            { $set: { settings: settings } },
+            {
+                $set: {
+                    settings: settings,
+                    seoSettings: settings.seoSettings,
+                    subdomain: settings.subdomain?.trim() === '' ? null : settings.subdomain?.toLowerCase(),
+                    customDomain: settings.customDomain?.trim() === '' ? null : settings.customDomain?.toLowerCase()
+                }
+            },
             { new: true }
         );
 

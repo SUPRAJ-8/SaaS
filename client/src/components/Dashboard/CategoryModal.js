@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './CategoryModal.css';
 
-const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
+const CategoryModal = ({ isOpen, onClose, category, onSave, isSaving }) => {
   const [formData, setFormData] = useState({
     name: '',
     image: null,
@@ -139,11 +139,11 @@ const CategoryModal = ({ isOpen, onClose, category, onSave }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn btn-secondary">
+            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              {category ? 'Update' : 'Save'}
+            <button type="submit" className={`btn btn-primary ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+              {isSaving ? 'Saving...' : (category ? 'Update' : 'Save')}
             </button>
           </div>
         </form>

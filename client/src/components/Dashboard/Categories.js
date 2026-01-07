@@ -26,6 +26,8 @@ const Categories = () => {
   const [subcategoryToEdit, setSubcategoryToEdit] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, data: null, selectedCount: 0 });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSub, setIsSavingSub] = useState(false);
 
   const requestSort = (key) => {
     let direction = 'asc';
@@ -147,6 +149,7 @@ const Categories = () => {
   };
 
   const handleSaveCategory = async (categoryData) => {
+    setIsSaving(true);
     // ... existing save logic ...
     // Simplified for brevity in this replace, I will call the original logic if possible or re-implement nicely.
     // I'll re-implement standard save logic briefly.
@@ -180,6 +183,8 @@ const Categories = () => {
     } catch (error) {
       console.error('Error saving category:', error);
       toast.error(error.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -296,7 +301,7 @@ const Categories = () => {
 
   const handleSaveSubCategory = async (subData) => {
     if (!selectedCategoryPanel) return;
-
+    setIsSavingSub(true);
     try {
       let updatedSubcategories;
       if (subcategoryToEdit) {
@@ -328,6 +333,8 @@ const Categories = () => {
     } catch (error) {
       console.error('Error saving sub-category:', error);
       toast.error(error.message);
+    } finally {
+      setIsSavingSub(false);
     }
   };
 
@@ -361,6 +368,7 @@ const Categories = () => {
         onClose={() => setIsEditModalOpen(false)}
         category={categoryToEdit}
         onSave={handleSaveCategory}
+        isSaving={isSaving}
       />
 
       {/* Header */}
@@ -635,6 +643,7 @@ const Categories = () => {
         }}
         onSave={handleSaveSubCategory}
         subcategory={subcategoryToEdit}
+        isSaving={isSavingSub}
       />
       <ConfirmationModal
         isOpen={deleteModal.isOpen}

@@ -7,9 +7,11 @@ import API_URL from '../../apiConfig';
 import NotFound from '../../pages/NotFound';
 import { getShopPath, resolveImageUrl } from '../../themeUtils';
 import { useTheme } from '../../contexts/ThemeContext';
+import ShopSEO from './ShopSEO';
 
 const ProductDetail = () => {
   const { theme } = useTheme();
+  const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
   const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
 
   useEffect(() => {
@@ -249,6 +251,12 @@ const ProductDetail = () => {
 
   return (
     <div className="product-list-page">
+      <ShopSEO
+        title={product.seoTitle || product.name}
+        description={product.seoDescription || product.shortDescription}
+        image={product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : null}
+        storeSettings={settings}
+      />
       <div className="shop-page-wrapper">
 
         <div className="product-detail-content">

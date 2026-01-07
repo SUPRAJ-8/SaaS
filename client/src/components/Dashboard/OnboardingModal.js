@@ -130,7 +130,7 @@ const OnboardingModal = ({ user, client, onComplete }) => {
                             </div>
                         </div>
 
-                        <button type="submit" className="onboarding-submit-btn" disabled={loading}>
+                        <button type="submit" className={`onboarding-submit-btn ${loading ? 'btn-loading' : ''}`} disabled={loading}>
                             {loading ? 'Saving...' : 'Save and Continue'} <FaArrowRight style={{ marginLeft: '8px' }} />
                         </button>
                     </form>

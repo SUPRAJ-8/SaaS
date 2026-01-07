@@ -24,6 +24,13 @@ const clientSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  customDomain: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+    lowercase: true
+  },
   subscriptionPlan: {
     type: String,
     enum: ['free', 'basic', 'pro', 'platinum', 'enterprise'],
@@ -42,6 +49,12 @@ const clientSchema = new mongoose.Schema({
   settings: {
     type: Object,
     default: {}
+  },
+  seoSettings: {
+    metaTitle: { type: String, trim: true },
+    metaDescription: { type: String, trim: true },
+    ogImage: { type: String },
+    keywords: { type: [String], default: [] }
   }
 }, { timestamps: true });
 

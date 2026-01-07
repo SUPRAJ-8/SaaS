@@ -146,41 +146,46 @@ app.use((req, res, next) => {
 // Middleware to handle subdomain routing
 const subdomainHandler = async (req, res, next) => {
   const host = req.hostname;
-
-  // Check for custom header first (useful for local dev or proxy scenarios)
   const headerSubdomain = req.headers['x-subdomain'];
 
-  const parts = host.split('.');
+  // 1. Try Custom Domain first (Fastest lookup)
+  // If the host is not our main domains, it might be a user's custom domain
+  const isMainDomain = host === 'nepostore.xyz' ||
+    host === 'www.nepostore.xyz' ||
+    host === 'app.nepostore.xyz' ||
+    host === 'localhost' ||
+    host.endsWith('.localhost');
 
-  // Determine subdomain based on hostname structure
+  if (!isMainDomain || headerSubdomain) {
+    try {
+      const query = headerSubdomain ? { subdomain: headerSubdomain } : { customDomain: host };
+      const tenantClient = await Client.findOne(query);
+      if (tenantClient) {
+        req.tenantClient = tenantClient;
+        return next();
+      }
+    } catch (err) {
+      console.error('Custom domain lookup error:', err);
+    }
+  }
+
+  // 2. Fallback to Subdomain logic
+  const parts = host.split('.');
   let subdomain = headerSubdomain || null;
 
   if (!subdomain) {
     if (host.endsWith('.localhost')) {
-      // e.g., app.localhost, tenant.localhost
       subdomain = parts[0];
-    } else if (host === 'localhost') {
-      // Root localhost - no subdomain
-      subdomain = null;
-    } else if (host === 'nepostore.xyz' || host === 'www.nepostore.xyz') {
-      // Main domain - no subdomain (landing page)
-      subdomain = null;
     } else if (host.endsWith('.nepostore.xyz')) {
-      // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
-      subdomain = parts[0];
-    } else if (parts.length > 2) {
-      // Fallback for other domains with subdomains
       subdomain = parts[0];
     }
   }
 
-  // If we are on app subdomain, it's the admin dashboard
   if (subdomain === 'app') {
     return next();
   }
 
-  // Check if it's a client/tenant subdomain (for shop)
-  if (subdomain && subdomain !== 'localhost' && subdomain !== 'www' && subdomain !== 'api') {
+  if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
     try {
       const tenantClient = await Client.findOne({ subdomain });
       if (tenantClient) {

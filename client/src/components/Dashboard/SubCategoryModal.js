@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './CategoryModal.css';
 
-const SubCategoryModal = ({ isOpen, onClose, onSave, subcategory }) => {
+const SubCategoryModal = ({ isOpen, onClose, onSave, subcategory, isSaving }) => {
     const [formData, setFormData] = useState({
         name: '',
     });
@@ -51,11 +51,11 @@ const SubCategoryModal = ({ isOpen, onClose, onSave, subcategory }) => {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" onClick={onClose} className="btn btn-secondary">
+                        <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            {subcategory ? 'Update' : 'Add Sub-category'}
+                        <button type="submit" className={`btn btn-primary ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+                            {isSaving ? 'Saving...' : (subcategory ? 'Update' : 'Add Sub-category')}
                         </button>
                     </div>
                 </form>

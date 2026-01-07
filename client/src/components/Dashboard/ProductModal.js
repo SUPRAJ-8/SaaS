@@ -5,7 +5,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import API_URL from '../../apiConfig';
 import { resolveImageUrl } from '../../themeUtils';
 
-const ProductModal = ({ isOpen, onClose, product, onSave }) => {
+const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
   const [formData, setFormData] = useState({
     name: '',
     shortDescription: '',
@@ -24,7 +24,9 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
     variantColors: [],
     variantSizes: [],
     existingImages: [],
-    samePriceForAllVariants: false
+    samePriceForAllVariants: false,
+    seoTitle: '',
+    seoDescription: ''
   });
   const [categories, setCategories] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -57,6 +59,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
         variantSizes: product.variantSizes || [],
         variants: product.variants || [],
         samePriceForAllVariants: product.samePriceForAllVariants || false,
+        seoTitle: product.seoTitle || '',
+        seoDescription: product.seoDescription || ''
       });
     } else {
       // Reset form for new product
@@ -79,7 +83,9 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
         variantSizes: [],
         status: 'Active',
         existingImages: [],
-        samePriceForAllVariants: false
+        samePriceForAllVariants: false,
+        seoTitle: '',
+        seoDescription: ''
       });
     }
   }, [product, isOpen]);
@@ -428,6 +434,32 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
             {/* Right Column */}
             <div className="form-column-right">
               <div className="card">
+                <h3>SEO & Metadata (Optional)</h3>
+                <div className="form-group">
+                  <label>SEO Title</label>
+                  <input
+                    type="text"
+                    name="seoTitle"
+                    value={formData.seoTitle}
+                    onChange={handleInputChange}
+                    placeholder="Custom Browser Title"
+                  />
+                  <small className="form-hint">If empty, product name will be used.</small>
+                </div>
+                <div className="form-group">
+                  <label>SEO Description</label>
+                  <textarea
+                    name="seoDescription"
+                    value={formData.seoDescription}
+                    onChange={handleInputChange}
+                    placeholder="Short description for Google search results"
+                    rows="3"
+                  />
+                  <small className="form-hint">If empty, product description will be used.</small>
+                </div>
+              </div>
+
+              <div className="card">
                 <h3>Upload Img</h3>
                 <div
                   className={`image-upload-container ${isDragging ? 'dragging' : ''}`}
@@ -517,8 +549,10 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-            <button type="submit" className="btn btn-primary">{product ? 'Update' : 'Save'}</button>
+            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving}>Cancel</button>
+            <button type="submit" className={`btn btn-primary ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
+              {isSaving ? 'Saving...' : (product ? 'Update' : 'Save')}
+            </button>
           </div>
         </form>
       </div>

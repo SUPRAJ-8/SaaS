@@ -10,6 +10,7 @@ import NexusFooter from './NexusFooter';
 import HeroSection from './HeroSection';
 
 import { applyStoreSettings, getShopPath } from '../../../themeUtils';
+import ShopSEO from '../ShopSEO';
 
 
 const EcommerceLayout = () => {
@@ -17,34 +18,16 @@ const EcommerceLayout = () => {
   const isProductDetailPage = location.pathname.includes('/product/');
   const isCheckoutPage = location.pathname.includes('/checkout');
 
-  // Load settings and update title/favicon
+  const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
+
   useEffect(() => {
-    const settings = localStorage.getItem('storeSettings');
-    if (settings) {
-      const parsedSettings = JSON.parse(settings);
-
-      // Update favicon
-      if (parsedSettings.favicon) {
-        let link = document.querySelector("link[rel~='icon']");
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'icon';
-          document.getElementsByTagName('head')[0].appendChild(link);
-        }
-        link.href = parsedSettings.favicon;
-      }
-
-      // Update page title with brand name or store name
-      const displayTitle = parsedSettings.brandName || parsedSettings.storeName || 'Ecommerce Store';
-      document.title = displayTitle;
-
-      // Re-apply settings to ensure they persist
-      applyStoreSettings();
-    }
-  }, [location.pathname]); // Update on route changes too
+    // Re-apply settings to ensure CSS variables persist
+    applyStoreSettings();
+  }, [location.pathname]);
 
   return (
     <div className="ecommerce-layout shop-container">
+      <ShopSEO storeSettings={settings} />
       <EcommerceHeader />
       <main>
         {(location.pathname === getShopPath('/') || location.pathname === '/' || location.pathname === '/shop' || location.pathname === '/shop/') && (

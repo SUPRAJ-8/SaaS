@@ -108,6 +108,14 @@ const ProductSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  seoTitle: {
+    type: String,
+    trim: true
+  },
+  seoDescription: {
+    type: String,
+    trim: true
   }
 }, { timestamps: true });
 

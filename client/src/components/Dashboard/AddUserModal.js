@@ -103,7 +103,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
             </select>
           </div>
           <div className="add-user-modal-actions">
-            <button type="submit" className="add-user-btn-submit" disabled={loading}>
+            <button type="submit" className={`add-user-btn-submit ${loading ? 'btn-loading' : ''}`} disabled={loading}>
               {loading ? 'Sending...' : 'Send invitation'}
             </button>
           </div>

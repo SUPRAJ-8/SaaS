@@ -80,7 +80,8 @@ router.post('/', upload.array('images', 10), async (req, res) => {
     const {
       name, shortDescription, longDescription, gender,
       crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section,
-      variantColors, variantSizes, samePriceForAllVariants
+      variantColors, variantSizes, samePriceForAllVariants,
+      seoTitle, seoDescription
     } = req.body;
 
     // Validate required fields
@@ -150,7 +151,9 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       variants,
       variantColors: variantColors ? JSON.parse(variantColors) : [],
       variantSizes: variantSizes ? JSON.parse(variantSizes) : [],
-      samePriceForAllVariants: samePriceForAllVariants ? JSON.parse(samePriceForAllVariants) : false
+      samePriceForAllVariants: samePriceForAllVariants ? JSON.parse(samePriceForAllVariants) : false,
+      seoTitle: seoTitle || '',
+      seoDescription: seoDescription || ''
     };
 
     const product = new Product(productData);
@@ -168,7 +171,8 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 router.put('/:id', upload.array('images', 10), async (req, res) => {
   const {
     name, shortDescription, longDescription, gender,
-    crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section
+    crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section,
+    seoTitle, seoDescription
   } = req.body;
 
   // Build product object
@@ -191,6 +195,8 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
   if (quantity) productFields.quantity = quantity;
   if (status) productFields.status = status;
   if (section !== undefined) productFields.section = section;
+  if (seoTitle !== undefined) productFields.seoTitle = seoTitle;
+  if (seoDescription !== undefined) productFields.seoDescription = seoDescription;
   // Handle images merge (existing + new)
   let finalImages = [];
 

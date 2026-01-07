@@ -51,36 +51,31 @@ function AppRouter() {
   const { siteSettings } = useSiteSettings();
   const isUnderConstruction = siteSettings?.siteUnderConstruction || false;
 
-  // Subdomain Detection Logic (v1.0.2)
+  // Domain/Subdomain Detection Logic (v2.0.0)
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
-
-  // Logic for production vs localhost
-  let subdomain = null;
-  if (hostname.endsWith('.localhost')) {
-    // e.g., app.localhost, tenant.localhost
-    subdomain = parts[0];
-  } else if (hostname === 'localhost') {
-    // For local testing, use search param: http://localhost:3000?tenant=app
-    const params = new URLSearchParams(window.location.search);
-    subdomain = params.get('tenant');
-  } else if (hostname === 'nepostore.xyz' || hostname === 'www.nepostore.xyz') {
-    // Main domain - no subdomain (landing page)
-    subdomain = null;
-  } else if (hostname.endsWith('.nepostore.xyz')) {
-    // Production subdomain: app.nepostore.xyz, tenant.nepostore.xyz, etc.
-    subdomain = parts[0];
-  } else if (parts.length > 2) {
-    // Fallback for other domains with subdomains
-    subdomain = parts[0];
-  }
-
-  const isDashboardSubdomain = subdomain === 'app';
-  const isLandingPage = !subdomain || subdomain === 'www';
-  const isShopSubdomain = subdomain && !isDashboardSubdomain && !isLandingPage;
-
   const protocol = window.location.protocol;
   const port = window.location.port ? `:${window.location.port}` : '';
+
+  // 1. Identify Main Platform Domains
+  const isMainLanding = hostname === 'nepostore.xyz' || hostname === 'www.nepostore.xyz';
+  const isDashboard = hostname === 'app.nepostore.xyz' || (hostname.endsWith('.localhost') && parts[0] === 'app');
+
+  // 2. Identify Subdomains on NepoStore
+  const isNepoSubdomain = hostname.endsWith('.nepostore.xyz') && !isMainLanding && !isDashboard;
+
+  // 3. Identify Localhost Shops
+  const isLocalhostShop = hostname.endsWith('.localhost') && parts[0] !== 'app';
+
+  // 4. Identify Custom Domains
+  // If it's not nepostore.xyz and not localhost, it's a custom domain shop
+  const isCustomDomain = !hostname.endsWith('nepostore.xyz') && !hostname.includes('localhost');
+
+  // Decision flags
+  const isLandingPage = isMainLanding || (hostname === 'localhost' && !new URLSearchParams(window.location.search).get('tenant'));
+  const isDashboardSubdomain = isDashboard || (hostname === 'localhost' && new URLSearchParams(window.location.search).get('tenant') === 'app');
+  const isShopSubdomain = isNepoSubdomain || isLocalhostShop || isCustomDomain || (hostname === 'localhost' && new URLSearchParams(window.location.search).get('tenant') && new URLSearchParams(window.location.search).get('tenant') !== 'app');
+
   const baseDomain = (hostname.endsWith('.localhost') || hostname === 'localhost') ? 'localhost' : 'nepostore.xyz';
   const dashboardUrl = `${protocol}//app.${baseDomain}${port}/dashboard`;
 

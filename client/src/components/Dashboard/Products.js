@@ -20,6 +20,7 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: 'single', product: null });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -215,6 +216,7 @@ const Products = () => {
   };
 
   const handleSaveProduct = async (productData) => {
+    setIsSaving(true);
     const isUpdating = !!productData._id;
     const url = isUpdating ? `${API_URL}/api/products/${productData._id}` : `${API_URL}/api/products`;
     const method = isUpdating ? 'PUT' : 'POST';
@@ -279,6 +281,8 @@ const Products = () => {
     } catch (error) {
       console.error('Error saving product:', error);
       toast.error(error.message || 'Failed to save product. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -290,6 +294,7 @@ const Products = () => {
         onClose={() => setIsEditModalOpen(false)}
         product={productToEdit}
         onSave={handleSaveProduct}
+        isSaving={isSaving}
       />
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
