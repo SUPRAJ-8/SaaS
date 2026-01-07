@@ -423,7 +423,7 @@ const PageBuilder = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await fetch('/api/products');
+                const response = await fetch(`${API_URL}/api/products`);
                 const data = await response.json();
                 setAvailableProducts(data);
             } catch (err) {

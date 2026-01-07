@@ -11,6 +11,7 @@ import { CategoryModal } from './CategoryModal.js';
 import { SubCategoryModal } from './SubCategoryModal.js';
 import ConfirmationModal from './ConfirmationModal.js';
 import API_URL from '../../apiConfig';
+import axios from 'axios';
 // import { resolveImageUrl } from '../../themeUtils'; // If needed for images
 
 const Categories = () => {
@@ -70,8 +71,8 @@ const Categories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/categories`);
-        const data = await response.json();
+        const response = await axios.get(`${API_URL}/api/categories`, { withCredentials: true });
+        const data = response.data;
         setCategories(data);
         // Default select first one if available
         if (data.length > 0) setSelectedCategoryPanel(data[0]);
@@ -412,13 +413,13 @@ const Categories = () => {
               <input type="text" placeholder="Search categories..." className="search-input-category" />
             </div>
             <button className="add-category-btn" onClick={handleAddClick}>
-              <FaPlus /> Add Category
+              <FaPlus /> <span className="btn-text">Add Category</span>
             </button>
           </div>
 
           {/* Conditional Bulk Actions */}
           {selectedCategories.length > 0 && (
-            <div className="bulk-actions-bar" style={{ marginBottom: '16px' }}>
+            <div className="bulk-actions-bar">
               <div className="bulk-actions-left">
                 <span className="bulk-count">{selectedCategories.length} selected</span>
                 <button className="deselect-all-btn" onClick={() => setSelectedCategories([])}>Deselect All</button>
@@ -426,7 +427,7 @@ const Categories = () => {
               <div className="bulk-actions-right">
                 <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Active')}>Mark Active</button>
                 <button className="bulk-action-btn" onClick={() => handleBulkUpdateStatus('Inactive')}>Mark Inactive</button>
-                <div className="bulk-divider" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.3)' }}></div>
+                <div className="bulk-divider"></div>
                 <button className="bulk-action-btn delete-btn" onClick={handleBulkDelete}>Delete</button>
               </div>
             </div>
@@ -434,76 +435,78 @@ const Categories = () => {
 
           {/* List Card */}
           <div className="categories-list-card">
-            <div className="category-list-header">
-              <div className="checkbox-cell"><input type="checkbox" onChange={handleSelectAll} checked={categories.length > 0 && selectedCategories.length === categories.length} /></div>
-              <div>#</div>
-              <div onClick={() => requestSort('name')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                CATEGORY DETAILS {getSortIcon('name')}
+            <div className="categories-table-scrollable">
+              <div className="category-list-header">
+                <div className="checkbox-cell"><input type="checkbox" onChange={handleSelectAll} checked={categories.length > 0 && selectedCategories.length === categories.length} /></div>
+                <div>#</div>
+                <div onClick={() => requestSort('name')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  CATEGORY DETAILS {getSortIcon('name')}
+                </div>
+                <div onClick={() => requestSort('items')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} className="hide-mobile">
+                  ITEMS {getSortIcon('items')}
+                </div>
+                <div onClick={() => requestSort('status')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  STATUS {getSortIcon('status')}
+                </div>
+                <div onClick={() => requestSort('date')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} className="hide-tablet">
+                  LAST UPDATED {getSortIcon('date')}
+                </div>
+                <div style={{ textAlign: 'right', paddingRight: '4px' }}>ACTIONS</div>
               </div>
-              <div onClick={() => requestSort('items')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                ITEMS {getSortIcon('items')}
-              </div>
-              <div onClick={() => requestSort('status')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                STATUS {getSortIcon('status')}
-              </div>
-              <div onClick={() => requestSort('date')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                LAST UPDATED {getSortIcon('date')}
-              </div>
-              <div style={{ textAlign: 'right', paddingRight: '4px' }}>ACTIONS</div>
-            </div>
 
-            <div className="category-list-body">
-              {sortedCategories.map((category, index) => (
-                <div
-                  key={category._id}
-                  className={`category-list-item ${selectedCategoryPanel?._id === category._id ? 'selected' : ''} ${selectedCategories.includes(category._id) ? 'row-selected' : ''}`}
-                  onClick={() => handleRowClick(category)}
-                >
-                  <div className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedCategories.includes(category._id)} onChange={(e) => handleSelectOne(e, category._id)} />
-                  </div>
-                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{index + 1}</div>
-                  <div className="category-info">
-                    <div className="category-icon">
-                      {category.image ? <img src={`${API_URL}${category.image}`} alt={category.name} /> : <FaShapes />}
+              <div className="category-list-body">
+                {sortedCategories.map((category, index) => (
+                  <div
+                    key={category._id}
+                    className={`category-list-item ${selectedCategoryPanel?._id === category._id ? 'selected' : ''} ${selectedCategories.includes(category._id) ? 'row-selected' : ''}`}
+                    onClick={() => handleRowClick(category)}
+                  >
+                    <div className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selectedCategories.includes(category._id)} onChange={(e) => handleSelectOne(e, category._id)} />
                     </div>
-                    <div className="category-details">
-                      <h4>{category.name}</h4>
+                    <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{index + 1}</div>
+                    <div className="category-info">
+                      <div className="category-icon">
+                        {category.image ? <img src={`${API_URL}${category.image}`} alt={category.name} /> : <FaShapes />}
+                      </div>
+                      <div className="category-details">
+                        <h4>{category.name}</h4>
+                      </div>
+                    </div>
+                    <div className="items-count hide-mobile">
+                      <span className="badge-items">
+                        {category.subcategories?.reduce((acc, sub) => acc + (sub.itemCount || 0), 0) || 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className={`cat-status-badge ${category.status === 'Active' ? 'active' : 'draft'}`}>
+                        {category.status || 'Active'}
+                      </span>
+                    </div>
+                    <div className="last-updated hide-tablet">
+                      {formatDate(category.date)}
+                    </div>
+                    <div className="action-icons">
+                      <FaEdit
+                        className="action-icon edit"
+                        onClick={(e) => { e.stopPropagation(); handleEditClick(category); }}
+                        title="Edit Category"
+                      />
+                      <FaTrashAlt
+                        className="action-icon delete"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(category); }}
+                        title="Delete Category"
+                      />
                     </div>
                   </div>
-                  <div className="items-count">
-                    <span className="badge-items">
-                      {category.subcategories?.reduce((acc, sub) => acc + (sub.itemCount || 0), 0) || 0}
-                    </span>
+                ))}
+                {categories.length === 0 && (
+                  <div className="no-data-content">
+                    <FaInbox className="no-data-icon" />
+                    <span className="no-data-text">No categories found</span>
                   </div>
-                  <div>
-                    <span className={`cat-status-badge ${category.status === 'Active' ? 'active' : 'draft'}`}>
-                      {category.status || 'Active'}
-                    </span>
-                  </div>
-                  <div className="last-updated">
-                    {formatDate(category.date)}
-                  </div>
-                  <div className="action-icons">
-                    <FaEdit
-                      className="action-icon edit"
-                      onClick={(e) => { e.stopPropagation(); handleEditClick(category); }}
-                      title="Edit Category"
-                    />
-                    <FaTrashAlt
-                      className="action-icon delete"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(category); }}
-                      title="Delete Category"
-                    />
-                  </div>
-                </div>
-              ))}
-              {categories.length === 0 && (
-                <div className="no-data-content">
-                  <FaInbox className="no-data-icon" />
-                  <span className="no-data-text">No categories found</span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Footer Pagination */}
@@ -521,103 +524,107 @@ const Categories = () => {
         </div>
 
         {/* Right Column: Sub-categories Panel */}
-        <div className="subcategories-panel">
-          {selectedCategoryPanel ? (
-            <>
-              <div className="panel-header">
-                <h3>SUB-CATEGORIES</h3>
-                <div className="panel-actions">
-                  <FaTimes style={{ cursor: 'pointer' }} onClick={() => setSelectedCategoryPanel(null)} />
-                </div>
-              </div>
-
-              <div className="selected-cat-header">
-                <div className="selected-cat-info">
-                  <div className="category-icon" style={{ width: 32, height: 32, backgroundColor: '#eff6ff', color: '#3b82f6', overflow: 'hidden' }}>
-                    {selectedCategoryPanel.image ? (
-                      <img
-                        src={`${API_URL}${selectedCategoryPanel.image}`}
-                        alt={selectedCategoryPanel.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <FaLayerGroup />
-                    )}
-                  </div>
-                  <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{selectedCategoryPanel.name}</h2>
-                </div>
-              </div>
-
-              <div className="subcategory-search-row">
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '0.8rem' }} />
-                  <input type="text" placeholder="Find sub-category..." style={{ width: '100%', paddingLeft: 30 }} />
-                </div>
-                <div className="btn-small-square btn-icon-filled" onClick={() => setIsSubModalOpen(true)}><FaPlus size={12} /></div>
-              </div>
-
-              {selectedSubCategories.length > 0 && (
-                <div className="bulk-actions-bar-mini">
-                  <span className="bulk-count-mini">{selectedSubCategories.length} selected</span>
-                  <div className="bulk-actions-mini">
-                    <button className="bulk-action-btn-mini delete-btn" onClick={handleBulkDeleteSub}>
-                      <FaTrashAlt size={12} /> Delete
-                    </button>
-                    <button className="deselect-btn-mini" onClick={() => setSelectedSubCategories([])}>
-                      <FaTimes size={12} />
-                    </button>
+        <div className="subcategories-panel-wrapper">
+          <div className="subcategories-panel">
+            {selectedCategoryPanel ? (
+              <>
+                <div className="panel-header">
+                  <h3>SUB-CATEGORIES</h3>
+                  <div className="panel-actions">
+                    <FaTimes style={{ cursor: 'pointer' }} onClick={() => setSelectedCategoryPanel(null)} />
                   </div>
                 </div>
-              )}
 
-              <div className="subcategory-table">
-                <div className="subcategory-table-header">
-                  <div><input type="checkbox" onChange={handleSelectAllSub} checked={selectedCategoryPanel.subcategories?.length > 0 && selectedSubCategories.length === selectedCategoryPanel.subcategories.length} /></div>
-                  <div>#</div>
-                  <div>NAME</div>
-                  <div style={{ textAlign: 'right' }}>ACTION</div>
-                </div>
-                <div className="subcategory-table-body">
-                  {(selectedCategoryPanel.subcategories && selectedCategoryPanel.subcategories.length > 0) ? (
-                    selectedCategoryPanel.subcategories.map((sub, idx) => (
-                      <div className={`subcategory-table-row ${selectedSubCategories.includes(sub._id) ? 'row-selected' : ''}`} key={sub._id || idx}>
-                        <div><input type="checkbox" checked={selectedSubCategories.includes(sub._id)} onChange={(e) => handleSelectOneSub(e, sub._id)} /></div>
-                        <div className="sub-index">{idx + 1}</div>
-                        <div className="sub-name">{sub.name}</div>
-                        <div className="sub-actions">
-                          <FaEdit
-                            className="sub-action-icon edit"
-                            onClick={() => handleEditSubClick(sub)}
-                          />
-                          <FaTrashAlt
-                            className="sub-action-icon delete"
-                            onClick={() => handleDeleteSubCategory(sub)}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-subs">
-                      <FaInbox className="no-subs-icon" />
-                      <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>No sub-categories yet</div>
+                <div className="selected-cat-header">
+                  <div className="selected-cat-info">
+                    <div className="category-icon" style={{ width: 32, height: 32, backgroundColor: '#eff6ff', color: '#3b82f6', overflow: 'hidden' }}>
+                      {selectedCategoryPanel.image ? (
+                        <img
+                          src={`${API_URL}${selectedCategoryPanel.image}`}
+                          alt={selectedCategoryPanel.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <FaLayerGroup />
+                      )}
                     </div>
-                  )}
+                    <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{selectedCategoryPanel.name}</h2>
+                  </div>
                 </div>
-              </div>
 
-              <a href="#" className="add-subcat-link" onClick={(e) => { e.preventDefault(); setIsSubModalOpen(true); }}><FaPlus /> Add another sub-category</a>
+                <div className="subcategory-search-row">
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '0.8rem' }} />
+                    <input type="text" placeholder="Find sub-category..." style={{ width: '100%', paddingLeft: 30 }} />
+                  </div>
+                  <div className="btn-small-square btn-icon-filled" onClick={() => setIsSubModalOpen(true)}><FaPlus size={12} /></div>
+                </div>
 
-              <div className="panel-footer-stats">
-                <span>{selectedCategoryPanel.subcategories ? selectedCategoryPanel.subcategories.length : 0} Sub-categories</span>
-                <span>{selectedCategoryPanel.totalItems || 0} Total Items</span>
+                {selectedSubCategories.length > 0 && (
+                  <div className="bulk-actions-bar-mini">
+                    <span className="bulk-count-mini">{selectedSubCategories.length} selected</span>
+                    <div className="bulk-actions-mini">
+                      <button className="bulk-action-btn-mini delete-btn" onClick={handleBulkDeleteSub}>
+                        <FaTrashAlt size={12} /> Delete
+                      </button>
+                      <button className="deselect-btn-mini" onClick={() => setSelectedSubCategories([])}>
+                        <FaTimes size={12} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="subcategory-table-scrollable">
+                  <div className="subcategory-table">
+                    <div className="subcategory-table-header">
+                      <div><input type="checkbox" onChange={handleSelectAllSub} checked={selectedCategoryPanel.subcategories?.length > 0 && selectedSubCategories.length === selectedCategoryPanel.subcategories.length} /></div>
+                      <div>#</div>
+                      <div>NAME</div>
+                      <div style={{ textAlign: 'right' }}>ACTION</div>
+                    </div>
+                    <div className="subcategory-table-body">
+                      {(selectedCategoryPanel.subcategories && selectedCategoryPanel.subcategories.length > 0) ? (
+                        selectedCategoryPanel.subcategories.map((sub, idx) => (
+                          <div className={`subcategory-table-row ${selectedSubCategories.includes(sub._id) ? 'row-selected' : ''}`} key={sub._id || idx}>
+                            <div><input type="checkbox" checked={selectedSubCategories.includes(sub._id)} onChange={(e) => handleSelectOneSub(e, sub._id)} /></div>
+                            <div className="sub-index">{idx + 1}</div>
+                            <div className="sub-name">{sub.name}</div>
+                            <div className="sub-actions">
+                              <FaEdit
+                                className="sub-action-icon edit"
+                                onClick={() => handleEditSubClick(sub)}
+                              />
+                              <FaTrashAlt
+                                className="sub-action-icon delete"
+                                onClick={() => handleDeleteSubCategory(sub)}
+                              />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-subs">
+                          <FaInbox className="no-subs-icon" />
+                          <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>No sub-categories yet</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <a href="#" className="add-subcat-link" onClick={(e) => { e.preventDefault(); setIsSubModalOpen(true); }}><FaPlus /> Add another sub-category</a>
+
+                <div className="panel-footer-stats">
+                  <span>{selectedCategoryPanel.subcategories ? selectedCategoryPanel.subcategories.length : 0} Sub-categories</span>
+                  <span>{selectedCategoryPanel.totalItems || 0} Total Items</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: 40 }}>
+                <FaLayerGroup size={40} style={{ marginBottom: 10, opacity: 0.5 }} />
+                <p>Select a category to view details</p>
               </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: 40 }}>
-              <FaLayerGroup size={40} style={{ marginBottom: 10, opacity: 0.5 }} />
-              <p>Select a category to view details</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       <SubCategoryModal

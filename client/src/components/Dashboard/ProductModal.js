@@ -37,7 +37,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${API_URL}/api/categories`);
         const data = await response.json();
         setCategories(data);
       } catch (error) {

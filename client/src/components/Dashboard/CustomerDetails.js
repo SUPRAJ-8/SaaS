@@ -4,6 +4,7 @@ import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import OrderDetailsModal from './OrderDetailsModal';
 import './CustomerDetails.css';
 import './OrderDetailsModal.css';
+import API_URL from '../../apiConfig';
 
 const CustomerDetails = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const CustomerDetails = () => {
   const [customer, setCustomer] = useState(null);
   const [orders, setOrders] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-              const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const handleOrderUpdate = (updatedOrder) => {
     setOrders(orders.map(order => order.orderId === updatedOrder.orderId ? updatedOrder : order));
@@ -48,11 +49,11 @@ const CustomerDetails = () => {
     if (!status) return '';
     return `status-${status.toLowerCase().replace(/ /g, '-')}`;
   };
-  
+
   useEffect(() => {
     const fetchCustomerData = async () => {
       try {
-        const response = await fetch(`/api/customers/${id}`);
+        const response = await fetch(`${API_URL}/api/customers/${id}`);
         if (!response.ok) {
           throw new Error('Customer not found');
         }
@@ -78,22 +79,22 @@ const CustomerDetails = () => {
   //   }
   // }, [orders, id]);
 
-    const handlePaymentStatusChange = (orderId, newStatus) => {
+  const handlePaymentStatusChange = (orderId, newStatus) => {
     const updatedOrders = orders.map(order => {
       if (order.orderId === orderId) {
         const newInvoices = order.invoices.map(inv => ({ ...inv, status: newStatus }));
-        return { 
-          ...order, 
+        return {
+          ...order,
           status: newStatus === 'Refunded' ? 'refunded' : order.status,
-          invoices: newInvoices 
+          invoices: newInvoices
         };
       }
       return order;
     });
-        setOrders(updatedOrders);
+    setOrders(updatedOrders);
   };
 
-  
+
 
   const handleStatusChange = (orderId, field, value) => {
     setOrders(orders.map(order => {
@@ -103,11 +104,11 @@ const CustomerDetails = () => {
           const updatedInvoices = order.invoices && order.invoices.length > 0
             ? order.invoices.map(inv => ({ ...inv, status: 'Refunded' }))
             : [{ status: 'Refunded' }];
-          return { 
-            ...order, 
-            [field]: value, 
+          return {
+            ...order,
+            [field]: value,
             invoices: updatedInvoices,
-            lastModified: new Date().toISOString() 
+            lastModified: new Date().toISOString()
           };
         }
         return { ...order, [field]: value, lastModified: new Date().toISOString() };
@@ -127,12 +128,12 @@ const CustomerDetails = () => {
     let sortableOrders = [...orders];
     if (sortConfig.key !== null) {
       sortableOrders.sort((a, b) => {
-                const keyA = sortConfig.key.split('.').reduce((o, i) => o[i], a);
+        const keyA = sortConfig.key.split('.').reduce((o, i) => o[i], a);
         const keyB = sortConfig.key.split('.').reduce((o, i) => o[i], b);
         if (keyA < keyB) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-                if (keyA > keyB) {
+        if (keyA > keyB) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -149,7 +150,7 @@ const CustomerDetails = () => {
     setSortConfig({ key, direction });
   };
 
-    const formatDate = (dateString) => {
+  const formatDate = (dateString) => {
     const date = new Date(dateString);
     const dateOptions = {
       month: 'short',
@@ -217,7 +218,7 @@ const CustomerDetails = () => {
                 <td>{order.customerDetails.name}</td>
                 <td>{order.items.length}</td>
                 <td>Rs. {order.payment.total.toFixed(2)}</td>
-                                <td>
+                <td>
                   <select
                     value={getPaymentStatus(order.invoices)}
                     onChange={(e) => handlePaymentStatusChange(order.orderId, e.target.value)}
@@ -227,7 +228,7 @@ const CustomerDetails = () => {
                     <option value="Refunded">REFUNDED</option>
                   </select>
                 </td>
-                                <td>{order.customerDetails.paymentTerms}</td>
+                <td>{order.customerDetails.paymentTerms}</td>
                 <td>
                   <select
                     value={order.status}
@@ -248,7 +249,7 @@ const CustomerDetails = () => {
           </tbody>
         </table>
       </div>
-            <OrderDetailsModal
+      <OrderDetailsModal
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
         order={selectedOrder}

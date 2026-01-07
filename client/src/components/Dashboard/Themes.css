@@ -255,21 +255,46 @@
 @media (max-width: 1024px) {
   .themes-grid {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
   }
 }
 
 @media (max-width: 768px) {
   .themes-page {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   .themes-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .themes-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .themes-header p {
+    font-size: 1rem;
   }
 
   .themes-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .theme-preview {
+    padding: 1rem;
+  }
+
+  .theme-info {
+    padding: 1.25rem;
+  }
+
+  .themes-header h1 {
+    font-size: 1.5rem;
   }
 }

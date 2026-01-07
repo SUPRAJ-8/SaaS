@@ -203,6 +203,7 @@ app.get('/', (req, res) => {
 // Define API Routes
 app.use('/auth', require('./routes/google-auth'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/pages', require('./routes/pages'));
 // We will create the API for managing websites later
@@ -216,7 +217,16 @@ app.use('/api/store-settings', require('./routes/store-settings'));
 app.use('/api/client-pages', require('./routes/client-pages'));
 app.use('/api/public-settings', require('./routes/public-settings'));
 app.use('/api/contact', require('./routes/contact'));
-app.use('/api/users', require('./routes/users'));
+
+// 404 Handler for API routes - Log to help debugging
+app.use('/api/*', (req, res) => {
+  console.log(`📡 [404] Unmatched API request: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    msg: 'API Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
 
 const port = process.env.PORT || 5002;
 

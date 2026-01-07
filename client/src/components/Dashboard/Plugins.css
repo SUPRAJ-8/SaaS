@@ -4,6 +4,12 @@
     padding: 2rem 3rem;
 }
 
+@media (max-width: 768px) {
+    .plugins-container-full {
+        padding: 1.5rem;
+    }
+}
+
 .page-title {
     font-size: 2.25rem;
     font-weight: 800;
@@ -89,6 +95,18 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 2rem;
+}
+
+@media (max-width: 1200px) {
+    .available-plugins-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .available-plugins-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .available-plugin-card {
@@ -311,6 +329,13 @@
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@media (max-width: 640px) {
+    .plugin-modal-content {
+        max-width: 95vw;
+        border-radius: 16px;
+    }
+}
+
 @keyframes slideUp {
     from {
         transform: translateY(20px);
@@ -383,6 +408,12 @@
     padding: 2rem;
 }
 
+@media (max-width: 640px) {
+    .modal-body {
+        padding: 1.25rem;
+    }
+}
+
 .integration-hint {
     width: 80%;
     margin-left: 20px;
@@ -419,6 +450,12 @@
     font-size: 1rem;
     color: #0f172a;
     transition: all 0.2s;
+}
+
+@media (max-width: 640px) {
+    .config-form-group input {
+        max-width: 100%;
+    }
 }
 
 .config-form-group input:focus {
@@ -541,5 +578,20 @@
 
     .available-plugins-grid {
         grid-template-columns: 1fr;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .footer-right {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .cancel-pill-btn,
+    .save-pill-btn {
+        width: 100%;
     }
 }

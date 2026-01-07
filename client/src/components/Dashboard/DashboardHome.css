@@ -98,6 +98,7 @@
   .header-actions {
     width: 100%;
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .customize-btn,
@@ -107,6 +108,19 @@
   }
 
   .dashboard-home .chart-container {
-    padding: 1rem;
+    padding: 1.25rem 0.75rem;
+    margin-top: 1.5rem;
+    border-radius: 12px;
+  }
+
+  .dashboard-home .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-home-header h1 {
+    font-size: 1.25rem;
   }
 }

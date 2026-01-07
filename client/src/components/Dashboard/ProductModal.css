@@ -19,7 +19,15 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .product-modal-content {
+    width: 95%;
+    padding: 16px;
+    margin: 10px;
+  }
 }
 
 .rich-text-modal-overlay {
@@ -97,6 +105,13 @@
   gap: 20px;
 }
 
+@media (max-width: 1024px) {
+  .form-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
 .card {
   background: #fff;
   padding: 20px;
@@ -136,6 +151,13 @@
 .form-row {
   display: flex;
   gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }
 
 .form-row .form-group {

@@ -386,99 +386,101 @@ const Products = () => {
         </div>
       )}
       <div className="products-table-container">
-        <table className="products-table">
-          <thead>
-            <tr>
-              <th className="checkbox-cell">
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={currentItems.length > 0 && currentItems.every(p => selectedProducts.includes(p._id))}
-                />
-              </th>
-              <th>#</th>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Inventory</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Updated</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="products-table-scrollable">
+          <table className="products-table">
+            <thead>
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center' }}>Loading...</td>
+                <th className="checkbox-cell">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={currentItems.length > 0 && currentItems.every(p => selectedProducts.includes(p._id))}
+                  />
+                </th>
+                <th>#</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Inventory</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Actions</th>
               </tr>
-            ) : currentItems.length > 0 ? (
-              currentItems.map((product, index) => (
-                <tr key={product._id} onClick={() => handleEditClick(product)} className={selectedProducts.includes(product._id) ? 'row-selected' : ''} style={{ cursor: 'pointer' }}>
-                  <td className="checkbox-cell"><input type="checkbox" checked={selectedProducts.includes(product._id)} onChange={(e) => handleSelectOne(e, product._id)} onClick={(e) => e.stopPropagation()} /></td>
-                  <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td>
-                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-                      <img
-                        src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL)}
-                        alt={product.name}
-                        style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
-                      />
-                      {product.images && product.images.length > 1 && (
-                        <span style={{
-                          position: 'absolute',
-                          bottom: '-2px',
-                          right: '-2px',
-                          background: 'rgba(0,0,0,0.7)',
-                          color: 'white',
-                          fontSize: '10px',
-                          padding: '1px 4px',
-                          borderRadius: '10px',
-                          border: '1px solid white'
-                        }}>
-                          +{product.images.length - 1}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="product-name">{product.name}</td>
-                  <td style={{ color: calculateInventory(product) > 0 ? 'green' : 'red' }}>
-                    {calculateInventory(product)}
-                  </td>
-                  <td>NPR {Number(product.sellingPrice || 0).toFixed(0)}</td>
-                  <td>
-                    <select
-                      value={product.status}
-                      onChange={(e) => handleProductUpdate(product._id, 'status', e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`status-select status-${product.status.toLowerCase()}`}>
-                      <option value="Active">Active</option>
-                      <option value="Draft">Draft</option>
-                      <option value="Archived">Archived</option>
-                    </select>
-                  </td>
-                  <td>{formatDate(product.createdAt)}</td>
-                  <td>{formatDate(product.updatedAt)}</td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <div className="actions-wrapper">
-                      <button className="action-btn edit-btn" onClick={() => handleEditClick(product)} title="Edit product"><FaEdit /></button>
-                      <button className="action-btn delete-btn" onClick={() => handleDeleteClick(product)} title="Delete product"><FaTrashAlt /></button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="10" style={{ textAlign: 'center' }}>Loading...</td>
+                </tr>
+              ) : currentItems.length > 0 ? (
+                currentItems.map((product, index) => (
+                  <tr key={product._id} onClick={() => handleEditClick(product)} className={selectedProducts.includes(product._id) ? 'row-selected' : ''} style={{ cursor: 'pointer' }}>
+                    <td className="checkbox-cell"><input type="checkbox" checked={selectedProducts.includes(product._id)} onChange={(e) => handleSelectOne(e, product._id)} onClick={(e) => e.stopPropagation()} /></td>
+                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td>
+                      <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+                        <img
+                          src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL)}
+                          alt={product.name}
+                          style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
+                        />
+                        {product.images && product.images.length > 1 && (
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '-2px',
+                            right: '-2px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            fontSize: '10px',
+                            padding: '1px 4px',
+                            borderRadius: '10px',
+                            border: '1px solid white'
+                          }}>
+                            +{product.images.length - 1}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="product-name">{product.name}</td>
+                    <td style={{ color: calculateInventory(product) > 0 ? 'green' : 'red' }}>
+                      {calculateInventory(product)}
+                    </td>
+                    <td>NPR {Number(product.sellingPrice || 0).toFixed(0)}</td>
+                    <td>
+                      <select
+                        value={product.status}
+                        onChange={(e) => handleProductUpdate(product._id, 'status', e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`status-select status-${product.status.toLowerCase()}`}>
+                        <option value="Active">Active</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Archived">Archived</option>
+                      </select>
+                    </td>
+                    <td>{formatDate(product.createdAt)}</td>
+                    <td>{formatDate(product.updatedAt)}</td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div className="actions-wrapper">
+                        <button className="action-btn edit-btn" onClick={() => handleEditClick(product)} title="Edit product"><FaEdit /></button>
+                        <button className="action-btn delete-btn" onClick={() => handleDeleteClick(product)} title="Delete product"><FaTrashAlt /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="10" className="no-data-cell">
+                    <div className="no-data-content">
+                      <FaInbox className="no-data-icon" />
+                      <span>No products found.</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="10" className="no-data-cell">
-                  <div className="no-data-content">
-                    <FaInbox className="no-data-icon" />
-                    <span>No products found.</span>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
         <div className="table-footer">
           <div className="showing-results">
             Showing <span className="text-bold">{filteredProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> of <span className="text-bold">{filteredProducts.length}</span> results

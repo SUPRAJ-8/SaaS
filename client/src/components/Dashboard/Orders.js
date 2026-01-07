@@ -44,7 +44,20 @@ const Orders = () => {
 
     // Dropdown visibility
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const [isMainFilterOpen, setIsMainFilterOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const mainFilterRef = useRef(null);
+
+    const activeFiltersCount = useMemo(() => {
+        let count = 0;
+        if (statusFilter !== 'All Statuses') count++;
+        if (labelFilter !== 'All Labels') count++;
+        if (paymentMethodFilter !== 'All Methods') count++;
+        if (paymentStatusFilter !== 'All Statuses') count++;
+        if (timeframeFilter !== 'All Time') count++;
+        if (startDate || endDate) count++;
+        return count;
+    }, [statusFilter, labelFilter, paymentMethodFilter, paymentStatusFilter, timeframeFilter, startDate, endDate]);
 
     const statusOptions = ['All Statuses', 'Pending', 'Processing', 'Shipping', 'Delivered', 'Cancelled', 'Refunded'];
     const paymentMethodOptions = ['All Methods', 'QR', 'COD'];
@@ -55,6 +68,9 @@ const Orders = () => {
         fetchOrders();
 
         const handleClickOutside = (event) => {
+            if (mainFilterRef.current && !mainFilterRef.current.contains(event.target)) {
+                setIsMainFilterOpen(false);
+            }
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setActiveDropdown(null);
                 setStatusEditId(null);
@@ -64,6 +80,17 @@ const Orders = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const clearAllFilters = () => {
+        setStatusFilter('All Statuses');
+        setLabelFilter('All Labels');
+        setPaymentMethodFilter('All Methods');
+        setPaymentStatusFilter('All Statuses');
+        setTimeframeFilter('All Time');
+        setStartDate(null);
+        setEndDate(null);
+        setActiveDropdown(null);
+    };
 
     const fetchOrders = async () => {
         try {
@@ -418,189 +445,6 @@ const Orders = () => {
             </div>
 
             <div className="filter-card">
-                <div className="filter-grid">
-                    {/* Status Filter */}
-                    <div className="filter-item">
-                        <span className="filter-label">Status</span>
-                        <div className={`dropdown-box ${activeDropdown === 'status' ? 'active' : ''}`} onClick={() => toggleDropdown('status')}>
-                            <FaFilter className="dropdown-icon" />
-                            <span>{statusFilter}</span>
-                            <FaChevronDown className="chevron-icon" />
-                            {activeDropdown === 'status' && (
-                                <div className="dropdown-menu">
-                                    {statusOptions.map(opt => (
-                                        <div key={opt} className={`dropdown-option ${statusFilter === opt ? 'selected' : ''}`}
-                                            onClick={(e) => { e.stopPropagation(); setStatusFilter(opt); setActiveDropdown(null); }}>
-                                            {opt} {statusFilter === opt && <FaCheck className="check-icon" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Label Filter */}
-                    <div className="filter-item">
-                        <span className="filter-label">Label</span>
-                        <div className={`dropdown-box ${activeDropdown === 'label' ? 'active' : ''}`} onClick={() => toggleDropdown('label')}>
-                            <FaTag className="dropdown-icon" />
-                            <div className="label-pills">
-                                {labelFilter === 'All Labels' ? (<span>All Labels</span>) : (<span className="pill-urgent">{labelFilter}</span>)}
-                            </div>
-                            <FaChevronDown className="chevron-icon" />
-                            {activeDropdown === 'label' && (
-                                <div className="dropdown-menu">
-                                    {availableLabels.map(opt => (
-                                        <div key={opt} className={`dropdown-option ${labelFilter === opt ? 'selected' : ''}`}
-                                            onClick={(e) => { e.stopPropagation(); setLabelFilter(opt); setActiveDropdown(null); }}>
-                                            {opt} {labelFilter === opt && <FaCheck className="check-icon" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Payment Method Filter */}
-                    <div className="filter-item">
-                        <span className="filter-label">Payment Method</span>
-                        <div className={`dropdown-box ${activeDropdown === 'method' ? 'active' : ''}`} onClick={() => toggleDropdown('method')}>
-                            <FaCreditCard className="dropdown-icon" />
-                            <span>{paymentMethodFilter}</span>
-                            <FaChevronDown className="chevron-icon" />
-                            {activeDropdown === 'method' && (
-                                <div className="dropdown-menu">
-                                    {paymentMethodOptions.map(opt => (
-                                        <div key={opt} className={`dropdown-option ${paymentMethodFilter === opt ? 'selected' : ''}`}
-                                            onClick={(e) => { e.stopPropagation(); setPaymentMethodFilter(opt); setActiveDropdown(null); }}>
-                                            {opt} {paymentMethodFilter === opt && <FaCheck className="check-icon" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Payment Status Filter */}
-                    <div className="filter-item">
-                        <span className="filter-label">Payment Status</span>
-                        <div className={`dropdown-box ${activeDropdown === 'paystatus' ? 'active' : ''}`} onClick={() => toggleDropdown('paystatus')}>
-                            <FaWallet className="dropdown-icon" />
-                            <span>{paymentStatusFilter}</span>
-                            <FaChevronDown className="chevron-icon" />
-                            {activeDropdown === 'paystatus' && (
-                                <div className="dropdown-menu">
-                                    {paymentStatusOptions.map(opt => (
-                                        <div key={opt} className={`dropdown-option ${paymentStatusFilter === opt ? 'selected' : ''}`}
-                                            onClick={(e) => { e.stopPropagation(); setPaymentStatusFilter(opt); setActiveDropdown(null); }}>
-                                            {opt} {paymentStatusFilter === opt && <FaCheck className="check-icon" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Timeframe Filter */}
-                    <div className="filter-item">
-                        <span className="filter-label">Timeframe</span>
-                        <div className={`dropdown-box ${activeDropdown === 'timeframe' ? 'active' : ''}`} onClick={() => toggleDropdown('timeframe')}>
-                            <FaHistory className="dropdown-icon" />
-                            <span>{timeframeFilter}</span>
-                            <FaChevronDown className="chevron-icon" />
-                            {activeDropdown === 'timeframe' && (
-                                <div className="dropdown-menu">
-                                    {timeframeOptions.map(opt => (
-                                        <div key={opt} className={`dropdown-option ${timeframeFilter === opt ? 'selected' : ''}`}
-                                            onClick={(e) => { e.stopPropagation(); setTimeframeFilter(opt); setActiveDropdown(null); }}>
-                                            {opt} {timeframeFilter === opt && <FaCheck className="check-icon" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Advanced Date Range */}
-                    <div className="filter-item">
-                        <span className="filter-label">Date Range</span>
-                        <div className={`advanced-date-picker-trigger ${activeDropdown === 'daterange' ? 'active' : ''}`} onClick={() => toggleDropdown('daterange')}>
-                            <FaCalendarAlt className="date-icon-inline" />
-                            <span>
-                                {startDate && endDate
-                                    ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-                                    : 'Select Range'}
-                            </span>
-                            <FaChevronDown className="chevron-icon" />
-
-                            {activeDropdown === 'daterange' && (
-                                <div className="advanced-date-picker-popover" onClick={(e) => e.stopPropagation()}>
-                                    <DatePicker
-                                        selected={startDate}
-                                        onChange={(update) => {
-                                            const [start, end] = update;
-                                            setStartDate(start);
-                                            setEndDate(end);
-                                        }}
-                                        startDate={startDate}
-                                        endDate={endDate}
-                                        selectsRange
-                                        monthsShown={2}
-                                        showPreviousMonths
-                                        maxDate={new Date()}
-                                        inline
-                                    />
-                                    <div className="date-picker-footer">
-                                        <div className="time-select-row">
-                                            <div className="time-block">
-                                                <span className="time-label">START</span>
-                                                <div className="time-input-group">
-                                                    <input type="text" className="time-input" defaultValue="10" />
-                                                    <span className="time-divider">:</span>
-                                                    <input type="text" className="time-input" defaultValue="00" />
-                                                    <select className="ampm-select">
-                                                        <option>AM</option>
-                                                        <option>PM</option>
-                                                    </select>
-                                                </div>
-                                                <span className="time-date-label">{startDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
-                                            </div>
-                                            <div className="time-block">
-                                                <span className="time-label">END</span>
-                                                <div className="time-input-group">
-                                                    <input type="text" className="time-input" defaultValue="06" />
-                                                    <span className="time-divider">:</span>
-                                                    <input type="text" className="time-input" defaultValue="00" />
-                                                    <select className="ampm-select">
-                                                        <option>AM</option>
-                                                        <option selected>PM</option>
-                                                    </select>
-                                                </div>
-                                                <span className="time-date-label">{endDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
-                                            </div>
-                                        </div>
-                                        <div className="footer-actions">
-                                            <div className="range-summary">
-                                                {startDate && endDate && (
-                                                    <>
-                                                        <span>{startDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 10:00 AM</span>
-                                                        <span className="arrow">→</span>
-                                                        <span>{endDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 06:00 PM</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="footer-buttons">
-                                                <button className="btn-cancel" onClick={() => setActiveDropdown(null)}>Cancel</button>
-                                                <button className="btn-apply" onClick={() => setActiveDropdown(null)}>Apply Range</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
                 <div className="actions-row">
                     <div className="orders-search-container">
                         <FaSearch className="orders-search-icon" />
@@ -612,15 +456,236 @@ const Orders = () => {
                             className="orders-search-input"
                         />
                     </div>
-                    <div className="btn-group">
-                        <button className="export-excel-btn">
-                            <FaFileExcel className="excel-icon" />
-                            Export Excel
-                        </button>
-                        <button className="create-order-btn">
-                            <FaPlus className="plus-icon" />
-                            Create Order
-                        </button>
+
+                    <div className="filter-actions-group">
+                        <div className="main-filter-container" ref={mainFilterRef}>
+                            <button
+                                className={`main-filter-btn ${isMainFilterOpen ? 'active' : ''} ${activeFiltersCount > 0 ? 'has-active-filters' : ''}`}
+                                onClick={() => setIsMainFilterOpen(!isMainFilterOpen)}
+                            >
+                                <div className="btn-content">
+                                    <FaFilter className="filter-icon" />
+                                    <span>Filter</span>
+                                    {activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
+                                </div>
+                                <FaChevronDown className={`chevron-icon ${isMainFilterOpen ? 'rotate' : ''}`} />
+                            </button>
+
+                            {isMainFilterOpen && (
+                                <div className="main-filter-dropdown">
+                                    <div className="filter-dropdown-header">
+                                        <div className="header-text">
+                                            <h3>Filters</h3>
+                                            <p>{activeFiltersCount} active filters</p>
+                                        </div>
+                                        {activeFiltersCount > 0 && (
+                                            <button className="clear-filters-link" onClick={clearAllFilters}>
+                                                Clear All
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="filter-grid-container">
+                                        {/* Status Filter */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Status</span>
+                                            <div className={`dropdown-box ${activeDropdown === 'status' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('status'); }}>
+                                                <FaFilter className="dropdown-icon" />
+                                                <span>{statusFilter}</span>
+                                                <FaChevronDown className="chevron-icon" />
+                                                {activeDropdown === 'status' && (
+                                                    <div className="dropdown-menu">
+                                                        {statusOptions.map(opt => (
+                                                            <div key={opt} className={`dropdown-option ${statusFilter === opt ? 'selected' : ''}`}
+                                                                onClick={(e) => { e.stopPropagation(); setStatusFilter(opt); setActiveDropdown(null); }}>
+                                                                {opt} {statusFilter === opt && <FaCheck className="check-icon" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Label Filter */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Label</span>
+                                            <div className={`dropdown-box ${activeDropdown === 'label' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('label'); }}>
+                                                <FaTag className="dropdown-icon" />
+                                                <div className="label-pills">
+                                                    {labelFilter === 'All Labels' ? (<span>All Labels</span>) : (<span className="pill-urgent">{labelFilter}</span>)}
+                                                </div>
+                                                <FaChevronDown className="chevron-icon" />
+                                                {activeDropdown === 'label' && (
+                                                    <div className="dropdown-menu">
+                                                        {availableLabels.map(opt => (
+                                                            <div key={opt} className={`dropdown-option ${labelFilter === opt ? 'selected' : ''}`}
+                                                                onClick={(e) => { e.stopPropagation(); setLabelFilter(opt); setActiveDropdown(null); }}>
+                                                                {opt} {labelFilter === opt && <FaCheck className="check-icon" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Payment Method Filter */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Payment Method</span>
+                                            <div className={`dropdown-box ${activeDropdown === 'method' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('method'); }}>
+                                                <FaCreditCard className="dropdown-icon" />
+                                                <span>{paymentMethodFilter}</span>
+                                                <FaChevronDown className="chevron-icon" />
+                                                {activeDropdown === 'method' && (
+                                                    <div className="dropdown-menu">
+                                                        {paymentMethodOptions.map(opt => (
+                                                            <div key={opt} className={`dropdown-option ${paymentMethodFilter === opt ? 'selected' : ''}`}
+                                                                onClick={(e) => { e.stopPropagation(); setPaymentMethodFilter(opt); setActiveDropdown(null); }}>
+                                                                {opt} {paymentMethodFilter === opt && <FaCheck className="check-icon" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Payment Status Filter */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Payment Status</span>
+                                            <div className={`dropdown-box ${activeDropdown === 'paystatus' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('paystatus'); }}>
+                                                <FaWallet className="dropdown-icon" />
+                                                <span>{paymentStatusFilter}</span>
+                                                <FaChevronDown className="chevron-icon" />
+                                                {activeDropdown === 'paystatus' && (
+                                                    <div className="dropdown-menu">
+                                                        {paymentStatusOptions.map(opt => (
+                                                            <div key={opt} className={`dropdown-option ${paymentStatusFilter === opt ? 'selected' : ''}`}
+                                                                onClick={(e) => { e.stopPropagation(); setPaymentStatusFilter(opt); setActiveDropdown(null); }}>
+                                                                {opt} {paymentStatusFilter === opt && <FaCheck className="check-icon" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Timeframe Filter */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Timeframe</span>
+                                            <div className={`dropdown-box ${activeDropdown === 'timeframe' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('timeframe'); }}>
+                                                <FaHistory className="dropdown-icon" />
+                                                <span>{timeframeFilter}</span>
+                                                <FaChevronDown className="chevron-icon" />
+                                                {activeDropdown === 'timeframe' && (
+                                                    <div className="dropdown-menu">
+                                                        {timeframeOptions.map(opt => (
+                                                            <div key={opt} className={`dropdown-option ${timeframeFilter === opt ? 'selected' : ''}`}
+                                                                onClick={(e) => { e.stopPropagation(); setTimeframeFilter(opt); setActiveDropdown(null); }}>
+                                                                {opt} {timeframeFilter === opt && <FaCheck className="check-icon" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Advanced Date Range */}
+                                        <div className="filter-item">
+                                            <span className="filter-label">Date Range</span>
+                                            <div className={`advanced-date-picker-trigger ${activeDropdown === 'daterange' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleDropdown('daterange'); }}>
+                                                <FaCalendarAlt className="date-icon-inline" />
+                                                <span>
+                                                    {startDate && endDate
+                                                        ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+                                                        : 'Select Range'}
+                                                </span>
+                                                <FaChevronDown className="chevron-icon" />
+
+                                                {activeDropdown === 'daterange' && (
+                                                    <div className="advanced-date-picker-popover" onClick={(e) => e.stopPropagation()}>
+                                                        <DatePicker
+                                                            selected={startDate}
+                                                            onChange={(update) => {
+                                                                const [start, end] = update;
+                                                                setStartDate(start);
+                                                                setEndDate(end);
+                                                            }}
+                                                            startDate={startDate}
+                                                            endDate={endDate}
+                                                            selectsRange
+                                                            monthsShown={window.innerWidth > 768 ? 2 : 1}
+                                                            showPreviousMonths
+                                                            maxDate={new Date()}
+                                                            inline
+                                                        />
+                                                        <div className="date-picker-footer">
+                                                            <div className="time-select-row">
+                                                                <div className="time-block">
+                                                                    <span className="time-label">START</span>
+                                                                    <div className="time-input-group">
+                                                                        <input type="text" className="time-input" defaultValue="10" />
+                                                                        <span className="time-divider">:</span>
+                                                                        <input type="text" className="time-input" defaultValue="00" />
+                                                                        <select className="ampm-select">
+                                                                            <option>AM</option>
+                                                                            <option>PM</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <span className="time-date-label">{startDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
+                                                                </div>
+                                                                <div className="time-block">
+                                                                    <span className="time-label">END</span>
+                                                                    <div className="time-input-group">
+                                                                        <input type="text" className="time-input" defaultValue="06" />
+                                                                        <span className="time-divider">:</span>
+                                                                        <input type="text" className="time-input" defaultValue="00" />
+                                                                        <select className="ampm-select">
+                                                                            <option>AM</option>
+                                                                            <option selected>PM</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <span className="time-date-label">{endDate?.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="footer-actions">
+                                                                <div className="range-summary">
+                                                                    {startDate && endDate && (
+                                                                        <>
+                                                                            <span>{startDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 10:00 AM</span>
+                                                                            <span className="arrow">→</span>
+                                                                            <span>{endDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}, 06:00 PM</span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                                <div className="footer-buttons">
+                                                                    <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); }}>Cancel</button>
+                                                                    <button className="btn-apply" onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); }}>Apply</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="filter-dropdown-footer">
+                                        <button className="btn-apply-filters" onClick={() => setIsMainFilterOpen(false)}>
+                                            Show {filteredOrders.length} Orders
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="btn-group">
+                            <button className="export-excel-btn">
+                                <FaFileExcel className="excel-icon" />
+                                <span>Export</span>
+                            </button>
+                            <button className="create-order-btn">
+                                <FaPlus className="plus-icon" />
+                                <span>Create Order</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -685,158 +750,160 @@ const Orders = () => {
             )}
 
             <div className="orders-table-container">
-                <table className="orders-table">
-                    <thead>
-                        <tr>
-                            <th className="checkbox-column">
-                                <div className="header-checkbox-wrapper">
-                                    <input
-                                        type="checkbox"
-                                        className="custom-checkbox"
-                                        checked={isAllSelected && currentItems.length > 0}
-                                        onChange={toggleSelectAll}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                    <span className="hash-symbol">#</span>
-                                </div>
-                            </th>
-                            <th onClick={() => requestSort('orderId')} className="sortable-header">
-                                Order ID <span className="sort-icon-group">
-                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
-                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
-                                </span>
-                            </th>
-                            <th onClick={() => requestSort('customerDetails.name')} className="sortable-header">
-                                Customer <span className="sort-icon-group">
-                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
-                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
-                                </span>
-                            </th>
-                            <th onClick={() => requestSort('payment.total')} className="sortable-header">
-                                Amount <span className="sort-icon-group">
-                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
-                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
-                                </span>
-                            </th>
-                            <th onClick={() => requestSort('status')} className="sortable-header">
-                                Order Status <span className="sort-icon-group">
-                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
-                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
-                                </span>
-                            </th>
-                            <th>Pay Status</th>
-                            <th onClick={() => requestSort('placedOn')} className="sortable-header">
-                                Date <span className="sort-icon-group">
-                                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
-                                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
-                                </span>
-                            </th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentItems.length > 0 ? (
-                            currentItems.map((order, index) => (
-                                <tr key={order._id} className={`order-row ${selectedOrders.has(order._id) ? 'row-selected' : ''}`} onClick={() => setSelectedOrder(order)}>
-                                    <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
-                                        <div className="cell-checkbox-wrapper">
-                                            <input
-                                                type="checkbox"
-                                                className="custom-checkbox"
-                                                checked={selectedOrders.has(order._id)}
-                                                onChange={(e) => toggleSelectOrder(e, order._id)}
-                                            />
-                                            <span className="row-number">{(currentPage - 1) * itemsPerPage + index + 1}</span>
-                                        </div>
-                                    </td>
-                                    <td className="text-bold">{order.orderId}</td>
-                                    <td>
-                                        <div className="customer-info">
-                                            <span className="customer-name">{order.customerDetails?.name || 'Guest'}</span>
-                                            <span className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b' }}>{order.customerDetails?.phone}</span>
-                                        </div>
-                                    </td>
-                                    <td>Rs. {order.payment?.total?.toFixed(2) || '0.00'}</td>
-                                    <td>
-                                        <div className="status-badge-container"
+                <div className="orders-table-wrapper">
+                    <table className="orders-table">
+                        <thead>
+                            <tr>
+                                <th className="checkbox-column">
+                                    <div className="header-checkbox-wrapper">
+                                        <input
+                                            type="checkbox"
+                                            className="custom-checkbox"
+                                            checked={isAllSelected && currentItems.length > 0}
+                                            onChange={toggleSelectAll}
                                             onClick={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                        >
-                                            <span
-                                                className={`ord-status-badge ord-status-${order.status?.toLowerCase()} clickable-status`}
-                                                onMouseDown={(e) => {
-                                                    e.stopPropagation();
-                                                    setStatusEditId(statusEditId === order._id ? null : order._id);
-                                                }}
+                                        />
+                                        <span className="hash-symbol">#</span>
+                                    </div>
+                                </th>
+                                <th onClick={() => requestSort('orderId')} className="sortable-header">
+                                    Order ID <span className="sort-icon-group">
+                                        <FaArrowUp className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                        <FaArrowDown className={`sort-icon ${sortConfig.key === 'orderId' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                    </span>
+                                </th>
+                                <th onClick={() => requestSort('customerDetails.name')} className="sortable-header">
+                                    Customer <span className="sort-icon-group">
+                                        <FaArrowUp className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                        <FaArrowDown className={`sort-icon ${sortConfig.key === 'customerDetails.name' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                    </span>
+                                </th>
+                                <th onClick={() => requestSort('payment.total')} className="sortable-header">
+                                    Amount <span className="sort-icon-group">
+                                        <FaArrowUp className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                        <FaArrowDown className={`sort-icon ${sortConfig.key === 'payment.total' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                    </span>
+                                </th>
+                                <th onClick={() => requestSort('status')} className="sortable-header">
+                                    Order Status <span className="sort-icon-group">
+                                        <FaArrowUp className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                        <FaArrowDown className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                    </span>
+                                </th>
+                                <th>Pay Status</th>
+                                <th onClick={() => requestSort('placedOn')} className="sortable-header">
+                                    Date <span className="sort-icon-group">
+                                        <FaArrowUp className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                                        <FaArrowDown className={`sort-icon ${sortConfig.key === 'placedOn' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                                    </span>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentItems.length > 0 ? (
+                                currentItems.map((order, index) => (
+                                    <tr key={order._id} className={`order-row ${selectedOrders.has(order._id) ? 'row-selected' : ''}`} onClick={() => setSelectedOrder(order)}>
+                                        <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
+                                            <div className="cell-checkbox-wrapper">
+                                                <input
+                                                    type="checkbox"
+                                                    className="custom-checkbox"
+                                                    checked={selectedOrders.has(order._id)}
+                                                    onChange={(e) => toggleSelectOrder(e, order._id)}
+                                                />
+                                                <span className="row-number">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                                            </div>
+                                        </td>
+                                        <td className="text-bold">{order.orderId}</td>
+                                        <td>
+                                            <div className="customer-info">
+                                                <span className="customer-name">{order.customerDetails?.name || 'Guest'}</span>
+                                                <span className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b' }}>{order.customerDetails?.phone}</span>
+                                            </div>
+                                        </td>
+                                        <td>Rs. {order.payment?.total?.toFixed(2) || '0.00'}</td>
+                                        <td>
+                                            <div className="status-badge-container"
+                                                onClick={(e) => e.stopPropagation()}
+                                                onMouseDown={(e) => e.stopPropagation()}
                                             >
-                                                {order.status}
-                                                <FaChevronDown className="status-chevron" />
-                                            </span>
-                                            {statusEditId === order._id && (
-                                                <div className="status-dropdown-menu">
-                                                    {statusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
-                                                        <div
-                                                            key={opt}
-                                                            className={`status-dropdown-option ${order.status?.toLowerCase() === opt.toLowerCase() ? 'selected' : ''}`}
-                                                            onMouseDown={(e) => {
-                                                                e.stopPropagation();
-                                                                updateOrderStatus(order, opt);
-                                                            }}
-                                                        >
-                                                            {opt}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="status-badge-container"
-                                            onClick={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                        >
-                                            <span
-                                                className={`ord-status-badge ord-status-${getPaymentStatus(order.invoices).toLowerCase()} clickable-status`}
-                                                onMouseDown={(e) => {
-                                                    e.stopPropagation();
-                                                    setPayStatusEditId(payStatusEditId === order._id ? null : order._id);
-                                                }}
+                                                <span
+                                                    className={`ord-status-badge ord-status-${order.status?.toLowerCase()} clickable-status`}
+                                                    onMouseDown={(e) => {
+                                                        e.stopPropagation();
+                                                        setStatusEditId(statusEditId === order._id ? null : order._id);
+                                                    }}
+                                                >
+                                                    {order.status}
+                                                    <FaChevronDown className="status-chevron" />
+                                                </span>
+                                                {statusEditId === order._id && (
+                                                    <div className="status-dropdown-menu">
+                                                        {statusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
+                                                            <div
+                                                                key={opt}
+                                                                className={`status-dropdown-option ${order.status?.toLowerCase() === opt.toLowerCase() ? 'selected' : ''}`}
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    updateOrderStatus(order, opt);
+                                                                }}
+                                                            >
+                                                                {opt}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="status-badge-container"
+                                                onClick={(e) => e.stopPropagation()}
+                                                onMouseDown={(e) => e.stopPropagation()}
                                             >
-                                                {getPaymentStatus(order.invoices)}
-                                                <FaChevronDown className="status-chevron" />
-                                            </span>
-                                            {payStatusEditId === order._id && (
-                                                <div className="status-dropdown-menu">
-                                                    {paymentStatusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
-                                                        <div
-                                                            key={opt}
-                                                            className={`status-dropdown-option ${getPaymentStatus(order.invoices) === opt ? 'selected' : ''}`}
-                                                            onMouseDown={(e) => {
-                                                                e.stopPropagation();
-                                                                updatePayStatus(order, opt);
-                                                            }}
-                                                        >
-                                                            {opt}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>{formatDate(order.placedOn)}</td>
-                                    <td className="actions-cell">
-                                        <div className="actions-wrapper">
-                                            <button className="edit-btn" onClick={() => setSelectedOrder(order)}><FaEdit /></button>
-                                            <button className="delete-btn" onClick={(e) => handleDelete(e, order)}><FaTrash /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr><td colSpan="8" className="no-data-cell"><div className="no-data-content"><FaInbox className="no-data-icon" /><span>No orders found</span></div></td></tr>
-                        )}
-                    </tbody>
-                </table>
+                                                <span
+                                                    className={`ord-status-badge ord-status-${getPaymentStatus(order.invoices).toLowerCase()} clickable-status`}
+                                                    onMouseDown={(e) => {
+                                                        e.stopPropagation();
+                                                        setPayStatusEditId(payStatusEditId === order._id ? null : order._id);
+                                                    }}
+                                                >
+                                                    {getPaymentStatus(order.invoices)}
+                                                    <FaChevronDown className="status-chevron" />
+                                                </span>
+                                                {payStatusEditId === order._id && (
+                                                    <div className="status-dropdown-menu">
+                                                        {paymentStatusOptions.filter(opt => opt !== 'All Statuses').map(opt => (
+                                                            <div
+                                                                key={opt}
+                                                                className={`status-dropdown-option ${getPaymentStatus(order.invoices) === opt ? 'selected' : ''}`}
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    updatePayStatus(order, opt);
+                                                                }}
+                                                            >
+                                                                {opt}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>{formatDate(order.placedOn)}</td>
+                                        <td className="actions-cell">
+                                            <div className="actions-wrapper">
+                                                <button className="edit-btn" onClick={() => setSelectedOrder(order)}><FaEdit /></button>
+                                                <button className="delete-btn" onClick={(e) => handleDelete(e, order)}><FaTrash /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan="8" className="no-data-cell"><div className="no-data-content"><FaInbox className="no-data-icon" /><span>No orders found</span></div></td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
                 {sortedOrders.length > 0 && (
                     <div className="table-footer">

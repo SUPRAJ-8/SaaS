@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaTimes, FaCheck } from 'react-icons/fa';
 import './ProductSelectionModal.css';
+import API_URL from '../../apiConfig';
+import { resolveImageUrl } from '../../themeUtils';
 
 const ProductSelectionModal = ({ isOpen, onClose, onSave, initialSelection = [] }) => {
     const [products, setProducts] = useState([]);
@@ -35,7 +37,7 @@ const ProductSelectionModal = ({ isOpen, onClose, onSave, initialSelection = [] 
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/products');
+            const response = await fetch(`${API_URL}/api/products`);
             const data = await response.json();
             setProducts(data);
             setFilteredProducts(data);
@@ -133,12 +135,7 @@ const ProductSelectionModal = ({ isOpen, onClose, onSave, initialSelection = [] 
                                         <td>
                                             <div className="product-table-thumb">
                                                 <img
-                                                    src={product.images && product.images.length > 0
-                                                        ? (product.images[0].startsWith('http')
-                                                            ? product.images[0]
-                                                            : `http://localhost:5002${product.images[0].startsWith('/') ? '' : '/'}${product.images[0]}`)
-                                                        : 'https://via.placeholder.com/150'
-                                                    }
+                                                    src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL)}
                                                     alt={product.name}
                                                 />
                                             </div>

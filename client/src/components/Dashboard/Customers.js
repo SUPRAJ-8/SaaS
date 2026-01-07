@@ -206,20 +206,9 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Toolbar Section: Search & Actions */}
+      {/* Toolbar Section: Actions & Search */}
       <div className="customers-toolbar">
-        <div className="search-wrapper-wide">
-          <FaSearch className="search-icon-grey" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or customer ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input-wide"
-          />
-        </div>
-
-        <div className="toolbar-actions">
+        <div className="toolbar-actions-row">
           <button className="btn-outline-white icon-text-btn" title="Print">
             <FaPrint /> Print
           </button>
@@ -229,6 +218,17 @@ const Customers = () => {
           <button className="btn-dark icon-text-btn">
             <FaPlus /> Add Customer
           </button>
+        </div>
+
+        <div className="search-wrapper-full">
+          <FaSearch className="search-icon-grey" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input-full"
+          />
         </div>
       </div>
 
@@ -248,135 +248,137 @@ const Customers = () => {
         </div>
       )}
       <div className="customers-table-container">
-        <table className="customers-table">
-          <thead>
-            <tr>
-              <th className="checkbox-cell">
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={currentItems.length > 0 && currentItems.every(c => selectedCustomers.includes(c._id))}
-                />
-              </th>
-              <th>#</th>
-              <th onClick={() => requestSort('name')} className="sortable-header">
-                Customer
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th onClick={() => requestSort('totalOrders')} className="sortable-header">
-                Orders
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'totalOrders' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'totalOrders' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th onClick={() => requestSort('totalSpent')} className="sortable-header">
-                Total Spent
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'totalSpent' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'totalSpent' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th onClick={() => requestSort('lastOrder')} className="sortable-header">
-                Last Order
-                <span className="sort-icon-group">
-                  <FaArrowUp
-                    className={`sort-icon ${sortConfig.key === 'lastOrder' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                  <FaArrowDown
-                    className={`sort-icon ${sortConfig.key === 'lastOrder' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
-                  />
-                </span>
-              </th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.length > 0 ? (
-              currentItems.map((customer, index) => (
-                <React.Fragment key={customer._id}>
-                  <tr className={`customer-row ${selectedCustomers.includes(customer._id) ? 'row-selected' : ''}`} onClick={() => handleRowClick(customer)} >
-                    <td className="checkbox-cell"><input type="checkbox" checked={selectedCustomers.includes(customer._id)} onChange={(e) => handleSelectOne(e, customer._id)} onClick={(e) => e.stopPropagation()} /></td>
-                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td>
-                      <div className="customer-name-cell">
-                        <CustomerAvatar name={customer.name} />
-                        <div>
-                          <div className="customer-name">{customer.name}</div>
-                          <div className="customer-email">{customer.email}</div>
-                          <div className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{customer.phone}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{customer.totalOrders}</td>
-                    <td>{formatCurrency(customer.totalSpent)}</td>
-                    <td>{formatDate(customer.lastOrder)}</td>
-                    <td>
-                      <select
-                        className={`status-select status-${(customer.status || 'Active').toLowerCase()}`}
-                        value={customer.status || 'Active'}
-                        onChange={(e) => handleStatusChange(customer._id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </td>
-                    <td className="actions-cell">
-                      <div className="actions-wrapper">
-                        <button
-                          className="edit-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toast.info("Edit customer feature coming soon");
-                          }}
-                          title="Edit customer"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(customer);
-                          }}
-                          title="Delete customer"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))
-            ) : (
+        <div className="customers-table-scrollable">
+          <table className="customers-table">
+            <thead>
               <tr>
-                <td colSpan="8" className="no-data-cell">
-                  <div className="no-data-content">
-                    <FaInbox className="no-data-icon" />
-                    <span>No data available</span>
-                  </div>
-                </td>
+                <th className="checkbox-cell">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={currentItems.length > 0 && currentItems.every(c => selectedCustomers.includes(c._id))}
+                  />
+                </th>
+                <th>#</th>
+                <th onClick={() => requestSort('name')} className="sortable-header">
+                  Customer
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('totalOrders')} className="sortable-header">
+                  Orders
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'totalOrders' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'totalOrders' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('totalSpent')} className="sortable-header">
+                  Total Spent
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'totalSpent' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'totalSpent' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('lastOrder')} className="sortable-header">
+                  Last Order
+                  <span className="sort-icon-group">
+                    <FaArrowUp
+                      className={`sort-icon ${sortConfig.key === 'lastOrder' && sortConfig.direction === 'ascending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                    <FaArrowDown
+                      className={`sort-icon ${sortConfig.key === 'lastOrder' && sortConfig.direction === 'descending' ? 'active' : (sortConfig.key !== null ? 'inactive' : '')}`}
+                    />
+                  </span>
+                </th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentItems.length > 0 ? (
+                currentItems.map((customer, index) => (
+                  <React.Fragment key={customer._id}>
+                    <tr className={`customer-row ${selectedCustomers.includes(customer._id) ? 'row-selected' : ''}`} onClick={() => handleRowClick(customer)} >
+                      <td className="checkbox-cell"><input type="checkbox" checked={selectedCustomers.includes(customer._id)} onChange={(e) => handleSelectOne(e, customer._id)} onClick={(e) => e.stopPropagation()} /></td>
+                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td>
+                        <div className="customer-name-cell">
+                          <CustomerAvatar name={customer.name} />
+                          <div>
+                            <div className="customer-name">{customer.name}</div>
+                            <div className="customer-email">{customer.email}</div>
+                            <div className="customer-phone" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{customer.phone}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{customer.totalOrders}</td>
+                      <td>{formatCurrency(customer.totalSpent)}</td>
+                      <td>{formatDate(customer.lastOrder)}</td>
+                      <td>
+                        <select
+                          className={`status-select status-${(customer.status || 'Active').toLowerCase()}`}
+                          value={customer.status || 'Active'}
+                          onChange={(e) => handleStatusChange(customer._id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </td>
+                      <td className="actions-cell">
+                        <div className="actions-wrapper">
+                          <button
+                            className="edit-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast.info("Edit customer feature coming soon");
+                            }}
+                            title="Edit customer"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(customer);
+                            }}
+                            title="Delete customer"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="no-data-cell">
+                    <div className="no-data-content">
+                      <FaInbox className="no-data-icon" />
+                      <span>No data available</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
         <div className="table-footer">
           <div className="showing-results">
             Showing <span className="text-bold">{sortedCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, sortedCustomers.length)}</span> of <span className="text-bold">{sortedCustomers.length}</span> results

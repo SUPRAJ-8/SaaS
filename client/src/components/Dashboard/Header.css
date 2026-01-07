@@ -6,8 +6,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 100;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-left {
@@ -194,25 +198,106 @@
   cursor: pointer;
   padding: 8px;
   margin-right: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.mobile-menu-btn:active {
+  background-color: #e2e8f0;
+  transform: scale(0.95);
+}
+
+@media (max-width: 1200px) {
+  .dashboard-search-box {
+    width: 200px;
+  }
 }
 
 @media (max-width: 1024px) {
   .mobile-menu-btn {
-    display: block;
+    display: flex !important;
   }
 
-  /* Hide search box on mobile to save space */
+  .dashboard-header {
+    padding: 0 16px;
+    height: 60px;
+  }
+
   .dashboard-search-box {
     display: none;
   }
 
-  /* Hide user details text, keep avatar */
   .user-info-text {
     display: none;
   }
 
   .header-company-name {
+    font-size: 1rem;
+  }
+
+  .user-profile-header {
+    padding: 4px 8px;
+  }
+
+  .user-avatar-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-logo svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .header-company-name {
+    font-size: 0.9rem;
+  }
+
+  .user-avatar-wrapper {
+    width: 32px;
+    height: 32px;
+  }
+
+  .profile-dropdown {
+    right: -12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0 8px;
+  }
+
+  .header-company-name {
     display: none;
-    /* Optional: hide company name if space is tight */
+  }
+
+  .mobile-menu-btn {
+    margin-right: 4px;
+    padding: 6px;
+  }
+
+  .header-right {
+    gap: 8px;
   }
 }

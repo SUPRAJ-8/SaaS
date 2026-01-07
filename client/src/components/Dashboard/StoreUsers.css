@@ -11,9 +11,8 @@
 .store-users-page .users-page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: 24px;
-  padding-bottom: 4px;
 }
 
 .store-users-page .header-title-section .page-title {
@@ -226,10 +225,10 @@
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  /* overflow-x: auto; Removed - moved to wrapper */
   border: 1px solid #e2e8f0;
   overflow: hidden;
-  /* Fix footer border radius */
+  display: flex;
+  flex-direction: column;
 }
 
 .store-users-page .users-table-scrollable {
@@ -253,10 +252,30 @@
   padding: 12px 16px;
   font-size: 0.75rem;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
   color: #64748b;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.store-users-page .sortable-header {
+  padding-right: 28px !important;
+  cursor: pointer;
+}
+
+.store-users-page .sort-icon-group {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  font-size: 0.625rem;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .store-users-page .users-table td {
@@ -385,10 +404,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background-color: #f8fafc;
+  background-color: #ffffff;
   border-top: 1px solid #e2e8f0;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .store-users-page .showing-results {
@@ -447,11 +469,8 @@
   .store-users-page {
     width: 100%;
     max-width: 100%;
-    /* Hard limit */
     overflow: hidden;
-    /* Hide horizontal overflow on the page level */
     padding: 0;
-    /* Slight padding to prevent edge touching */
     box-sizing: border-box;
   }
 
@@ -465,8 +484,7 @@
     display: block !important;
     margin-bottom: 20px;
     width: 100%;
-    padding-right: 0;
-    /* Ensure no extra padding causes overflow */
+    padding: 0;
   }
 
   .store-users-page .header-title-section {
@@ -496,6 +514,7 @@
     gap: 12px;
     margin-bottom: 24px;
     width: 100%;
+    padding: 0;
   }
 
   /* Target the 3 original cards to fill their cells */
@@ -562,6 +581,8 @@
   .store-users-page .users-toolbar {
     flex-direction: column;
     padding: 12px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .store-users-page .status-filters-pills {
@@ -584,6 +605,7 @@
     width: 100%;
     /* No max-width or overflow needed here anymore */
     display: block;
+    box-sizing: border-box;
   }
 
   .store-users-page .users-table-scrollable {

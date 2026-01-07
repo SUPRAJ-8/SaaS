@@ -57,3 +57,23 @@
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+
+@media (max-width: 768px) {
+  .bulk-upload-container {
+    padding: 15px;
+  }
+
+  .upload-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .upload-form input[type="file"] {
+    margin-right: 0;
+  }
+
+  .upload-form button {
+    width: 100%;
+  }
+}
