@@ -34,21 +34,13 @@ const LoginPage = () => {
         console.log('User data:', response.data.user);
         toast.success('Successfully logged in! Redirecting...');
 
-        // Wait a moment for session cookie to be set, then redirect
-        // Use window.location.href for full page reload to ensure ProtectedRoute picks up session
+        // Use window.location.replace to prevent going back to login page
         setTimeout(() => {
           console.log('🔄 Redirecting to dashboard...');
-          console.log('Current location:', window.location.href);
-          console.log('Cookies before redirect:', document.cookie);
-
-          // Force redirect - try multiple methods to ensure it works
-          try {
-            window.location.href = '/dashboard';
-          } catch (e) {
-            console.error('Redirect error:', e);
-            window.location.replace('/dashboard');
-          }
-        }, 500); // Wait for session to be saved
+          const dashboardUrl = `${window.location.protocol}//${window.location.host}/dashboard`;
+          console.log('Target URL:', dashboardUrl);
+          window.location.replace(dashboardUrl);
+        }, 300); // reduced delay slightly but kept it for cookie processing
 
         return true;
       }

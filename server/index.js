@@ -99,13 +99,19 @@ app.use((req, res, next) => {
   };
 
   if (isProd) {
-    // CRITICAL FIX: For cross-domain auth (frontend on nepostore.xyz, backend on render.com)
+    // CRITICAL FIX: For cross-domain auth (frontend on nepostore.xyz, backend on render.com or api.nepostore.xyz)
     // We MUST use sameSite: 'none' and secure: true
-    // We MUST NOT set a domain attribute (let browser handle it)
     cookieConfig.sameSite = 'none';
     cookieConfig.secure = true;
-    // DO NOT set domain - this breaks cross-domain cookies!
-    console.log('[Cookie] Production config: sameSite=none, secure=true, no domain restriction');
+
+    // Set domain to allow sharing cookies across all subdomains of nepostore.xyz
+    // This is essential if frontend is on app.nepostore.xyz and backend is on api.nepostore.xyz
+    if (req.hostname.endsWith('nepostore.xyz')) {
+      cookieConfig.domain = '.nepostore.xyz';
+      console.log('[Cookie] Production config: domain=.nepostore.xyz, sameSite=none, secure=true');
+    } else {
+      console.log('[Cookie] Production config: no domain specified, sameSite=none, secure=true');
+    }
   } else {
     cookieConfig.sameSite = 'lax';
     cookieConfig.secure = false;
