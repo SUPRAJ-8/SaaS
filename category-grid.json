@@ -1,0 +1,321 @@
+{
+    "id": "category-grid-dynamic-v1",
+    "name": "Category Grid (Dynamic)",
+    "category": "Category",
+    "description": "A responsive grid of category cards with images and titles",
+    "type": "dynamic",
+    "thumbnail": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80",
+    "schema": [
+        {
+            "type": "header",
+            "label": "SECTION HEADER"
+        },
+        {
+            "key": "section_title",
+            "type": "text",
+            "label": "Section Title",
+            "default": "Shop by Category"
+        },
+        {
+            "key": "section_subtitle",
+            "type": "textarea",
+            "label": "Subtitle (Optional)",
+            "default": "Discover our wide selection",
+            "rows": 2
+        },
+        {
+            "type": "header",
+            "label": "LAYOUT"
+        },
+        {
+            "key": "columns",
+            "type": "select",
+            "label": "Columns",
+            "default": "4",
+            "options": [
+                {
+                    "label": "2 Columns",
+                    "value": "2"
+                },
+                {
+                    "label": "3 Columns",
+                    "value": "3"
+                },
+                {
+                    "label": "4 Columns",
+                    "value": "4"
+                },
+                {
+                    "label": "6 Columns",
+                    "value": "6"
+                }
+            ]
+        },
+        {
+            "key": "gap",
+            "type": "text",
+            "label": "Gap Between Cards (px)",
+            "default": "24"
+        },
+        {
+            "key": "padding_y",
+            "type": "text",
+            "label": "Vertical Padding (px)",
+            "default": "60"
+        },
+        {
+            "type": "header",
+            "label": "STYLING"
+        },
+        {
+            "key": "bg_color",
+            "type": "color",
+            "label": "Background Color",
+            "default": "#ffffff"
+        },
+        {
+            "key": "card_border_radius",
+            "type": "text",
+            "label": "Card Border Radius (px)",
+            "default": "12"
+        },
+        {
+            "key": "show_card_shadow",
+            "type": "boolean",
+            "label": "Show Card Shadow",
+            "default": true
+        }
+    ],
+    "structure": {
+        "tag": "section",
+        "style": {
+            "backgroundColor": "{{bg_color}}",
+            "paddingTop": "{{padding_y}}px",
+            "paddingBottom": "{{padding_y}}px"
+        },
+        "children": [
+            {
+                "tag": "div",
+                "style": {
+                    "maxWidth": "1200px",
+                    "margin": "0 auto",
+                    "padding": "0 20px"
+                },
+                "children": [
+                    {
+                        "tag": "div",
+                        "style": {
+                            "textAlign": "center",
+                            "marginBottom": "40px"
+                        },
+                        "children": [
+                            {
+                                "tag": "h2",
+                                "style": {
+                                    "fontSize": "2.5rem",
+                                    "fontWeight": "800",
+                                    "color": "#1f2937",
+                                    "marginBottom": "10px"
+                                },
+                                "text": "{{section_title}}"
+                            },
+                            {
+                                "tag": "p",
+                                "style": {
+                                    "fontSize": "1.1rem",
+                                    "color": "#6b7280"
+                                },
+                                "text": "{{section_subtitle}}"
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "div",
+                        "className": "category-grid-wrapper",
+                        "style": {
+                            "display": "grid",
+                            "gridTemplateColumns": "repeat({{columns}}, 1fr)",
+                            "gap": "{{gap}}px"
+                        },
+                        "children": [
+                            {
+                                "tag": "div",
+                                "className": "category-card",
+                                "style": {
+                                    "borderRadius": "{{card_border_radius}}px",
+                                    "overflow": "hidden",
+                                    "background": "#f9fafb",
+                                    "cursor": "pointer",
+                                    "transition": "transform 0.3s",
+                                    "boxShadow": "{{show_card_shadow}}",
+                                    "height": "200px",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center"
+                                },
+                                "children": [
+                                    {
+                                        "tag": "div",
+                                        "style": {
+                                            "textAlign": "center",
+                                            "padding": "20px"
+                                        },
+                                        "children": [
+                                            {
+                                                "tag": "div",
+                                                "style": {
+                                                    "fontSize": "3rem",
+                                                    "marginBottom": "10px"
+                                                },
+                                                "text": "📦"
+                                            },
+                                            {
+                                                "tag": "h3",
+                                                "style": {
+                                                    "fontSize": "1.25rem",
+                                                    "fontWeight": "700",
+                                                    "color": "#374151"
+                                                },
+                                                "text": "Category 1"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "div",
+                                "className": "category-card",
+                                "style": {
+                                    "borderRadius": "{{card_border_radius}}px",
+                                    "overflow": "hidden",
+                                    "background": "#f9fafb",
+                                    "cursor": "pointer",
+                                    "transition": "transform 0.3s",
+                                    "height": "200px",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center"
+                                },
+                                "children": [
+                                    {
+                                        "tag": "div",
+                                        "style": {
+                                            "textAlign": "center",
+                                            "padding": "20px"
+                                        },
+                                        "children": [
+                                            {
+                                                "tag": "div",
+                                                "style": {
+                                                    "fontSize": "3rem",
+                                                    "marginBottom": "10px"
+                                                },
+                                                "text": "👗"
+                                            },
+                                            {
+                                                "tag": "h3",
+                                                "style": {
+                                                    "fontSize": "1.25rem",
+                                                    "fontWeight": "700",
+                                                    "color": "#374151"
+                                                },
+                                                "text": "Category 2"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "div",
+                                "className": "category-card",
+                                "style": {
+                                    "borderRadius": "{{card_border_radius}}px",
+                                    "overflow": "hidden",
+                                    "background": "#f9fafb",
+                                    "cursor": "pointer",
+                                    "transition": "transform 0.3s",
+                                    "height": "200px",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center"
+                                },
+                                "children": [
+                                    {
+                                        "tag": "div",
+                                        "style": {
+                                            "textAlign": "center",
+                                            "padding": "20px"
+                                        },
+                                        "children": [
+                                            {
+                                                "tag": "div",
+                                                "style": {
+                                                    "fontSize": "3rem",
+                                                    "marginBottom": "10px"
+                                                },
+                                                "text": "💻"
+                                            },
+                                            {
+                                                "tag": "h3",
+                                                "style": {
+                                                    "fontSize": "1.25rem",
+                                                    "fontWeight": "700",
+                                                    "color": "#374151"
+                                                },
+                                                "text": "Category 3"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "div",
+                                "className": "category-card",
+                                "style": {
+                                    "borderRadius": "{{card_border_radius}}px",
+                                    "overflow": "hidden",
+                                    "background": "#f9fafb",
+                                    "cursor": "pointer",
+                                    "transition": "transform 0.3s",
+                                    "height": "200px",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center"
+                                },
+                                "children": [
+                                    {
+                                        "tag": "div",
+                                        "style": {
+                                            "textAlign": "center",
+                                            "padding": "20px"
+                                        },
+                                        "children": [
+                                            {
+                                                "tag": "div",
+                                                "style": {
+                                                    "fontSize": "3rem",
+                                                    "marginBottom": "10px"
+                                                },
+                                                "text": "⚽"
+                                            },
+                                            {
+                                                "tag": "h3",
+                                                "style": {
+                                                    "fontSize": "1.25rem",
+                                                    "fontWeight": "700",
+                                                    "color": "#374151"
+                                                },
+                                                "text": "Category 4"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "styles": ".category-card:hover { transform: translateY(-5px); }"
+}

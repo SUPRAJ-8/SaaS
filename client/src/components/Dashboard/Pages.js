@@ -5,6 +5,9 @@ import './Pages.css';
 import { toast } from 'react-toastify';
 import { ThemeContext } from '../../contexts/ThemeContext';
 
+import axios from 'axios';
+import API_URL from '../../apiConfig';
+
 const Pages = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
@@ -17,22 +20,33 @@ const Pages = () => {
     const [pages, setPages] = useState([]);
 
     useEffect(() => {
-        const savedPages = localStorage.getItem('site_pages');
-        if (savedPages) {
-            setPages(JSON.parse(savedPages));
-        } else {
-            const initialPages = [
-                // Ecommerce Theme Pages
-                { id: 1, title: 'Home Page', slug: '', status: 'Active', lastModified: '2025-12-20', type: 'Core', themeId: 'ecommerce' },
-                { id: 2, title: 'Checkout Page', slug: 'checkout', status: 'Active', lastModified: '2025-12-19', type: 'Core', themeId: 'ecommerce' },
+        const fetchPages = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/api/client-pages`, { withCredentials: true });
+                if (response.data && response.data.length > 0) {
+                    setPages(response.data);
+                    // Also sync to local storage for existing logic that uses it
+                    localStorage.setItem('site_pages', JSON.stringify(response.data));
+                } else {
+                    const initialPages = [
+                        { id: 1, title: 'Home Page', slug: '', status: 'Active', lastModified: '2025-12-20', type: 'Core', themeId: 'ecommerce' },
+                        { id: 2, title: 'Checkout Page', slug: 'checkout', status: 'Active', lastModified: '2025-12-19', type: 'Core', themeId: 'ecommerce' },
+                        { id: 3, title: 'Nexus Home', slug: '', status: 'Active', lastModified: '2025-12-21', type: 'Core', themeId: 'nexus' },
+                        { id: 4, title: 'Product Landing', slug: 'landing', status: 'Inactive', lastModified: '2025-12-21', type: 'Custom', themeId: 'nexus' },
+                    ];
+                    setPages(initialPages);
+                    localStorage.setItem('site_pages', JSON.stringify(initialPages));
+                }
+            } catch (error) {
+                console.error("Failed to fetch pages:", error);
+                const savedPages = localStorage.getItem('site_pages');
+                if (savedPages) {
+                    setPages(JSON.parse(savedPages));
+                }
+            }
+        };
 
-                // Nexus Theme Pages
-                { id: 3, title: 'Nexus Home', slug: '', status: 'Active', lastModified: '2025-12-21', type: 'Core', themeId: 'nexus' },
-                { id: 4, title: 'Product Landing', slug: 'landing', status: 'Inactive', lastModified: '2025-12-21', type: 'Custom', themeId: 'nexus' },
-            ];
-            setPages(initialPages);
-            localStorage.setItem('site_pages', JSON.stringify(initialPages));
-        }
+        fetchPages();
     }, []);
 
     const filteredPages = pages.filter(page =>

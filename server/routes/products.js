@@ -89,13 +89,19 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       return res.status(400).json({ msg: 'Product name is required' });
     }
 
+    // Multi-tenancy isolation
+    const clientId = req.user?.clientId || req.body.clientId;
+    if (!clientId) {
+      return res.status(400).json({ msg: 'ClientId is required. Are you logged in?' });
+    }
+
     // Generate SKU if not provided
     const productSku = sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Check if product with SKU already exists
-    let existingProduct = await Product.findOne({ sku: productSku });
+    // Check if product with SKU already exists (Within the same client)
+    let existingProduct = await Product.findOne({ sku: productSku, clientId });
     if (existingProduct) {
-      return res.status(400).json({ msg: 'Product with this SKU already exists' });
+      return res.status(400).json({ msg: 'Product with this SKU already exists in your store' });
     }
 
     // Parse hasVariants (handle both string and boolean)
@@ -124,11 +130,6 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       ? req.files.map(file => `/uploads/${file.filename}`)
       : [];
 
-    // Multi-tenancy isolation
-    const clientId = req.user?.clientId || req.body.clientId;
-    if (!clientId) {
-      return res.status(400).json({ msg: 'ClientId is required. Are you logged in?' });
-    }
 
     // Convert numeric strings to numbers
     const productData = {
@@ -161,6 +162,9 @@ router.post('/', upload.array('images', 10), async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error('Error creating product:', err);
+    if (err.code === 11000) {
+      return res.status(400).json({ msg: 'Product with this SKU already exists in your store' });
+    }
     res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });

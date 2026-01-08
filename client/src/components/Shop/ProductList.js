@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useDispatchCart } from './CartProvider';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { FaRegHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight } from 'react-icons/fa';
+import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import axios from 'axios';
 import { getShopPath, resolveImageUrl } from '../../themeUtils';
@@ -51,6 +51,51 @@ const ProductCard = ({ product }) => {
     : (product.quantity || 0);
   const isOutOfStock = totalStock <= 0;
 
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+    setIsWishlisted(wishlist.includes(product._id));
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'wishlist') {
+        const updatedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        setIsWishlisted(updatedWishlist.includes(product._id));
+      }
+    };
+
+    const handleWishlistUpdate = () => {
+      const updatedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      setIsWishlisted(updatedWishlist.includes(product._id));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+    };
+  }, [product._id]);
+
+  const toggleWishlist = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+    let updatedWishlist;
+
+    if (wishlist.includes(product._id)) {
+      updatedWishlist = wishlist.filter(id => id !== product._id);
+    } else {
+      updatedWishlist = [...wishlist, product._id];
+    }
+
+    localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+    setIsWishlisted(!isWishlisted);
+    window.dispatchEvent(new Event('wishlistUpdated'));
+  };
+
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (isOutOfStock) return; // Prevent adding if out of stock
@@ -76,8 +121,8 @@ const ProductCard = ({ product }) => {
         <div className="product-image-container">
           {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
           {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
-          <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
-            <FaRegHeart />
+          <button className="wishlist-btn" onClick={toggleWishlist}>
+            {isWishlisted ? <FaHeart style={{ color: 'red' }} /> : <FaRegHeart />}
           </button>
           <img
             src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
@@ -139,9 +184,22 @@ const ProductSection = ({ title, icon, products, loading, error, showExploreAll 
       <div className="ecommerce-product-grid">
         {loading && <p>Loading products...</p>}
         {error && <p>{error}</p>}
-        {!loading && !error && products.map(product => (
-          <ProductCard key={product._id} product={product} />
-        ))}
+        {!loading && !error && products.length > 0 ? (
+          products.map(product => <ProductCard key={product._id} product={product} />)
+        ) : !loading && !error && (
+          <div className="no-products-premium">
+            <div className="empty-icon-circle">
+              <FaBoxOpen />
+            </div>
+            <div className="empty-content">
+              <h3>Oops! It's empty here.</h3>
+              <p>We couldn't find any {title.toLowerCase()} right now. Try adjusting your filters or explore our latest drops.</p>
+              <button className="explore-new-btn" onClick={() => window.location.href = getShopPath('/products')}>
+                Explore New Arrivals
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -203,11 +261,13 @@ const ProductList = () => {
   const [availableColors, setAvailableColors] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [pageNotFound, setPageNotFound] = useState(false);
 
   const resetFilters = (e) => {
     if (e) e.preventDefault();
     setSelectedCategory('all');
+    setSelectedSubcategory('all');
     setPriceRange({ min: '', max: '' });
     setStockStatus('all');
     setSelectedColors([]);
@@ -218,8 +278,18 @@ const ProductList = () => {
   const filteredProducts = allProducts.filter(product => {
     // ... filtering logic ...
     // Category Filter
-    if (selectedCategory !== 'all' && product.category && product.category._id !== selectedCategory && product.category !== selectedCategory) {
-      return false;
+    if (selectedCategory !== 'all') {
+      const productCatId = product.category?._id || product.category;
+      if (productCatId !== selectedCategory) {
+        return false;
+      }
+    }
+
+    // Subcategory Filter
+    if (selectedSubcategory !== 'all') {
+      if (product.subcategory !== selectedSubcategory) {
+        return false;
+      }
     }
     // Price Filter
     const price = product.sellingPrice || 0;
@@ -459,11 +529,31 @@ const ProductList = () => {
         </>
       )}
 
+      {((isDynamicTheme) && !slug && dynamicSections.length === 0 && !loadingDynamic) && (
+        <div className="empty-home-state" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center',
+          padding: '20px',
+          backgroundColor: '#f8fafc'
+        }}>
+          <div style={{ fontSize: '3rem', color: '#94a3b8', marginBottom: '20px' }}>
+            <FaPaintBrush />
+          </div>
+          <h2 style={{ fontSize: '2rem', marginBottom: '10px', color: '#334155' }}>Ready to Design?</h2>
+          <p style={{ fontSize: '1.1rem', color: '#64748b', marginBottom: '30px', maxWidth: '600px' }}>
+            Your home page is currently empty. Visit the Dashboard to add sections and customize your store's look.
+          </p>
+        </div>
+      )}
+
       {/* Standard Products View: Sidebar + Grid */}
       {/* Shown when: 1. On /products path, OR 2. Non-Nexus theme, OR 3. Nexus theme but NO dynamic sections found */}
       {(slug === 'products' ||
-        (slug && theme.id !== 'nexus' && localStorage.getItem('themeId') !== 'nexus') ||
-        (theme.id === 'nexus' && dynamicSections.length === 0 && !loadingDynamic)
+        (slug && theme.id !== 'nexus' && localStorage.getItem('themeId') !== 'nexus')
       ) && (
           <div className="shop-page-wrapper">
             <div className="shop-page-header">
@@ -483,6 +573,7 @@ const ProductList = () => {
                     <h3>Filter By <span onClick={resetFilters} className="reset-filter-link" style={{ cursor: 'pointer' }}>Reset All</span></h3>
                   </div>
 
+
                   <div className="sidebar-widget">
                     <h3>CATEGORIES</h3>
                     <ul className="categories-list">
@@ -491,13 +582,37 @@ const ProductList = () => {
                         onClick={() => setSelectedCategory('all')}
                       >All Categories</li>
                       {categories.map(cat => (
-                        <li
-                          key={cat._id}
-                          className={selectedCategory === cat._id ? 'active' : ''}
-                          onClick={() => setSelectedCategory(cat._id)}
-                        >
-                          {cat.name}
-                        </li>
+                        <React.Fragment key={cat._id}>
+                          <li
+                            className={selectedCategory === cat._id ? 'active' : ''}
+                            onClick={() => {
+                              setSelectedCategory(cat._id);
+                              setSelectedSubcategory('all'); // Reset subcat when cat changes
+                            }}
+                          >
+                            {cat.name}
+                          </li>
+                          {/* Render subcategories if this category is active */}
+                          {selectedCategory === cat._id && cat.subcategories && cat.subcategories.length > 0 && (
+                            <ul className="subcategories-list">
+                              <li
+                                className={selectedSubcategory === 'all' ? 'active-sub' : ''}
+                                onClick={() => setSelectedSubcategory('all')}
+                              >
+                                — All {cat.name}
+                              </li>
+                              {cat.subcategories.map(sub => (
+                                <li
+                                  key={sub.name}
+                                  className={selectedSubcategory === sub.name ? 'active-sub' : ''}
+                                  onClick={() => setSelectedSubcategory(sub.name)}
+                                >
+                                  — {sub.name}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </React.Fragment>
                       ))}
                     </ul>
                   </div>
@@ -600,23 +715,25 @@ const ProductList = () => {
 
               {/* Main Grid */}
               <div className="shop-main-content">
-                <div className="shop-controls-bar">
-                  <div className="results-count">
-                    Showing <span className="count-highlight">{sortedProducts.length}</span> {sortedProducts.length === 1 ? 'result' : 'results'}
+                {sortedProducts.length > 0 && (
+                  <div className="shop-controls-bar">
+                    <div className="results-count">
+                      Showing <span className="count-highlight">{sortedProducts.length}</span> {sortedProducts.length === 1 ? 'result' : 'results'}
+                    </div>
+                    <div className="sort-wrapper">
+                      <span className="sort-label">SORT BY</span>
+                      <select
+                        className="sort-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                      >
+                        <option value="newest">Newest</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="sort-wrapper">
-                    <span className="sort-label">SORT BY</span>
-                    <select
-                      className="sort-select"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                    >
-                      <option value="newest">Newest</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                    </select>
-                  </div>
-                </div>
+                )}
                 <ProductSection title="All Products" icon={<FaTh />} products={sortedProducts} loading={loading} error={error} hideHeader={true} />
               </div>
             </div>

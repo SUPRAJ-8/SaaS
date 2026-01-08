@@ -1,3 +1,12 @@
+// Helper to get RGB from Hex
+const hexToRgb = (hex) => {
+    if (!hex) return '0, 0, 0';
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ?
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` :
+        '0, 0, 0';
+};
+
 // Helper to update the document favicon
 const updateFavicon = (url) => {
     let link = document.querySelector("link[rel~='icon']");
@@ -44,34 +53,31 @@ export const applyStoreSettings = (providedSettings = null) => {
 
             // Apply colors
             if (parsedSettings.primaryColor) {
-                document.documentElement.style.setProperty('--primary-color', parsedSettings.primaryColor);
-                document.documentElement.style.setProperty('--primary', parsedSettings.primaryColor);
-                // The primary color from settings should be the accent/action color in layouts
-                document.documentElement.style.setProperty('--theme-accent', parsedSettings.primaryColor);
+                const primary = parsedSettings.primaryColor;
+                const primaryRgb = hexToRgb(primary);
+
+                document.documentElement.style.setProperty('--primary-color', primary);
+                document.documentElement.style.setProperty('--primary', primary);
+                document.documentElement.style.setProperty('--primary-color-rgb', primaryRgb);
+
+                // Common layout mappings
+                document.documentElement.style.setProperty('--theme-primary', primary);
+                document.documentElement.style.setProperty('--theme-accent', primary);
             }
-            if (parsedSettings.secondaryColor) {
-                document.documentElement.style.setProperty('--secondary-color', parsedSettings.secondaryColor);
-                document.documentElement.style.setProperty('--secondary', parsedSettings.secondaryColor);
+
+            if (parsedSettings.brandTextColor) {
+                const brandText = parsedSettings.brandTextColor;
+                document.documentElement.style.setProperty('--brand-text-color', brandText);
+                document.documentElement.style.setProperty('--on-primary', brandText);
+                document.documentElement.style.setProperty('--primary-content', brandText);
+                document.documentElement.style.setProperty('--primary-text', brandText);
             }
-            if (parsedSettings.accentColor) {
-                document.documentElement.style.setProperty('--accent-color', parsedSettings.accentColor);
-            }
+
             if (parsedSettings.backgroundColor) {
                 document.documentElement.style.setProperty('--background-color', parsedSettings.backgroundColor);
                 document.documentElement.style.setProperty('--background', parsedSettings.backgroundColor);
-                // Background maps to theme-primary in some layouts
-                document.documentElement.style.setProperty('--theme-primary', parsedSettings.backgroundColor);
             }
-            if (parsedSettings.surfaceColor) {
-                document.documentElement.style.setProperty('--surface-color', parsedSettings.surfaceColor);
-                document.documentElement.style.setProperty('--foreground', parsedSettings.surfaceColor);
-                document.documentElement.style.setProperty('--theme-secondary', parsedSettings.surfaceColor);
-            } else if (parsedSettings.backgroundColor) {
-                // Fallback surface to background if not defined
-                document.documentElement.style.setProperty('--surface-color', parsedSettings.backgroundColor);
-                document.documentElement.style.setProperty('--foreground', parsedSettings.backgroundColor);
-                document.documentElement.style.setProperty('--theme-secondary', parsedSettings.backgroundColor);
-            }
+
             if (parsedSettings.textColor) {
                 document.documentElement.style.setProperty('--text-color', parsedSettings.textColor);
                 document.documentElement.style.setProperty('--copy', parsedSettings.textColor);
@@ -96,7 +102,21 @@ export const applyStoreSettings = (providedSettings = null) => {
 // Helper for links to stay within /shop subpath if that's where we are
 export const getShopPath = (path) => {
     const prefix = window.location.pathname.startsWith('/shop') ? '/shop' : '';
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    let cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+    // Check for localhost tenant param and preserve it
+    // This ensures that navigation on localhost with ?tenant=... works correctly
+    // and doesn't redirect back to the Landing Page.
+    if (window.location.hostname === 'localhost') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tenant = urlParams.get('tenant');
+
+        if (tenant) {
+            const separator = cleanPath.includes('?') ? '&' : '?';
+            return `${prefix}${cleanPath}${separator}tenant=${tenant}`;
+        }
+    }
+
     return `${prefix}${cleanPath}`;
 };
 

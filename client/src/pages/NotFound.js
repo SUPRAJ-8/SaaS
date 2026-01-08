@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getShopPath } from '../themeUtils';
 import './NotFound.css';
 
 const NotFound = () => {
@@ -17,7 +18,7 @@ const NotFound = () => {
                     <p className="not-found-subtitle">the page you are looking for not available!</p>
                     <button
                         className="not-found-home-btn"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate(getShopPath('/'))}
                     >
                         Go to Home
                     </button>

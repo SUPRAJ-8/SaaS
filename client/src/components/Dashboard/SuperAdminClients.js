@@ -22,7 +22,8 @@ import {
     FaFilter,
     FaArrowUp,
     FaSun,
-    FaMoon
+    FaMoon,
+    FaFileAlt
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import API_URL from '../../apiConfig';

@@ -55,8 +55,8 @@
 .cart-count-badge {
     font-size: 13px;
     font-weight: 600;
-    color: #2563eb;
-    background-color: #eff6ff;
+    color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
     padding: 4px 12px;
     border-radius: 9999px;
 }
@@ -243,8 +243,8 @@
 
 .checkout-btn-slide {
     width: 100%;
-    background-color: #2563eb;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--brand-text-color);
     border: none;
     border-radius: 8px;
     padding: 14px;
@@ -255,7 +255,8 @@
 }
 
 .checkout-btn-slide:hover {
-    background-color: #1d4ed8;
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 @media (max-width: 480px) {

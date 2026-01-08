@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import DebouncedColorPicker from './DebouncedColorPicker';
 import { toast } from 'react-toastify';
 import NexusFooter from '../Shop/layouts/NexusFooter';
 import './FooterEditorModal.css';
@@ -118,41 +119,19 @@ const FooterEditorModal = ({ isOpen, onClose, onSave, activeThemeId }) => {
                             <div className="control-item">
                                 <label>Text Color</label>
                                 <div className="color-picker-composite">
-                                    <input
-                                        type="color"
-                                        className="color-input-hidden"
-                                        id="textColor"
+                                    <DebouncedColorPicker
                                         value={settings.textColor || '#ffffff'}
-                                        onChange={(e) => handleInputChange('textColor', e.target.value)}
-                                    />
-                                    <label htmlFor="textColor" className="color-preview-circle" style={{ backgroundColor: settings.textColor || '#ffffff' }}></label>
-                                    <input
-                                        type="text"
-                                        className="color-text-input"
-                                        value={settings.textColor || '#ffffff'}
-                                        onChange={(e) => handleInputChange('textColor', e.target.value)}
+                                        onChange={(val) => handleInputChange('textColor', val)}
                                     />
                                 </div>
                             </div>
                             <div className="control-item">
                                 <label>Background</label>
                                 <div className="bg-controls">
-                                    <div className="color-picker-composite" style={{ opacity: settings.useThemeColor ? 0.5 : 1 }}>
-                                        <input
-                                            type="color"
-                                            className="color-input-hidden"
-                                            id="bgColor"
+                                    <div style={{ opacity: settings.useThemeColor ? 0.5 : 1 }}>
+                                        <DebouncedColorPicker
                                             value={settings.backgroundColor || '#000000'}
-                                            disabled={settings.useThemeColor}
-                                            onChange={(e) => handleInputChange('backgroundColor', e.target.value)}
-                                        />
-                                        <label htmlFor="bgColor" className="color-preview-circle" style={{ backgroundColor: settings.backgroundColor || '#000000' }}></label>
-                                        <input
-                                            type="text"
-                                            className="color-text-input"
-                                            value={settings.backgroundColor || '#000000'}
-                                            disabled={settings.useThemeColor}
-                                            onChange={(e) => handleInputChange('backgroundColor', e.target.value)}
+                                            onChange={(val) => !settings.useThemeColor && handleInputChange('backgroundColor', val)}
                                         />
                                     </div>
                                     <label className="checkbox-label">

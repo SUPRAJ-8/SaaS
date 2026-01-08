@@ -1,0 +1,153 @@
+{
+    "id": "hero-replica-v1",
+    "name": "Modern Hero (Dynamic)",
+    "category": "Hero",
+    "description": "Full replica of the hardcoded Modern Hero using dynamic JSON schema.",
+    "type": "dynamic",
+    "schema": [
+        {
+            "type": "header",
+            "label": "MAIN CONTENT"
+        },
+        {
+            "key": "title",
+            "type": "textarea",
+            "label": "Main Title",
+            "default": "Make an impact with your headline",
+            "rows": 2
+        },
+        {
+            "key": "show_highlight",
+            "type": "boolean",
+            "label": "Highlight Text",
+            "default": true
+        },
+        {
+            "key": "highlight_text",
+            "type": "text",
+            "label": "Text to Highlight",
+            "default": "impact"
+        },
+        {
+            "key": "highlight_color",
+            "type": "color",
+            "label": "Highlight Color",
+            "default": "#2563eb"
+        },
+        {
+            "key": "subtitle",
+            "type": "textarea",
+            "label": "Subtitle",
+            "default": "Loram ipsum dolor sit amet, consectetur adipiscing elit.",
+            "rows": 3
+        },
+        {
+            "type": "header",
+            "label": "BUTTONS"
+        },
+        {
+            "key": "show_btn_1",
+            "type": "boolean",
+            "label": "Show Primary Button",
+            "default": true
+        },
+        {
+            "key": "btn_1_text",
+            "type": "text",
+            "label": "Button Text",
+            "default": "Shop Now"
+        },
+        {
+            "key": "btn_1_bg",
+            "type": "color",
+            "label": "Button Background",
+            "default": "#2563eb"
+        },
+        {
+            "type": "header",
+            "label": "LAYOUT"
+        },
+        {
+            "key": "padding_y",
+            "type": "text",
+            "label": "Vertical Padding (px)",
+            "default": "80"
+        },
+        {
+            "key": "bg_color",
+            "type": "color",
+            "label": "Section Background",
+            "default": "#ffffff"
+        }
+    ],
+    "structure": {
+        "tag": "div",
+        "style": {
+            "backgroundColor": "{{bg_color}}",
+            "paddingTop": "{{padding_y}}px",
+            "paddingBottom": "{{padding_y}}px",
+            "textAlign": "center"
+        },
+        "children": [
+            {
+                "tag": "div",
+                "className": "hero-container",
+                "style": {
+                    "maxWidth": "800px",
+                    "margin": "0 auto"
+                },
+                "children": [
+                    {
+                        "tag": "h1",
+                        "className": "hero-title",
+                        "style": {
+                            "marginBottom": "20px",
+                            "fontSize": "3.5rem",
+                            "fontWeight": "800",
+                            "lineHeight": "1.2"
+                        },
+                        "text": "{{title}}"
+                    },
+                    {
+                        "tag": "p",
+                        "className": "hero-subtitle",
+                        "style": {
+                            "marginBottom": "30px",
+                            "fontSize": "1.25rem",
+                            "color": "#64748b"
+                        },
+                        "text": "{{subtitle}}"
+                    },
+                    {
+                        "tag": "div",
+                        "className": "hero-actions",
+                        "style": {
+                            "display": "flex",
+                            "gap": "15px",
+                            "justifyContent": "center"
+                        },
+                        "children": [
+                            {
+                                "tag": "button",
+                                "condition": "show_btn_1",
+                                "className": "hero-btn-primary",
+                                "text": "{{btn_1_text}}",
+                                "style": {
+                                    "backgroundColor": "{{btn_1_bg}}",
+                                    "color": "#fff",
+                                    "padding": "12px 24px",
+                                    "borderRadius": "8px",
+                                    "border": "none",
+                                    "fontSize": "1rem",
+                                    "fontWeight": "600",
+                                    "cursor": "pointer"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "styles": ""
+}

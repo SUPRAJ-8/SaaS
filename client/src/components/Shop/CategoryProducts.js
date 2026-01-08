@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { FaTh, FaThLarge, FaChevronRight, FaRegHeart, FaFilter, FaStar } from 'react-icons/fa';
+import { FaTh, FaThLarge, FaChevronRight, FaRegHeart, FaHeart, FaFilter, FaStar, FaBoxOpen } from 'react-icons/fa';
 import { useDispatchCart } from './CartProvider';
+import axios from 'axios';
 import API_URL from '../../apiConfig';
 import NotFound from '../../pages/NotFound';
 import { getShopPath, resolveImageUrl } from '../../themeUtils';
@@ -24,6 +25,51 @@ const ProductCard = ({ product }) => {
     const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
     const dispatch = useDispatchCart();
 
+    const [isWishlisted, setIsWishlisted] = useState(false);
+
+    useEffect(() => {
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        setIsWishlisted(wishlist.includes(product._id));
+
+        const handleStorageChange = (e) => {
+            if (e.key === 'wishlist') {
+                const updatedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+                setIsWishlisted(updatedWishlist.includes(product._id));
+            }
+        };
+
+        const handleWishlistUpdate = () => {
+            const updatedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            setIsWishlisted(updatedWishlist.includes(product._id));
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+        };
+    }, [product._id]);
+
+    const toggleWishlist = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        let updatedWishlist;
+
+        if (wishlist.includes(product._id)) {
+            updatedWishlist = wishlist.filter(id => id !== product._id);
+        } else {
+            updatedWishlist = [...wishlist, product._id];
+        }
+
+        localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+        setIsWishlisted(!isWishlisted);
+        window.dispatchEvent(new Event('wishlistUpdated'));
+    };
+
     const handleAddToCart = (e) => {
         e.preventDefault();
         const cartItem = {
@@ -40,8 +86,8 @@ const ProductCard = ({ product }) => {
             <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link">
                 <div className="product-image-container">
                     {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
-                    <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
-                        <FaRegHeart />
+                    <button className="wishlist-btn" onClick={toggleWishlist}>
+                        {isWishlisted ? <FaHeart style={{ color: 'red' }} /> : <FaRegHeart />}
                     </button>
                     <img
                         src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
@@ -80,6 +126,8 @@ const CategoryProducts = () => {
     const [allProducts, setAllProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [category, setCategory] = useState(null);
+    const [selectedSubcategory, setSelectedSubcategory] = useState('all');
+    const [pageNotFound, setPageNotFound] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -96,15 +144,35 @@ const CategoryProducts = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
+                // Detect subdomain to pass as header for tenant resolution
+                const hostname = window.location.hostname;
+                let subdomain = null;
+                if (hostname.endsWith('.localhost')) {
+                    subdomain = hostname.split('.')[0];
+                } else if (hostname.endsWith('.nepostore.xyz') && hostname !== 'nepostore.xyz' && hostname !== 'www.nepostore.xyz') {
+                    subdomain = hostname.split('.')[0];
+                }
+
+                const config = {
+                    withCredentials: true
+                };
+
+                if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'localhost') {
+                    config.headers = { 'x-subdomain': subdomain };
+                }
+
                 // Fetch categories
-                const catRes = await fetch(`${API_URL}/api/categories`);
-                const allCats = await catRes.json();
+                const catRes = await axios.get(`${API_URL}/api/categories`, config);
+                const allCats = catRes.data;
+                console.log('📡 [CategoryProducts] Fetched categories:', allCats.length);
                 setCategories(allCats);
                 const foundCat = allCats.find(c => c._id === id);
+                console.log('🔍 [CategoryProducts] Current Category ID:', id, 'Found:', foundCat?.name);
                 setCategory(foundCat);
 
                 // Fetch all products to extract variants and filter
                 const productsData = await getProducts();
+                console.log('📦 [CategoryProducts] Fetched all products:', productsData.length);
                 setAllProducts(productsData);
 
                 // Extract colors and sizes
@@ -130,8 +198,18 @@ const CategoryProducts = () => {
 
     const filteredProducts = allProducts.filter(product => {
         // Category constraint (fixed for this page)
-        if (product.category !== id && (category && product.category !== category._id && product.category !== category.name)) {
+        const productCategoryId = product.category?._id || product.category;
+        const targetCategoryId = id;
+
+        if (productCategoryId !== targetCategoryId && (!category || productCategoryId !== category.name)) {
             return false;
+        }
+
+        // Subcategory Filter
+        if (selectedSubcategory !== 'all') {
+            if (product.subcategory !== selectedSubcategory) {
+                return false;
+            }
         }
 
         // Price Filter
@@ -205,6 +283,7 @@ const CategoryProducts = () => {
                             <div className="filter-header">
                                 <h3>FILTER BY:</h3>
                             </div>
+
                             <div className="sidebar-widget">
                                 <h3>Categories</h3>
                                 <ul className="categories-list">
@@ -213,13 +292,34 @@ const CategoryProducts = () => {
                                         onClick={() => navigate(getShopPath('/products'))}
                                     >All Categories</li>
                                     {categories.map(cat => (
-                                        <li
-                                            key={cat._id}
-                                            className={id === cat._id ? 'active' : ''}
-                                            onClick={() => navigate(getShopPath(`/category/${cat._id}`))}
-                                        >
-                                            {cat.name}
-                                        </li>
+                                        <React.Fragment key={cat._id}>
+                                            <li
+                                                className={id === cat._id ? 'active' : ''}
+                                                onClick={() => navigate(getShopPath(`/category/${cat._id}`))}
+                                            >
+                                                {cat.name}
+                                            </li>
+                                            {/* Subcategories for active category */}
+                                            {id === cat._id && cat.subcategories && cat.subcategories.length > 0 && (
+                                                <ul className="subcategories-list">
+                                                    <li
+                                                        className={selectedSubcategory === 'all' ? 'active-sub' : ''}
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedSubcategory('all'); }}
+                                                    >
+                                                        — All {cat.name}
+                                                    </li>
+                                                    {cat.subcategories.map(sub => (
+                                                        <li
+                                                            key={sub.name}
+                                                            className={selectedSubcategory === sub.name ? 'active-sub' : ''}
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedSubcategory(sub.name); }}
+                                                        >
+                                                            — {sub.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </React.Fragment>
                                     ))}
                                 </ul>
                             </div>
@@ -325,23 +425,25 @@ const CategoryProducts = () => {
 
                     {/* Main Grid */}
                     <div className="shop-main-content">
-                        <div className="shop-controls-bar">
-                            <div className="results-count">
-                                Showing {sortedProducts.length} {sortedProducts.length === 1 ? 'result' : 'results'}
+                        {sortedProducts.length > 0 && (
+                            <div className="shop-controls-bar">
+                                <div className="results-count">
+                                    Showing {sortedProducts.length} {sortedProducts.length === 1 ? 'result' : 'results'}
+                                </div>
+                                <div className="sort-wrapper">
+                                    <span className="sort-label">SORT BY</span>
+                                    <select
+                                        className="sort-select"
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                    >
+                                        <option value="newest">Newest</option>
+                                        <option value="price-low">Price: Low to High</option>
+                                        <option value="price-high">Price: High to Low</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="sort-wrapper">
-                                <span className="sort-label">SORT BY</span>
-                                <select
-                                    className="sort-select"
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                >
-                                    <option value="newest">Newest</option>
-                                    <option value="price-low">Price: Low to High</option>
-                                    <option value="price-high">Price: High to Low</option>
-                                </select>
-                            </div>
-                        </div>
+                        )}
 
                         <div className="product-grid-container">
                             <div className="ecommerce-product-grid">
@@ -352,9 +454,17 @@ const CategoryProducts = () => {
                                 ) : sortedProducts.length > 0 ? (
                                     sortedProducts.map(product => <ProductCard key={product._id} product={product} />)
                                 ) : (
-                                    <div className="no-products">
-                                        <h3>No products found in this category</h3>
-                                        <p>Check back later or browse other categories.</p>
+                                    <div className="no-products-premium">
+                                        <div className="empty-icon-circle">
+                                            <FaBoxOpen />
+                                        </div>
+                                        <div className="empty-content">
+                                            <h3>Oops! It's empty here.</h3>
+                                            <p>We couldn't find any "{category ? category.name : 'products'}" right now. Try adjusting your filters or explore our latest drops.</p>
+                                            <button className="explore-new-btn" onClick={() => navigate(getShopPath('/products'))}>
+                                                Explore New Arrivals
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>

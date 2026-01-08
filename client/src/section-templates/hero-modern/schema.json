@@ -1,0 +1,64 @@
+[
+    {
+        "type": "header",
+        "label": "Content"
+    },
+    {
+        "key": "title",
+        "type": "textarea",
+        "label": "Hero Title",
+        "default": "Make an Impact with Your Product",
+        "rows": 2
+    },
+    {
+        "key": "subtitle",
+        "type": "textarea",
+        "label": "Subtitle",
+        "default": "Transform your business with our innovative solution",
+        "rows": 3
+    },
+    {
+        "type": "header",
+        "label": "Button"
+    },
+    {
+        "key": "showButton",
+        "type": "boolean",
+        "label": "Show Button",
+        "default": true
+    },
+    {
+        "key": "buttonText",
+        "type": "text",
+        "label": "Button Text",
+        "default": "Get Started"
+    },
+    {
+        "key": "buttonLink",
+        "type": "text",
+        "label": "Button Link",
+        "default": "#"
+    },
+    {
+        "type": "header",
+        "label": "Styling"
+    },
+    {
+        "key": "bgColor",
+        "type": "color",
+        "label": "Background Color",
+        "default": "#ffffff"
+    },
+    {
+        "key": "textColor",
+        "type": "color",
+        "label": "Text Color",
+        "default": "#000000"
+    },
+    {
+        "key": "backgroundImage",
+        "type": "image",
+        "label": "Background Image (Optional)",
+        "default": ""
+    }
+]

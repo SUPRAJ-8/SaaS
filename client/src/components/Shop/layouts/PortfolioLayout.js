@@ -4,6 +4,7 @@ import '../ProductStyles.css';
 import './PortfolioLayout.css'; // This file will be created next
 
 import { applyStoreSettings } from '../../../themeUtils';
+import axios from 'axios';
 
 // Call it immediately
 applyStoreSettings();
@@ -64,30 +65,38 @@ export const PortfolioFooter = () => {
 
 const PortfolioLayout = () => {
   useEffect(() => {
-    // Load settings from localStorage
-    const settings = localStorage.getItem('storeSettings');
-    if (settings) {
-      const parsedSettings = JSON.parse(settings);
-
-      // Update favicon
-      if (parsedSettings.favicon) {
-        let link = document.querySelector("link[rel~='icon']");
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'icon';
-          document.getElementsByTagName('head')[0].appendChild(link);
+    const fetchSettings = async () => {
+      try {
+        let response;
+        try {
+          response = await axios.get('/api/store-settings');
+        } catch (e) {
+          const hostname = window.location.hostname;
+          const parts = hostname.split('.');
+          if (parts.length > 2 || (hostname.endsWith('.localhost') && parts.length > 1)) {
+            const subdomain = parts[0];
+            if (subdomain !== 'app' && subdomain !== 'www') {
+              response = await axios.get(`/api/store-settings/public/${subdomain}`);
+            }
+          }
         }
-        link.href = parsedSettings.favicon;
-      }
 
-      // Update page title with store name
-      if (parsedSettings.storeName) {
-        document.title = parsedSettings.storeName;
+        if (response && response.data) {
+          const data = response.data;
+          localStorage.setItem('storeSettings', JSON.stringify(data));
+          if (data.navbarStyle) {
+            localStorage.setItem('navbarSettings', JSON.stringify({ navbarStyle: data.navbarStyle }));
+          }
+          applyStoreSettings();
+          window.dispatchEvent(new Event('navbarSettingsUpdated'));
+          window.dispatchEvent(new Event('storage'));
+        }
+      } catch (error) {
+        console.warn("Portfolio sync failed:", error.message);
       }
+    };
 
-      // Re-apply settings to ensure they persist
-      applyStoreSettings();
-    }
+    fetchSettings();
   }, []);
 
   return (

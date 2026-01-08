@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaArrowRight } from 'react-icons/fa';
+import { FaFire, FaStar, FaHeart, FaRegHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaArrowRight } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatchCart } from '../../Shop/CartProvider';
 import API_URL from '../../../apiConfig';
@@ -145,83 +145,15 @@ const ProductGridTemplate = ({ content }) => {
                 {products.length > 0 ? (
                     <>
                         <div className="ecommerce-product-grid">
-                            {displayedProducts.map(product => {
-                                const totalStock = product.hasVariants
-                                    ? (product.variants || []).reduce((acc, v) => acc + (v.quantity || 0), 0)
-                                    : (product.quantity || 0);
-                                const isOutOfStock = totalStock <= 0;
-
-                                const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
-
-                                const handleAddToCart = (e) => {
-                                    e.preventDefault();
-                                    if (isBuilder || isOutOfStock) return;
-                                    const cartItem = {
-                                        id: product._id,
-                                        name: product.name,
-                                        price: product.sellingPrice,
-                                        image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300',
-                                        quantity: 1
-                                    };
-                                    dispatch({ type: 'ADD_ITEM', payload: cartItem });
-
-                                    // Open cart panel after adding
-                                    setTimeout(() => {
-                                        window.dispatchEvent(new Event('openCartPanel'));
-                                    }, 100);
-                                };
-
-                                const priceDisplay = currency.position === 'before'
-                                    ? `${currency.symbol} ${Number(product.sellingPrice || product.price || 0).toLocaleString()}`
-                                    : `${Number(product.sellingPrice || product.price || 0).toLocaleString()} ${currency.symbol}`;
-
-                                const crossedPriceDisplay = product.crossedPrice > 0
-                                    ? (currency.position === 'before'
-                                        ? `${currency.symbol} ${Number(product.crossedPrice).toLocaleString()}`
-                                        : `${Number(product.crossedPrice).toLocaleString()} ${currency.symbol}`)
-                                    : null;
-
-                                return (
-                                    <div key={product._id} className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
-                                        <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
-                                            <div className="product-image-container">
-                                                {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
-                                                {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
-                                                <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
-                                                    <FaHeart size={14} />
-                                                </button>
-                                                <img
-                                                    src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
-                                                    alt={product.name}
-                                                />
-                                            </div>
-                                            <div className="product-details">
-                                                <h3>{product.name}</h3>
-                                                <div className="product-price-actions">
-                                                    <div className="price-container">
-                                                        <span className="product-price">{priceDisplay}</span>
-                                                        {crossedPriceDisplay && (
-                                                            <span className="original-price">{crossedPriceDisplay}</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="product-rating">
-                                                        <FaStar className="star" size={10} />
-                                                        <span className="rating-value">{product.rating || '4.5'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                        <button
-                                            className="add-to-cart-btn-small"
-                                            onClick={handleAddToCart}
-                                            disabled={isOutOfStock}
-                                            style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
-                                        >
-                                            {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
-                                        </button>
-                                    </div>
-                                );
-                            })}
+                            {displayedProducts.map(product => (
+                                <ProductCardItem
+                                    key={product._id}
+                                    product={product}
+                                    currency={currency}
+                                    isBuilder={isBuilder}
+                                    dispatch={dispatch}
+                                />
+                            ))}
                         </div>
                         {products.length > visibleCount && (
                             <div className="show-more-container">
@@ -244,6 +176,130 @@ const ProductGridTemplate = ({ content }) => {
 
             </div>
         </section >
+    );
+};
+
+// Inner component to handle individual product state (like wishlist)
+const ProductCardItem = ({ product, currency, isBuilder, dispatch }) => {
+    const [isWishlisted, setIsWishlisted] = useState(false);
+
+    // Calculate stock and discounts
+    const totalStock = product.hasVariants
+        ? (product.variants || []).reduce((acc, v) => acc + (v.quantity || 0), 0)
+        : (product.quantity || 0);
+    const isOutOfStock = totalStock <= 0;
+    const discount = product.crossedPrice ? Math.round(((product.crossedPrice - product.sellingPrice) / product.crossedPrice) * 100) : 0;
+
+    // Wishlist Logic
+    useEffect(() => {
+        const checkWishlist = () => {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            setIsWishlisted(wishlist.includes(product._id));
+        };
+
+        checkWishlist();
+
+        const handleStorageChange = (e) => {
+            if (e.key === 'wishlist') checkWishlist();
+        };
+
+        const handleWishlistUpdate = () => checkWishlist();
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+        };
+    }, [product._id]);
+
+    const toggleWishlist = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isBuilder) return;
+
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        let updatedWishlist;
+
+        if (wishlist.includes(product._id)) {
+            updatedWishlist = wishlist.filter(id => id !== product._id);
+        } else {
+            updatedWishlist = [...wishlist, product._id];
+        }
+
+        localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+        setIsWishlisted(!isWishlisted);
+        window.dispatchEvent(new Event('wishlistUpdated'));
+    };
+
+    const handleAddToCart = (e) => {
+        e.preventDefault();
+        if (isBuilder || isOutOfStock) return;
+        const cartItem = {
+            id: product._id,
+            name: product.name,
+            price: product.sellingPrice,
+            image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300',
+            quantity: 1
+        };
+        dispatch({ type: 'ADD_ITEM', payload: cartItem });
+
+        // Open cart panel after adding
+        setTimeout(() => {
+            window.dispatchEvent(new Event('openCartPanel'));
+        }, 100);
+    };
+
+    const priceDisplay = currency.position === 'before'
+        ? `${currency.symbol} ${Number(product.sellingPrice || product.price || 0).toLocaleString()}`
+        : `${Number(product.sellingPrice || product.price || 0).toLocaleString()} ${currency.symbol}`;
+
+    const crossedPriceDisplay = product.crossedPrice > 0
+        ? (currency.position === 'before'
+            ? `${currency.symbol} ${Number(product.crossedPrice).toLocaleString()}`
+            : `${Number(product.crossedPrice).toLocaleString()} ${currency.symbol}`)
+        : null;
+
+    return (
+        <div className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
+            <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
+                <div className="product-image-container">
+                    {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
+                    {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
+                    <button className="wishlist-btn" onClick={toggleWishlist}>
+                        {isWishlisted ? <FaHeart size={14} style={{ color: 'red' }} /> : <FaRegHeart size={14} />}
+                    </button>
+                    <img
+                        src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
+                        alt={product.name}
+                    />
+                </div>
+                <div className="product-details">
+                    <h3>{product.name}</h3>
+                    <div className="product-price-actions">
+                        <div className="price-container">
+                            <span className="product-price">{priceDisplay}</span>
+                            {crossedPriceDisplay && (
+                                <span className="original-price">{crossedPriceDisplay}</span>
+                            )}
+                        </div>
+                        <div className="product-rating">
+                            <FaStar className="star" size={10} />
+                            <span className="rating-value">{product.rating || '4.5'}</span>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+            <button
+                className="add-to-cart-btn-small"
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+            >
+                {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
+            </button>
+        </div>
     );
 };
 

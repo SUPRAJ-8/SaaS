@@ -1,56 +1,5 @@
-/* Nexus Theme Specific Styles - Discord-ish Dark Theme */
-.nexus-theme {
-    /* Core Palette - Dynamic with Discord Dark fallbacks */
-    --primary: var(--primary-color, #5866f2);
-    --primary-content: #ffffff;
-    --primary-dark: color-mix(in srgb, var(--primary), black 20%);
-    --primary-light: color-mix(in srgb, var(--primary), white 20%);
-
-    --secondary: var(--secondary-color, #f25899);
-    --secondary-content: #ffffff;
-    --secondary-dark: color-mix(in srgb, var(--secondary), black 20%);
-    --secondary-light: color-mix(in srgb, var(--secondary), white 20%);
-
-    --background: var(--background-color, #F9FAFB);
-    /* Page background */
-    --foreground: var(--surface-color, #1d1e30);
-    /* Cards, sections */
-    --border: var(--theme-border, #303350);
-    /* Dividers */
-
-    --copy: var(--text-color, #fafafc);
-    /* Headings */
-    --copy-light: color-mix(in srgb, var(--copy), transparent 20%);
-    /* Body */
-    --copy-lighter: color-mix(in srgb, var(--copy), transparent 40%);
-    /* Meta */
-
-    --success: #58f258;
-    --success-content: #054605;
-    --warning: #f2f258;
-    --warning-content: #464605;
-    --error: #f25858;
-    --error-content: #460505;
-
-    /* Theme Layout Mappings */
-    --nexus-bg: var(--background);
-    --nexus-surface: var(--foreground);
-    --nexus-text: var(--copy);
-    --nexus-border: var(--border);
-
-    /* Global Resets for Theme */
-    background-color: var(--background);
-    color: var(--copy);
-    font-family: var(--font-family, 'Inter', sans-serif) !important;
-    min-height: 100vh;
-}
-
-/* =========================================
-   HEADER / NAVIGATION
-   ========================================= */
-
 .nexus-theme .nexus-header {
-    background-color: #f0f4ff;
+    background-color: #F9FAFB;
     border-bottom: 1px solid var(--border);
     padding: 0 2rem;
     height: 80px;
@@ -86,7 +35,7 @@
 }
 
 .nexus-theme .nexus-cat-btn {
-    background-color: var(--foreground);
+    background-color: #F9FAFB;
     border: 1px solid var(--border);
     color: var(--copy);
     padding: 0.6rem 1.2rem;
@@ -750,8 +699,8 @@
 }
 
 .nexus-theme button:disabled {
-    background-color: var(--foreground);
-    color: var(--copy-lighter);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary);
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
@@ -831,5 +780,93 @@
         min-height: 70px;
         padding: 10px 1.5rem !important;
         flex-wrap: wrap !important;
+    }
+}
+
+/* =========================================
+   PREMIUM BRAND WATERMARK & BACKGROUNDS
+   ========================================= */
+
+.nexus-theme .nexus-brand-watermark-section {
+    position: relative;
+    padding: 120px 0;
+    overflow: hidden;
+    background-color: var(--background, #ffffff);
+}
+
+/* The Animated Watermark Background */
+.nexus-theme .nexus-brand-watermark-section::before {
+    content: attr(data-brand);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-5deg);
+    font-size: 25vw;
+    font-weight: 950;
+    color: var(--primary);
+    opacity: 0.04;
+    white-space: nowrap;
+    z-index: 0;
+    pointer-events: none;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+    animation: nexusWatermarkFloat 20s ease-in-out infinite;
+    filter: blur(2px);
+}
+
+@keyframes nexusWatermarkFloat {
+
+    0%,
+    100% {
+        transform: translate(-50%, -52%) rotate(-5deg);
+    }
+
+    50% {
+        transform: translate(-50%, -48%) rotate(-3deg);
+    }
+}
+
+/* Glassmorphism Card for Content on top of Brand */
+.nexus-theme .nexus-glass-card {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.nexus-theme .nexus-premium-heading,
+.nexus-theme .nexus-brand-watermark-section .hero-title {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 850;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #1a1b1e 0%, #4a4b50 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nexus-theme .nexus-brand-watermark-section .hero-subtitle {
+    color: #64748b;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .nexus-theme .nexus-brand-watermark-section::before {
+        font-size: 40vw;
+    }
+
+    .nexus-theme .nexus-premium-heading {
+        font-size: 2.5rem;
     }
 }

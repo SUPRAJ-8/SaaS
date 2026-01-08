@@ -1,20 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FaTimes, FaSearch, FaChevronDown, FaImage, FaThLarge, FaStar, FaQuestionCircle, FaEnvelope, FaBullhorn, FaObjectGroup, FaLayerGroup } from 'react-icons/fa';
 import './SectionTemplateModal.css';
+import axios from 'axios';
+import API_URL from '../../apiConfig';
 
 const CATEGORIES = [
-    { id: 'all', name: 'All Templates', icon: <FaLayerGroup />, count: 45 },
-    { id: 'general', name: 'General Content', icon: <FaObjectGroup />, count: 6 },
-    { id: 'premium', name: 'Premium Sections', icon: <FaStar />, count: 22, hasSub: true },
-    { id: 'product', name: 'Product Displays', icon: <FaThLarge />, count: 9 },
-    { id: 'category', name: 'Category Grids', icon: <FaImage />, count: 6 },
-    { id: 'content', name: 'Media & Text', icon: <FaObjectGroup />, count: 5 },
-    { id: 'slider', name: 'Carousels', icon: <FaLayerGroup />, count: 3 },
-    { id: 'banner', name: 'Banners', icon: <FaBullhorn />, count: 1 },
-    { id: 'faq', name: 'Q&A / Help', icon: <FaQuestionCircle />, count: 1 }
+    { id: 'all', name: 'All Templates', icon: <FaLayerGroup /> },
+    { id: 'general', name: 'General Content', icon: <FaObjectGroup /> },
+    { id: 'premium', name: 'Premium Sections', icon: <FaStar />, hasSub: true },
+    { id: 'product', name: 'Product Displays', icon: <FaThLarge /> },
+    { id: 'category', name: 'CATEGORY LIST', icon: <FaImage /> },
+    { id: 'content', name: 'Media & Text', icon: <FaObjectGroup /> },
+    { id: 'slider', name: 'Carousels', icon: <FaLayerGroup /> },
+    { id: 'banner', name: 'Banners', icon: <FaBullhorn /> },
+    { id: 'faq', name: 'Q&A / Help', icon: <FaQuestionCircle /> }
 ];
 
-const TEMPLATES = [
+const DEFAULT_TEMPLATES = [
     {
         id: 'modern-hero',
         name: 'MODERN TECH HERO',
@@ -75,7 +77,7 @@ const TEMPLATES = [
     },
     {
         id: 'category-list',
-        name: 'CATEGORIES',
+        name: 'CATEGORY LIST',
         category: 'category',
         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
         description: 'Discover by category',
@@ -94,14 +96,49 @@ const TEMPLATES = [
 const SectionTemplateModal = ({ isOpen, onClose, onSelect }) => {
     const [activeCat, setActiveCat] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [dynamicTemplates, setDynamicTemplates] = useState([]);
+
+    // Fetch dynamic templates from server
+    useEffect(() => {
+        if (isOpen) {
+            const fetchTemplates = async () => {
+                try {
+                    const res = await axios.get(`${API_URL}/api/templates`);
+                    const formatted = res.data.map(t => ({
+                        id: t.id,
+                        name: t.name,
+                        category: (t.category || 'general').toLowerCase(),
+                        image: t.thumbnail || 'https://placehold.co/500x350?text=New+Template',
+                        description: t.description || 'Custom Dynamic Section',
+                        type: 'dynamic', // Important: Identify as dynamic
+                        templateData: t, // Pass full template data (schema, structure)
+                        defaultContent: {} // Dynamic defaults are handled by schema
+                    }));
+                    setDynamicTemplates(formatted);
+                } catch (err) {
+                    console.error('Error fetching templates:', err);
+                }
+            };
+            fetchTemplates();
+        }
+    }, [isOpen]);
+
+    const allTemplates = useMemo(() => {
+        return [...DEFAULT_TEMPLATES, ...dynamicTemplates];
+    }, [dynamicTemplates]);
 
     const filteredTemplates = useMemo(() => {
-        return TEMPLATES.filter(t => {
+        return allTemplates.filter(t => {
             const matchesCat = activeCat === 'all' || t.category === activeCat;
             const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
             return matchesCat && matchesSearch;
         });
-    }, [activeCat, searchQuery]);
+    }, [activeCat, searchQuery, allTemplates]);
+
+    const getCategoryCount = (catId) => {
+        if (catId === 'all') return allTemplates.length;
+        return allTemplates.filter(t => t.category === catId).length;
+    };
 
     if (!isOpen) return null;
 
@@ -134,7 +171,7 @@ const SectionTemplateModal = ({ isOpen, onClose, onSelect }) => {
                                     <span className="cat-icon">{cat.icon}</span>
                                     <span className="cat-name">{cat.name}</span>
                                 </div>
-                                <span className="cat-badge">{cat.count}</span>
+                                <span className="cat-badge">{getCategoryCount(cat.id)}</span>
                             </div>
                         ))}
                     </nav>

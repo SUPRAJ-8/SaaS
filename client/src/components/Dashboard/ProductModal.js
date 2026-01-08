@@ -284,18 +284,43 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
                     style={{
                       border: '1px solid #ddd',
                       borderRadius: '4px',
-                      minHeight: '100px',
+                      height: '120px', // Fixed height for consistency
                       cursor: 'pointer',
                       background: '#fff',
-                      maxHeight: '200px',
-                      overflowY: 'auto'
+                      position: 'relative',
+                      overflow: 'hidden',
+                      padding: '10px'
                     }}
                   >
                     {formData.longDescription ? (
-                      <div className="ql-editor" dangerouslySetInnerHTML={{ __html: formData.longDescription }} />
+                      <>
+                        <div
+                          className="ql-editor"
+                          style={{
+                            border: 'none',
+                            padding: 0,
+                            height: '100%',
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            wordBreak: 'break-word'
+                          }}
+                          dangerouslySetInnerHTML={{ __html: formData.longDescription }}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: '40px',
+                          background: 'linear-gradient(transparent, #ffffff)',
+                          pointerEvents: 'none'
+                        }} />
+                      </>
                     ) : (
-                      <div style={{ padding: '10px' }}>
-                        <span style={{ color: '#999' }}>Click to add description...</span>
+                      <div style={{ padding: '10px', color: '#999' }}>
+                        Click to add description...
                       </div>
                     )}
                   </div>

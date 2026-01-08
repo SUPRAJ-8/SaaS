@@ -408,7 +408,7 @@
 
 .cat-dropdown-item:hover {
   background: var(--primary-color, #4CAF50);
-  color: white;
+  color: var(--brand-text-color, white);
 }
 
 .logo-container {
@@ -535,7 +535,7 @@
 
 .action-btn:hover {
   background: var(--theme-accent, #4CAF50);
-  color: white;
+  color: var(--brand-text-color, white);
   border-color: var(--theme-accent, #4CAF50);
   transform: translateY(-2px);
 }
@@ -576,6 +576,7 @@
 
 .categories-btn:hover {
   background-color: var(--secondary-color, #45a049);
+  color: var(--brand-text-color, white);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -687,7 +688,7 @@
 
 .action-btn:hover {
   background-color: var(--primary-color, #4CAF50);
-  color: white;
+  color: var(--brand-text-color, white);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

@@ -524,6 +524,58 @@ textarea[name="constructionMessage"]:focus {
   text-align: left;
 }
 
+.color-branding-section {
+  margin-bottom: 30px;
+}
+
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.color-input {
+  width: 45px !important;
+  height: 45px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  background: none !important;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-text-input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  text-transform: uppercase;
+  padding: 8px !important;
+  min-width: 100px;
+}
+
+.color-text-input:focus {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .color-themes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

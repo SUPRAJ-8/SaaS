@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import './NavbarEditorModal.css';
+import axios from 'axios';
 
 const NavbarEditorModal = ({ isOpen, onClose, onSave, activeThemeId }) => {
     const [navbarStyle, setNavbarStyle] = useState('basic');
@@ -22,16 +23,43 @@ const NavbarEditorModal = ({ isOpen, onClose, onSave, activeThemeId }) => {
         }
     }, [isOpen]);
 
-    const handleSave = () => {
-        const settings = {
-            navbarStyle: navbarStyle
-        };
-        localStorage.setItem(storageKey, JSON.stringify(settings));
-        window.dispatchEvent(new Event(eventName));
-        // Also dispatch legacy for compatibility if needed, but the prefix is the priority
-        window.dispatchEvent(new Event('navbarSettingsUpdated'));
-        onSave();
-        toast.success("Navbar style saved.");
+    const handleSave = async () => {
+        try {
+            const settings = { navbarStyle: navbarStyle };
+
+            // 1. Update theme-specific storage (if activeThemeId provided)
+            localStorage.setItem(storageKey, JSON.stringify(settings));
+
+            // 2. Update GLOBAL navbar storage for the Shop Layouts
+            localStorage.setItem('navbarSettings', JSON.stringify(settings));
+
+            // 3. Update main storeSettings object to stay in sync
+            const existingStoreSettings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
+            const updatedStoreLocal = { ...existingStoreSettings, navbarStyle: navbarStyle };
+            localStorage.setItem('storeSettings', JSON.stringify(updatedStoreLocal));
+
+            // Dispatch events for immediate UI updates in Builder and Shop preview
+            window.dispatchEvent(new Event(eventName));
+            window.dispatchEvent(new Event('navbarSettingsUpdated'));
+            window.dispatchEvent(new Event('storage'));
+
+            // 4. Save to backend for persistent storage (Shop / Live Site)
+            const res = await axios.get('/api/store-settings');
+            const currentStoreSettings = res.data || {};
+
+            const updatedStoreSettings = {
+                ...currentStoreSettings,
+                navbarStyle: navbarStyle
+            };
+
+            await axios.put('/api/store-settings', updatedStoreSettings);
+            toast.success("Navbar layout updated successfully");
+            onSave();
+        } catch (error) {
+            console.error("Failed to save navbar settings to server", error);
+            toast.warning("Saved locally. Background sync failed.");
+            onSave();
+        }
     };
 
     if (!isOpen) return null;

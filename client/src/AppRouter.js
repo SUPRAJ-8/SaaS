@@ -10,6 +10,7 @@ import CategoryProducts from './components/Shop/CategoryProducts';
 import Checkout from './components/Shop/Checkout';
 import { useSiteSettings } from './contexts/SiteSettingsContext';
 import OrderTracking from './components/Shop/OrderTracking';
+import Wishlist from './components/Shop/Wishlist';
 import LandingPage from './components/LandingPage';
 import FloatingPlugins from './components/Shop/FloatingPlugins';
 import './App.css';
@@ -128,6 +129,8 @@ function AppRouter() {
               <Route path="store-settings" element={<StoreSettings />} />
               <Route path="pages" element={<Pages />} />
               <Route path="page-builder/:id" element={<PageBuilder />} />
+              {/* Template Builder Route - Reuses PageBuilder in template mode */}
+              <Route path="template-builder/:id" element={<PageBuilder mode="template" />} />
               <Route path="plugins" element={<Plugins />} />
             </Route>
             {/* Redirect root to /dashboard */}
@@ -143,10 +146,11 @@ function AppRouter() {
               <Route path="*" element={<UnderConstruction />} />
             ) : (
               <Route path="/" element={<ShopLayout />}>
-                <Route index element={<ProductList />} />
-                <Route path=":slug" element={<ProductList />} />
+                <Route index element={<ProductList key="home" />} />
+                <Route path=":slug" element={<ProductList key="slug" />} />
                 <Route path="product/:id" element={<ProductDetail />} />
                 <Route path="category/:id" element={<CategoryProducts />} />
+                <Route path="wishlist" element={<Wishlist />} />
                 <Route path="checkout" element={<Checkout />} />
                 <Route path="track-order" element={<OrderTracking />} />
                 <Route path="track-order/:orderId" element={<OrderTracking />} />

@@ -3,6 +3,8 @@ const express = require('express');
 const Client = require('./models/Client');
 const cors = require('cors');
 const connectDB = require('./db');
+const Category = require('./models/Category');
+const Product = require('./models/Product');
 
 const app = express();
 
@@ -224,6 +226,7 @@ app.use('/api/public-settings', require('./routes/public-settings'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/themes', require('./routes/themes'));
 app.use('/api/websites', require('./routes/websites'));
+app.use('/api/templates', require('./routes/templates')); // <--- added
 
 // 404 Handler for API routes - Log to help debugging
 app.use('/api/*', (req, res) => {
@@ -263,6 +266,26 @@ const startServer = async () => {
         await Client.collection.dropIndex('ownerEmail_1');
         console.log('✅ Successfully dropped index: ownerEmail_1');
       }
+
+      // Cleanup Category name index
+      try {
+        const catIndexes = await Category.collection.indexes();
+        if (catIndexes.find(i => i.name === 'name_1')) {
+          console.log('🗑️ Found legacy unique index "name_1" on categories. Dropping...');
+          await Category.collection.dropIndex('name_1');
+          console.log('✅ Dropped index: name_1');
+        }
+      } catch (e) { console.log('Category index cleanup info:', e.message); }
+
+      // Cleanup Product sku index
+      try {
+        const prodIndexes = await Product.collection.indexes();
+        if (prodIndexes.find(i => i.name === 'sku_1')) {
+          console.log('🗑️ Found legacy unique index "sku_1" on products. Dropping...');
+          await Product.collection.dropIndex('sku_1');
+          console.log('✅ Dropped index: sku_1');
+        }
+      } catch (e) { console.log('Product index cleanup info:', e.message); }
     } catch (indexErr) {
       console.log('ℹ️ Index cleanup info:', indexErr.message);
     }

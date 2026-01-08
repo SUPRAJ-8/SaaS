@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes, FaRegHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../CartProvider';
 import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
 import { getShopPath } from '../../../themeUtils';
 import CartSlidePanel from '../CartSlidePanel';
+import axios from 'axios';
+import API_URL from '../../../apiConfig';
 import './NexusLayout.css';
 
 const NexusHeader = () => {
@@ -18,6 +20,7 @@ const NexusHeader = () => {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { items: cartItems } = useCart();
     const cartCount = cartItems?.reduce((total, item) => total + (Number(item.quantity) || 0), 0) || 0;
+    const [wishlistCount, setWishlistCount] = useState(0);
 
     // Use trim() to avoid empty spaces being treated as valid names
     const rawBrand = siteSettings?.brandName?.trim();
@@ -55,9 +58,24 @@ const NexusHeader = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('/api/categories');
-            const data = await response.json();
-            setCategories(data);
+            const hostname = window.location.hostname;
+            let subdomain = null;
+            if (hostname.endsWith('.localhost')) {
+                subdomain = hostname.split('.')[0];
+            } else if (hostname.endsWith('.nepostore.xyz') && hostname !== 'nepostore.xyz' && hostname !== 'www.nepostore.xyz') {
+                subdomain = hostname.split('.')[0];
+            }
+
+            const config = {
+                withCredentials: true
+            };
+
+            if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'localhost') {
+                config.headers = { 'x-subdomain': subdomain };
+            }
+
+            const response = await axios.get(`${API_URL}/api/categories`, config);
+            setCategories(response.data);
         } catch (error) {
             console.error('Error fetching categories:', error);
         }
@@ -83,6 +101,31 @@ const NexusHeader = () => {
         const handleCartOpenRequest = () => setIsCartOpen(true);
         window.addEventListener('requestCartOpen', handleCartOpenRequest);
         return () => window.removeEventListener('requestCartOpen', handleCartOpenRequest);
+    }, []);
+
+    // Track wishlist count
+    useEffect(() => {
+        const updateWishlistCount = () => {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            setWishlistCount(wishlist.length);
+        };
+
+        // Initial load
+        updateWishlistCount();
+
+        // Listen for changes
+        const handleWishlistUpdate = () => updateWishlistCount();
+        const handleStorageChange = (e) => {
+            if (e.key === 'wishlist') updateWishlistCount();
+        };
+
+        window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     const handleSearchSubmit = (e) => {
@@ -220,6 +263,10 @@ const NexusHeader = () => {
                                 <FaSearch />
                             </button>
                         </div>
+                        <button className="nexus-icon-btn nexus-wishlist-btn" onClick={() => navigate(getShopPath('/wishlist'))}>
+                            <FaRegHeart />
+                            {wishlistCount > 0 && <span className="nexus-cart-badge">{wishlistCount}</span>}
+                        </button>
                         <button className="nexus-icon-btn nexus-cart-btn" onClick={() => setIsCartOpen(true)}>
                             <FaShoppingCart />
                             <span className="nexus-cart-badge">{cartCount}</span>

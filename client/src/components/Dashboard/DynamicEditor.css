@@ -1,0 +1,177 @@
+/* Dynamic Section Editor Styles */
+
+/* Header Grouping */
+.property-group-header {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+.property-group-header h4 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.1em;
+}
+
+/* Base Editor Container */
+.dynamic-editor-container {
+    padding-bottom: 40px;
+}
+
+/* Label Row */
+.property-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.field-icon-hint {
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+/* Inputs */
+.dynamic-input,
+.dynamic-select,
+.dynamic-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #334155;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.dynamic-input:focus,
+.dynamic-textarea:focus,
+.dynamic-select:focus {
+    outline: none;
+    background: white;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.dynamic-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Color Picker Pill */
+.custom-color-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.color-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.color-indicator input[type="color"] {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    transform: scale(2);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.custom-color-pill input[type="text"] {
+    border: none;
+    background: transparent;
+    font-family: monospace;
+    font-size: 13px;
+    color: #475569;
+    flex: 1;
+}
+
+.custom-color-pill input[type="text"]:focus {
+    outline: none;
+}
+
+/* Checkbox Standard */
+.checkbox-standard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.checkbox-standard:hover {
+    background: #f1f5f9;
+}
+
+.checkbox-standard.checked {
+    background: #fdf4ff;
+    /* light purple tint */
+    border-color: #e9d5ff;
+}
+
+.checkbox-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #94a3b8;
+    transition: all 0.2s;
+}
+
+.checkbox-standard.checked .checkbox-icon {
+    background: #7c3aed;
+    color: white;
+}
+
+.checkbox-standard span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.checkbox-standard.checked span {
+    color: #7c3aed;
+}
+
+/* Image Input Wrapper */
+.image-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-image-preview {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+}

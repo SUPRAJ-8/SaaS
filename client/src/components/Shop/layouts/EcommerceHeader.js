@@ -18,6 +18,7 @@ const EcommerceHeader = () => {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { items: cartItems } = useCart();
     const cartCount = cartItems?.reduce((total, item) => total + (Number(item.quantity) || 0), 0) || 0;
+    const [wishlistCount, setWishlistCount] = useState(0);
 
     const loadSettings = () => {
         const settingsStr = localStorage.getItem('storeSettings');
@@ -83,6 +84,29 @@ const EcommerceHeader = () => {
         const handleCartOpenRequest = () => setIsCartOpen(true);
         window.addEventListener('requestCartOpen', handleCartOpenRequest);
         return () => window.removeEventListener('requestCartOpen', handleCartOpenRequest);
+    }, []);
+
+    // Track wishlist count
+    useEffect(() => {
+        const updateWishlistCount = () => {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            setWishlistCount(wishlist.length);
+        };
+
+        updateWishlistCount();
+
+        const handleWishlistUpdate = () => updateWishlistCount();
+        const handleStorageChange = (e) => {
+            if (e.key === 'wishlist') updateWishlistCount();
+        };
+
+        window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     const handleSearchSubmit = (e) => {
@@ -210,7 +234,7 @@ const EcommerceHeader = () => {
                         <button className="premium-action-btn wishlist-btn" onClick={() => navigate(getShopPath('/wishlist'))}>
                             <div className="icon-wrapper">
                                 <FaRegHeart />
-                                <span className="badge red">2</span> {/* Mock value as requested in image */}
+                                {wishlistCount > 0 && <span className="badge red">{wishlistCount}</span>}
                             </div>
                         </button>
                     </div>
@@ -283,6 +307,10 @@ const EcommerceHeader = () => {
                                 </button>
                             </div>
 
+                            <button className="action-btn wishlist-btn-header" onClick={() => navigate(getShopPath('/wishlist'))}>
+                                <FaRegHeart />
+                                {wishlistCount > 0 && <span className="cart-badge">{wishlistCount}</span>}
+                            </button>
                             <button className="action-btn cart-btn" onClick={() => setIsCartOpen(true)}>
                                 <FaShoppingCart />
                                 <span className="cart-badge">{cartCount}</span>

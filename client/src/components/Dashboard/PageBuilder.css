@@ -1,3 +1,5 @@
+@import './DynamicEditor.css';
+
 .page-builder-container {
     height: 100vh;
     display: flex;
@@ -195,7 +197,7 @@
 
 .builder-sidebar,
 .builder-properties {
-    width: 280px;
+    width: 300px;
     background: white;
     padding: 20px;
     overflow-y: auto;
@@ -203,7 +205,7 @@
 }
 
 .builder-properties {
-    width: 280px;
+    width: 300px;
     background: white;
     padding: 20px;
     overflow-y: auto;
@@ -1535,4 +1537,68 @@
 /* Ensure navbar wrapper is above page content for clicking */
 .builder-navbar-wrapper {
     z-index: 100 !important;
+}
+
+/* Page Settings Editor Styles */
+.page-settings-editor {
+    padding: 10px 5px;
+}
+
+.page-settings-editor h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 24px;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.slug-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.slug-prefix {
+    background: #f1f5f9;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #94a3b8;
+    border-right: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.slug-input-wrapper input {
+    border: none !important;
+    background: transparent !important;
+    padding: 8px 12px !important;
+    flex: 1;
+    font-size: 14px;
+    margin-bottom: 0 !important;
+}
+
+.field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.page-settings-info {
+    margin-top: 32px;
+    padding: 16px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border: 1px solid #e0f2fe;
+}
+
+.page-settings-info p {
+    font-size: 12px;
+    color: #0369a1;
+    line-height: 1.5;
+    margin: 0;
 }

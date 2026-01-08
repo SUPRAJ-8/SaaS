@@ -11,9 +11,8 @@ export const ThemeProvider = ({ children }) => {
   const [themeId, setThemeId] = useState(() => {
     // Get stored theme from localStorage as initial fallback
     let storedId = localStorage.getItem('themeId') || 'nexus';
-    // Migration: raw renamed to nexus
-    if (storedId === 'raw' || storedId === 'base') return 'nexus';
-    return storedId;
+    // Migration: ensure everything defaults to nexus
+    return 'nexus';
   });
 
   // Sync themeId with siteSettings when they are loaded/updated from API

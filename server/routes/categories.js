@@ -29,11 +29,19 @@ const upload = multer({ storage: storage });
 // @access  Public
 router.get('/', async (req, res) => {
   try {
+    const hostname = req.hostname;
+    const headerSubdomain = req.headers['x-subdomain'];
+    console.log(`📡 [GET] /api/categories | Host: ${hostname} | X-Subdomain: ${headerSubdomain}`);
+
     const clientId = req.tenantClient?._id || req.query.clientId || (req.user && req.user.clientId);
+    console.log(`🔑 Identified ClientId: ${clientId}`);
+
     if (!clientId) {
+      console.log('⚠️ No ClientId found for categories request');
       return res.json([]);
     }
     const categories = await Category.find({ clientId });
+    console.log(`✅ Found ${categories.length} categories`);
     res.json(categories);
   } catch (err) {
     console.error(err.message);
@@ -79,6 +87,9 @@ router.post('/', upload.single('image'), async (req, res) => {
     res.json(category);
   } catch (err) {
     console.error('Error creating category:', err);
+    if (err.code === 11000) {
+      return res.status(400).json({ msg: 'Category with this name already exists in your store' });
+    }
     res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });

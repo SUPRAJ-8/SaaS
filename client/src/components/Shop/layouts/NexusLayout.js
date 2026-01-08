@@ -6,34 +6,58 @@ import './NexusLayout.css';
 import NexusHeader from './NexusHeader';
 import NexusFooter from './NexusFooter';
 import { applyStoreSettings } from '../../../themeUtils';
+import axios from 'axios';
 
 const NexusLayout = () => {
     const location = useLocation();
 
     // Load settings and update title/favicon
     useEffect(() => {
-        const settings = localStorage.getItem('storeSettings');
-        if (settings) {
-            const parsedSettings = JSON.parse(settings);
-
-            // Update favicon
-            if (parsedSettings.favicon) {
-                let link = document.querySelector("link[rel~='icon']");
-                if (!link) {
-                    link = document.createElement('link');
-                    link.rel = 'icon';
-                    document.getElementsByTagName('head')[0].appendChild(link);
+        const fetchSettings = async () => {
+            try {
+                const hostname = window.location.hostname;
+                const parts = hostname.split('.');
+                let subdomain = null;
+                if (parts.length > 2 || (hostname.endsWith('.localhost') && parts.length > 1)) {
+                    const firstPart = parts[0];
+                    if (firstPart !== 'app' && firstPart !== 'www') {
+                        subdomain = firstPart;
+                    }
                 }
-                link.href = parsedSettings.favicon;
+
+                let response;
+                if (subdomain) {
+                    // If on a store subdomain, always use public API first
+                    try {
+                        response = await axios.get(`/api/store-settings/public/${subdomain}`);
+                    } catch (e) {
+                        console.warn("Public settings fetch failed for subdomain:", subdomain);
+                    }
+                } else {
+                    // Fallback for app subdomain or localhost (trying to get logged-in user's store)
+                    try {
+                        response = await axios.get('/api/store-settings');
+                    } catch (e) {
+                        console.warn("Private settings fetch failed");
+                    }
+                }
+
+                if (response && response.data) {
+                    const data = response.data;
+                    localStorage.setItem('storeSettings', JSON.stringify(data));
+                    if (data.navbarStyle) {
+                        localStorage.setItem('navbarSettings', JSON.stringify({ navbarStyle: data.navbarStyle }));
+                    }
+                    applyStoreSettings();
+                    window.dispatchEvent(new Event('navbarSettingsUpdated'));
+                    window.dispatchEvent(new Event('storage'));
+                }
+            } catch (error) {
+                console.warn("Nexus sync failed:", error.message);
             }
+        };
 
-            // Update page title with brand name or store name
-            const displayTitle = parsedSettings.brandName || parsedSettings.storeName || 'Nexus Store';
-            document.title = displayTitle;
-
-            // Re-apply settings to ensure they persist
-            applyStoreSettings();
-        }
+        fetchSettings();
     }, [location.pathname]);
 
     return (

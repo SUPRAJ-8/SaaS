@@ -55,8 +55,7 @@ const ProductSchema = new mongoose.Schema({
   },
   sku: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   crossedPrice: {
     type: Number,
@@ -118,5 +117,8 @@ const ProductSchema = new mongoose.Schema({
     trim: true
   }
 }, { timestamps: true });
+
+// Compound index to ensure SKU is unique only for a specific store/client
+ProductSchema.index({ clientId: 1, sku: 1 }, { unique: true });
 
 module.exports = mongoose.model('Product', ProductSchema);

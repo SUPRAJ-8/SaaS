@@ -63,7 +63,8 @@ const SuperAdminThemes = () => {
     const fetchThemes = async () => {
         try {
             const response = await axios.get(`${API_URL}/api/themes/admin`, { withCredentials: true });
-            setThemes(response.data);
+            const filteredThemes = response.data.filter(t => t.id === 'nexus');
+            setThemes(filteredThemes);
             if (response.data.length > 0) {
                 // Find first active theme for UI highlight
                 const active = response.data.find(t => t.isActive);

@@ -15,44 +15,59 @@
 }
 
 .step-circle {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: #ccc;
-  color: white;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
 }
 
 .step-label {
-  margin-left: 8px;
-  color: #aaa;
+  margin-left: 10px;
+  color: #9ca3af;
   font-weight: 500;
   white-space: nowrap;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
 }
 
 .step-connector {
   flex-grow: 1;
   height: 2px;
-  background-color: #ccc;
-  margin: 0 10px;
+  background-color: #e5e7eb;
+  margin: 0 15px;
+  transition: background-color 0.3s ease;
 }
 
 /* --- States --- */
 
-.step-item.active .step-circle,
+.step-item.active .step-circle {
+  background-color: var(--primary-color);
+  color: var(--brand-text-color);
+  box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.1);
+}
+
 .step-item.completed .step-circle {
-  background-color: #4a00e0; /* Purple */
+  background-color: var(--primary-color);
+  color: var(--brand-text-color);
 }
 
 .step-item.active .step-label {
-  color: #000;
-  font-weight: bold;
+  color: var(--copy);
+  font-weight: 700;
+}
+
+.step-item.completed .step-label {
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 .step-connector.completed {
-  background-color: #4a00e0; /* Purple */
+  background-color: var(--primary-color);
 }

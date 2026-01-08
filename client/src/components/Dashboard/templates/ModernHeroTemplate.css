@@ -45,7 +45,7 @@
 }
 
 .hero-highlight {
-    color: var(--theme-primary, #2563eb);
+    color: var(--primary-color, #2563eb);
     display: inline;
 }
 
@@ -65,8 +65,8 @@
 }
 
 .btn-primary-modern {
-    background: #2563eb;
-    color: white;
+    background: var(--primary-color, #2563eb);
+    color: var(--brand-text-color, white);
     border: none;
     padding: 16px 32px;
     border-radius: 12px;
@@ -120,8 +120,8 @@
 .play-icon-wrapper {
     width: 24px;
     height: 24px;
-    background: #2563eb;
-    color: white;
+    background: var(--primary-color, #2563eb);
+    color: var(--brand-text-color, white);
     border-radius: 50%;
     display: flex;
     align-items: center;

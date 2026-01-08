@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import ModernHeroTemplate from '../../Dashboard/templates/ModernHeroTemplate';
+import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
 import './EcommerceLayout.css';
+import './NexusLayout.css';
 
 const HeroSection = () => {
+    const { siteSettings } = useContext(SiteSettingsContext);
+    const storeName = siteSettings?.brandName || siteSettings?.storeName || 'NEXUS';
+
     const defaultContent = {
         title: "Experience the Future of Premium Audio",
         highlightedText: "Premium Audio",
@@ -15,7 +20,13 @@ const HeroSection = () => {
         paddingBottom: 80
     };
 
-    return <ModernHeroTemplate content={defaultContent} />;
+    return (
+        <section className="nexus-brand-watermark-section" data-brand={storeName}>
+            <div className="nexus-glass-card-wrapper" style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px' }}>
+                <ModernHeroTemplate content={defaultContent} />
+            </div>
+        </section>
+    );
 };
 
 export default HeroSection;

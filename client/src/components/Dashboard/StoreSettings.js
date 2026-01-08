@@ -24,45 +24,9 @@ const StoreSettings = () => {
     navigation: false
   });
 
-  // Predefined color themes
-  /*
-  const colorThemes = [
-    { name: 'Purple Dream', primary: '#7c3aed', secondary: '#a78bfa', accent: '#c4b5fd', bg: '#faf5ff' },
-    { name: 'Ocean Blue', primary: '#0ea5e9', secondary: '#38bdf8', accent: '#7dd3fc', bg: '#f0f9ff' },
-    { name: 'Forest Green', primary: '#10b981', secondary: '#34d399', accent: '#6ee7b7', bg: '#f0fdf4' },
-    { name: 'Sunset Orange', primary: '#f97316', secondary: '#fb923c', accent: '#fdba74', bg: '#fff7ed' },
-    { name: 'Ruby Red', primary: '#ef4444', secondary: '#f87171', accent: '#fca5a5', bg: '#fef2f2' },
-    { name: 'Royal Gold', primary: '#eab308', secondary: '#facc15', accent: '#fde047', bg: '#fefce8' },
-    { name: 'Midnight Dark', primary: '#1e293b', secondary: '#334155', accent: '#475569', bg: '#f8fafc' },
-    { name: 'Pink Blossom', primary: '#ec4899', secondary: '#f472b6', accent: '#f9a8d4', bg: '#fdf2f8' },
-  ];
-  */
-  const colorThemes = {
-    social: [
-      { name: 'YouTube Light', primary: '#ff0200', secondary: '#0200ff', accent: '#ff3533', bg: '#fbfbfb', surface: '#f0f0f0', text: '#262626' },
-      { name: 'YouTube Dark', primary: '#ff0200', secondary: '#0200ff', accent: '#ff3533', bg: '#1a1a1a', surface: '#262626', text: '#fbfbfb' },
-      { name: 'Twitch Light', primary: '#9147ff', secondary: '#ff4759', accent: '#af7aff', bg: '#fbfbfb', surface: '#f0eff0', text: '#262527' },
-      { name: 'Twitch Dark', primary: '#9147ff', secondary: '#ff4759', accent: '#af7aff', bg: '#19191a', surface: '#262527', text: '#fbfbfb' },
-      { name: 'Discord Light', primary: '#5866f2', secondary: '#f25899', accent: '#8791f6', bg: '#fafafc', surface: '#ecedf4', text: '#1d1e30' },
-      { name: 'Discord Dark', primary: '#5866f2', secondary: '#f25899', accent: '#8791f6', bg: '#131420', surface: '#1d1e30', text: '#fafafc' },
-    ],
-    platform: [
-      { name: 'Indie Hackers Light', primary: '#4699eb', secondary: '#eb9846', accent: '#74b2f0', bg: '#fafbfd', surface: '#eaf0f5', text: '#192634' },
-      { name: 'Indie Hackers Dark', primary: '#4699eb', secondary: '#eb9846', accent: '#74b2f0', bg: '#111a22', surface: '#192634', text: '#fafbfd' },
-      { name: 'Unreal Engine Light', primary: '#02abf5', secondary: '#f50246', accent: '#2dbefd', bg: '#fafcfd', surface: '#eaf2f5', text: '#192b34' },
-      { name: 'Unreal Engine Dark', primary: '#02abf5', secondary: '#f50246', accent: '#2dbefd', bg: '#111d22', surface: '#192b34', text: '#fafcfd' },
-    ],
-    classic: [
-      { name: 'Purple Dream', primary: '#7c3aed', secondary: '#a78bfa', accent: '#c4b5fd', bg: '#faf5ff', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Ocean Blue', primary: '#0ea5e9', secondary: '#38bdf8', accent: '#7dd3fc', bg: '#f0f9ff', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Forest Green', primary: '#10b981', secondary: '#34d399', accent: '#6ee7b7', bg: '#f0fdf4', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Sunset Orange', primary: '#f97316', secondary: '#fb923c', accent: '#fdba74', bg: '#fff7ed', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Ruby Red', primary: '#ef4444', secondary: '#f87171', accent: '#fca5a5', bg: '#fef2f2', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Royal Gold', primary: '#eab308', secondary: '#facc15', accent: '#fde047', bg: '#fefce8', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Midnight Dark', primary: '#1e293b', secondary: '#334155', accent: '#475569', bg: '#f8fafc', surface: '#ffffff', text: '#1f2937' },
-      { name: 'Pink Blossom', primary: '#ec4899', secondary: '#f472b6', accent: '#f9a8d4', bg: '#fdf2f8', surface: '#ffffff', text: '#1f2937' },
-    ]
-  };
+  // Simplifed color state: Only Brand and Text on Brand colors
+  const DEFAULT_BRAND_COLOR = '#000000';
+  const DEFAULT_BRAND_TEXT_COLOR = '#ffffff';
 
 
   const defaultSettings = {
@@ -99,13 +63,11 @@ const StoreSettings = () => {
     siteUnderConstruction: false,
     constructionMessage: 'We are currently updating our store. Please check back soon!',
     constructionContactEmail: '',
-    primaryColor: '#5866f2',
-    secondaryColor: '#f25899',
-    accentColor: '#8791f6',
-    backgroundColor: '#131420',
-    surfaceColor: '#1d1e30',
-    textColor: '#fafafc',
-    selectedTheme: 'Discord Dark',
+    primaryColor: '#000000',
+    brandTextColor: '#ffffff',
+    backgroundColor: '#ffffff',
+    textColor: '#1a1a1a',
+    selectedTheme: 'Custom',
     fontFamily: 'Inter',
     // Appearances - Components
     buttonStyle: 'rounded',
@@ -296,21 +258,6 @@ const StoreSettings = () => {
   const handleComponentsSubmit = (e) => {
     e.preventDefault();
     saveSettingsToApi(storeData, 'Component settings saved successfully!');
-  };
-
-  const handleThemeSelect = (theme) => {
-    const updatedData = {
-      ...storeData,
-      primaryColor: theme.primary,
-      secondaryColor: theme.secondary,
-      accentColor: theme.accent,
-      backgroundColor: theme.bg,
-      surfaceColor: theme.surface,
-      textColor: theme.text,
-      selectedTheme: theme.name
-    };
-    setStoreData(updatedData);
-    saveSettingsToApi(updatedData, `${theme.name} theme applied successfully!`);
   };
 
   const handleFileUpload = (file, field) => {
@@ -1076,70 +1023,50 @@ const StoreSettings = () => {
               {expandedSections.themes && (
                 <div className="collapsible-content">
 
-                  <div className="color-themes-section">
-                    <h4 className="themes-heading">Social Media Themes</h4>
-                    <div className="color-themes-grid">
-                      {colorThemes.social.map((theme) => (
-                        <div
-                          key={theme.name}
-                          className={`theme-card ${storeData.selectedTheme === theme.name ? 'selected' : ''}`}
-                          onClick={() => handleThemeSelect(theme)}
-                        >
-                          <div className="theme-colors">
-                            <div className="color-dot" style={{ backgroundColor: theme.primary }} title="Primary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.secondary }} title="Secondary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.text }} title="Text"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.bg }} title="Background"></div>
-                          </div>
-                          <span className="theme-name">{theme.name}</span>
-                          {storeData.selectedTheme === theme.name && (
-                            <div className="selected-badge">✓</div>
-                          )}
+                  <div className="color-branding-section">
+                    <h4 className="themes-heading">Store Colors</h4>
+                    <div className="form-row">
+                      <div className="form-field">
+                        <label>Brand Color</label>
+                        <div className="color-picker-container">
+                          <input
+                            type="color"
+                            name="primaryColor"
+                            value={storeData.primaryColor}
+                            onChange={handleInputChange}
+                            className="color-input"
+                          />
+                          <input
+                            type="text"
+                            name="primaryColor"
+                            value={storeData.primaryColor}
+                            onChange={handleInputChange}
+                            className="color-text-input"
+                          />
                         </div>
-                      ))}
-                    </div>
+                        <small className="form-hint">Used for buttons, links, and primary accents.</small>
+                      </div>
 
-                    <h4 className="themes-heading" style={{ marginTop: '2rem' }}>Platform Themes</h4>
-                    <div className="color-themes-grid">
-                      {colorThemes.platform.map((theme) => (
-                        <div
-                          key={theme.name}
-                          className={`theme-card ${storeData.selectedTheme === theme.name ? 'selected' : ''}`}
-                          onClick={() => handleThemeSelect(theme)}
-                        >
-                          <div className="theme-colors">
-                            <div className="color-dot" style={{ backgroundColor: theme.primary }} title="Primary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.secondary }} title="Secondary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.text }} title="Text"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.bg }} title="Background"></div>
-                          </div>
-                          <span className="theme-name">{theme.name}</span>
-                          {storeData.selectedTheme === theme.name && (
-                            <div className="selected-badge">✓</div>
-                          )}
+                      <div className="form-field">
+                        <label>Text over Brand color</label>
+                        <div className="color-picker-container">
+                          <input
+                            type="color"
+                            name="brandTextColor"
+                            value={storeData.brandTextColor}
+                            onChange={handleInputChange}
+                            className="color-input"
+                          />
+                          <input
+                            type="text"
+                            name="brandTextColor"
+                            value={storeData.brandTextColor}
+                            onChange={handleInputChange}
+                            className="color-text-input"
+                          />
                         </div>
-                      ))}
-                    </div>
-                    <h4 className="themes-heading" style={{ marginTop: '2rem' }}>Classic Themes</h4>
-                    <div className="color-themes-grid">
-                      {colorThemes.classic.map((theme) => (
-                        <div
-                          key={theme.name}
-                          className={`theme-card ${storeData.selectedTheme === theme.name ? 'selected' : ''}`}
-                          onClick={() => handleThemeSelect(theme)}
-                        >
-                          <div className="theme-colors">
-                            <div className="color-dot" style={{ backgroundColor: theme.primary }} title="Primary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.secondary }} title="Secondary"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.text }} title="Text"></div>
-                            <div className="color-dot" style={{ backgroundColor: theme.bg }} title="Background"></div>
-                          </div>
-                          <span className="theme-name">{theme.name}</span>
-                          {storeData.selectedTheme === theme.name && (
-                            <div className="selected-badge">✓</div>
-                          )}
-                        </div>
-                      ))}
+                        <small className="form-hint">Color of text when placed on brand-colored backgrounds.</small>
+                      </div>
                     </div>
                   </div>
 

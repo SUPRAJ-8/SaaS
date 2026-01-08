@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const CategorySchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   image: {
     type: String
@@ -35,5 +34,8 @@ const CategorySchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Compound index to ensure category name is unique only for a specific store/client
+CategorySchema.index({ clientId: 1, name: 1 }, { unique: true });
 
 module.exports = Category = mongoose.model('category', CategorySchema);

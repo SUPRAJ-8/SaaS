@@ -23,7 +23,8 @@ const Themes = () => {
           axios.get(`${API_URL}/api/websites`, { withCredentials: true })
         ]);
 
-        setThemes(themesRes.data);
+        const filteredThemes = themesRes.data.filter(t => t.id === 'nexus');
+        setThemes(filteredThemes);
 
         // Find home page ID for customization
         if (websitesRes.data.length > 0) {
