@@ -319,18 +319,38 @@
 }
 
 .products-page .products-table th.sortable-header {
-    padding-right: 28px !important;
     cursor: pointer;
+    position: relative;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.products-page .products-table th.sortable-header:hover {
+    background-color: #f1f5f9;
 }
 
 .products-page .sort-icon-group {
     display: inline-flex;
     flex-direction: column;
     vertical-align: middle;
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: 8px;
+}
+
+.products-page .sort-icon {
+    font-size: 0.7rem;
+    height: 7px;
+    color: #cbd5e1;
+    transition: color 0.2s;
+}
+
+.products-page .sort-icon.active {
+    color: #2563eb;
+}
+
+@media (max-width: 768px) {
+    .products-page .sort-icon-group {
+        display: none !important;
+    }
 }
 
 .products-page .products-table td {

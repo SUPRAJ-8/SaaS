@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const Client = require('../models/Client');
+const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 
 const { ensureAuthenticated } = require('../middleware/auth');
@@ -245,8 +246,10 @@ router.post('/', async (req, res) => {
         phone: customerDetails.phone,
         province: customerDetails.province,
         city: customerDetails.city,
+        district: customerDetails.district,
         address: customerDetails.streetAddress, // Note: streetAddress from client maps to address in DB
         landmark: customerDetails.landmark,
+        toll: customerDetails.toll,
         orderNotes: customerDetails.orderNote, // Note: orderNote from client maps to orderNotes in DB
         paymentTerms: customerDetails.paymentTerms || 'COD' // Set default payment method
       } : {},
@@ -256,6 +259,20 @@ router.post('/', async (req, res) => {
 
     const order = await newOrder.save();
     console.log('Order created successfully:', order.orderId);
+
+    // Reduce inventory immediately on placement
+    await reduceProductInventory(order.items);
+
+    // Create notification for new order
+    await new Notification({
+      clientId: clientId,
+      type: 'order',
+      title: 'New Order Received',
+      message: `Order ${order.orderId} has been placed by ${customerDetails?.name || 'a customer'}.`,
+      targetLink: '/dashboard/orders',
+      metadata: { orderId: order._id }
+    }).save();
+
     res.json(order);
   } catch (err) {
     console.error('Error creating order:', err);
@@ -302,47 +319,98 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
 // Helper function to reduce product inventory
 const reduceProductInventory = async (items) => {
+  console.log(`[Inventory] Reducing stock for ${items.length} items...`);
   for (const item of items) {
     try {
-      const product = await Product.findById(item.product || item.id);
+      const productId = item.product || item.id;
+      if (!productId) {
+        console.warn(`[Inventory] No product ID found for item: ${item.name}`);
+        continue;
+      }
 
+      const product = await Product.findById(productId);
       if (!product) {
-        console.warn(`Product not found for item: ${item.name}`);
+        console.warn(`[Inventory] Product not found in DB: ${item.name} (${productId})`);
         continue;
       }
 
       // Check if item has variant information
-      if (item.variant) {
-        // Parse variant string like "Variant: Red/M"
-        const variantMatch = item.variant.match(/Variant:\s*(\w+)\/(\w+)/i);
-        if (variantMatch && product.hasVariants) {
-          const color = variantMatch[1].toLowerCase();
-          const size = variantMatch[2].toLowerCase();
+      if (item.variant && product.hasVariants) {
+        // Handle both "Variant: Color/Size" and just "Color/Size"
+        const variantStr = item.variant.replace(/Variant:\s*/i, '');
+        const parts = variantStr.split('/');
+
+        if (parts.length >= 2) {
+          const color = parts[0].trim().toLowerCase();
+          const size = parts[1].trim().toLowerCase();
 
           // Find and update the matching variant
           const variantIndex = product.variants.findIndex(
-            v => v.color.toLowerCase() === color && v.size.toLowerCase() === size
+            v => v.color?.toLowerCase() === color && v.size?.toLowerCase() === size
           );
 
           if (variantIndex !== -1) {
             const currentQuantity = product.variants[variantIndex].quantity || 0;
             product.variants[variantIndex].quantity = Math.max(0, currentQuantity - item.quantity);
-            console.log(`Reduced variant ${color}/${size} of ${product.name} by ${item.quantity}. New quantity: ${product.variants[variantIndex].quantity}`);
+            console.log(`[Inventory] Reduced variant ${color}/${size} of ${product.name} by ${item.quantity}. New qty: ${product.variants[variantIndex].quantity}`);
           } else {
-            console.warn(`Variant ${color}/${size} not found for product: ${product.name}`);
+            console.warn(`[Inventory] Variant ${color}/${size} not found for product: ${product.name}. Check available variants:`, product.variants.map(v => `${v.color}/${v.size}`));
+            // Fallback: If variant not found but product has no global quantity, maybe it's a data mismatch
           }
         }
       } else {
-        // No variant, update main product quantity
+        // No variant or product doesn't use variants, update main product quantity
         const currentQuantity = product.quantity || 0;
         product.quantity = Math.max(0, currentQuantity - item.quantity);
-        console.log(`Reduced ${product.name} by ${item.quantity}. New quantity: ${product.quantity}`);
+        console.log(`[Inventory] Reduced ${product.name} by ${item.quantity}. New qty: ${product.quantity}`);
       }
 
       await product.save();
     } catch (error) {
-      console.error(`Error reducing inventory for item ${item.name}:`, error);
-      // Continue with other items even if one fails
+      console.error(`[Inventory] Error reducing stock for ${item.name}:`, error);
+    }
+  }
+};
+
+// Helper function to restore product inventory (on cancellation/refund)
+const restoreProductInventory = async (items) => {
+  console.log(`[Inventory] Restoring stock for ${items.length} items...`);
+  for (const item of items) {
+    try {
+      const productId = item.product || item.id;
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        console.warn(`[Inventory] Product not found for restock: ${item.name}`);
+        continue;
+      }
+
+      // Check if item has variant information
+      if (item.variant && product.hasVariants) {
+        const variantStr = item.variant.replace(/Variant:\s*/i, '');
+        const parts = variantStr.split('/');
+
+        if (parts.length >= 2) {
+          const color = parts[0].trim().toLowerCase();
+          const size = parts[1].trim().toLowerCase();
+
+          const variantIndex = product.variants.findIndex(
+            v => v.color?.toLowerCase() === color && v.size?.toLowerCase() === size
+          );
+
+          if (variantIndex !== -1) {
+            product.variants[variantIndex].quantity = (product.variants[variantIndex].quantity || 0) + item.quantity;
+            console.log(`[Inventory] Restored variant ${color}/${size} of ${product.name} by ${item.quantity}.`);
+          }
+        }
+      } else {
+        product.quantity = (product.quantity || 0) + item.quantity;
+        console.log(`[Inventory] Restored ${product.name} by ${item.quantity}.`);
+      }
+
+      await product.save();
+    } catch (error) {
+      console.error(`[Inventory] Error restoring stock for ${item.name}:`, error);
     }
   }
 };
@@ -381,10 +449,34 @@ router.put('/:id', ensureAuthenticated, async (req, res) => {
 
     await order.save();
 
-    // If status changed to 'delivered', reduce product quantities
-    if (status === 'delivered' && previousStatus !== 'delivered') {
-      console.log(`Order ${order.orderId} marked as delivered. Reducing inventory...`);
+    // Inventory logic for status changes
+    const newStatus = order.status?.toLowerCase();
+    const oldStatus = previousStatus?.toLowerCase();
+    const isNowCancelled = newStatus === 'cancelled' || newStatus === 'refunded';
+    const wasCancelled = oldStatus === 'cancelled' || oldStatus === 'refunded';
+
+    console.log(`[Inventory] Status change: ${oldStatus} -> ${newStatus} | wasCancelled: ${wasCancelled}, isNowCancelled: ${isNowCancelled}`);
+
+    if (isNowCancelled && !wasCancelled) {
+      // Moving TO cancelled/refunded -> Restore stock
+      console.log(`[Inventory] Order ${order.orderId} cancelled/refunded. Restoring stock...`);
+      await restoreProductInventory(order.items);
+    } else if (!isNowCancelled && wasCancelled) {
+      // Moving FROM cancelled/refunded back to active -> Decrease stock
+      console.log(`[Inventory] Order ${order.orderId} reactivated (${newStatus}). Decreasing stock...`);
       await reduceProductInventory(order.items);
+    }
+
+    // Create notification if status is completed
+    if (status === 'delivered') {
+      await new Notification({
+        clientId: order.clientId,
+        type: 'order',
+        title: 'Order Status: Completed',
+        message: `Order ${order.orderId} has been marked as delivered/completed.`,
+        targetLink: '/dashboard/orders',
+        metadata: { orderId: order._id }
+      }).save();
     }
 
     res.json(order);
@@ -530,7 +622,7 @@ router.post('/bulk-status', ensureAuthenticated, async (req, res) => {
 
         // If payment status is set to Refunded, automatically set order status to refunded
         if (status === 'Refunded') {
-          updateData.status = 'refunded';
+          updateData.status = 'cancelled';
         }
 
         await Order.findByIdAndUpdate(order._id, { $set: updateData });
@@ -546,9 +638,30 @@ router.post('/bulk-status', ensureAuthenticated, async (req, res) => {
 
         await order.save();
 
-        // If status changed to 'delivered', reduce inventory
-        if (status.toLowerCase() === 'delivered' && previousStatus !== 'delivered') {
+        // Handle inventory transitions
+        const newStatus = order.status?.toLowerCase();
+        const oldStatus = previousStatus?.toLowerCase();
+        const isNowCancelled = newStatus === 'cancelled' || newStatus === 'refunded';
+        const wasCancelled = oldStatus === 'cancelled' || oldStatus === 'refunded';
+
+        console.log(`[Inventory] Bulk status change: ${oldStatus} -> ${newStatus} | wasCancelled: ${wasCancelled}, isNowCancelled: ${isNowCancelled}`);
+
+        if (isNowCancelled && !wasCancelled) {
+          await restoreProductInventory(order.items);
+        } else if (!isNowCancelled && wasCancelled) {
           await reduceProductInventory(order.items);
+        }
+
+        // Notification for completion
+        if (status.toLowerCase() === 'delivered' && previousStatus !== 'delivered') {
+          await new Notification({
+            clientId: order.clientId,
+            type: 'order',
+            title: 'Order Status: Completed',
+            message: `Order ${order.orderId} has been marked as completed.`,
+            targetLink: '/dashboard/orders',
+            metadata: { orderId: order._id }
+          }).save();
         }
       }
     }

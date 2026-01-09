@@ -227,6 +227,8 @@ app.use('/api/contact', require('./routes/contact'));
 app.use('/api/themes', require('./routes/themes'));
 app.use('/api/websites', require('./routes/websites'));
 app.use('/api/templates', require('./routes/templates')); // <--- added
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // 404 Handler for API routes - Log to help debugging
 app.use('/api/*', (req, res) => {

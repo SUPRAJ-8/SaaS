@@ -130,8 +130,8 @@ const AddressForm = ({ addressData, onAddressChange }) => {
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="postal-code">Toll</label>
-            <input type="text" id="postal-code" name="postalCode" value={addressData.postalCode} onChange={handleInputChange} placeholder="Buddha Chock" />
+            <label htmlFor="toll">Toll</label>
+            <input type="text" id="toll" name="toll" value={addressData.toll} onChange={handleInputChange} placeholder="Buddha Chock" />
           </div>
         </div>
         <div className="form-group">

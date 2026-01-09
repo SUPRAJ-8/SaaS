@@ -1,26 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSignOutAlt, FaBars } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { FaSignOutAlt, FaBars, FaEye, FaBell } from 'react-icons/fa';
+import { BsLayoutSidebar } from 'react-icons/bs';
 import API_URL from '../../apiConfig';
 import './Header.css';
 
-const Header = ({ toggleSidebar }) => {
+const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [user, setUser] = useState(null);
+  const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`${API_URL}/auth/current_user`);
-        setUser(response.data);
+        const userRes = await axios.get(`${API_URL}/auth/current_user`);
+        setUser(userRes.data);
+
+        if (userRes.data?.clientId) {
+          const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
+          setClient(clientRes.data);
+
+          // Fetch unread notifications count
+          const notesRes = await axios.get(`${API_URL}/api/notifications`);
+          const unread = notesRes.data.filter(n => n.status === 'unread').length;
+          setUnreadCount(unread);
+        }
       } catch (error) {
-        console.error('Error fetching user:', error);
-        setUser(null);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchUser();
+    fetchData();
   }, []);
 
   const handleLogout = async () => {
@@ -54,8 +67,31 @@ const Header = ({ toggleSidebar }) => {
     }
   };
 
+  const handleVisitStore = (e) => {
+    e.preventDefault();
+    if (!client || !client.subdomain) return;
+
+    const hostname = window.location.hostname;
+    let baseDomain = hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost';
+    let protocol = hostname.includes('nepostore.xyz') ? 'https:' : 'http:';
+    let port = hostname.includes('nepostore.xyz') ? '' : ':3000';
+
+    const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+    window.open(shopUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <header className="dashboard-header">
+    <header className={`dashboard-header ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
+      <div className="layout-toggle-icons">
+        <button
+          className={`layout-btn ${isSidebarOpen ? 'active' : ''}`}
+          title="Toggle Sidebar"
+          onClick={toggleSidebar}
+        >
+          <BsLayoutSidebar />
+        </button>
+      </div>
+
       <div className="header-left">
         <button className="mobile-menu-btn" onClick={toggleSidebar}>
           <FaBars />
@@ -72,8 +108,21 @@ const Header = ({ toggleSidebar }) => {
           <div className="search-icon-btn"></div>
           <input type="text" placeholder="Search orders, products, customers..." />
         </div>
+
+        <button
+          className="header-visit-store-btn"
+          onClick={handleVisitStore}
+          disabled={!client?.subdomain}
+          title="View Live Store"
+        >
+          <FaEye /> <span>View Store</span>
+        </button>
       </div>
       <div className="header-right">
+        <Link to="/dashboard/notifications" className="header-notification-btn" title="Notifications">
+          <FaBell />
+          {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+        </Link>
         <div className="user-profile-header">
           <div className="user-avatar-wrapper">
             <img

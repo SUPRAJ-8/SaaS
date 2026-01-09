@@ -5,7 +5,7 @@ import Header from './Header';
 import './DashboardLayout.css';
 
 const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(window.innerWidth > 1024);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -16,7 +16,7 @@ const DashboardLayout = () => {
       <div className="dashboard-content">
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
         <div className="main-panel">
-          <Header toggleSidebar={toggleSidebar} />
+          <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
           <main className="content-area">
             <Outlet />
           </main>

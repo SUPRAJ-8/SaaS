@@ -1,291 +1,345 @@
 .dashboard-sidebar {
-  width: 250px;
-  height: 100vh;
-  flex-shrink: 0;
-  background-color: #ffffff;
-  border-right: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+    width: 250px;
+    height: 100vh;
+    flex-shrink: 0;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 101;
+}
+
+.dashboard-sidebar:not(.open) {
+    width: 0;
+    border-right: none;
 }
 
 .dashboard-sidebar-header {
-  padding: 11px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  /* Space betwen brand and close button */
-  border-bottom: 1px solid #f1f5f9;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-  user-select: none;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Space betwen brand and close button */
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+    height: 64px;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 250px;
+    z-index: 102;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
 }
 
 .header-brand-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
 }
 
 .mobile-close-btn {
-  display: none;
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  min-width: 36px;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    min-width: 36px;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
 }
 
 .mobile-close-btn:hover {
-  background-color: #f1f5f9;
-  color: #1e293b;
+    background-color: #f1f5f9;
+    color: #1e293b;
 }
 
 .mobile-close-btn:active {
-  background-color: #e2e8f0;
-  transform: scale(0.95);
+    background-color: #e2e8f0;
+    transform: scale(0.95);
 }
 
 .dashboard-sidebar-header:hover {
-  background-color: #f8fafc;
+    background-color: #f8fafc;
 }
 
 .logo {
-  width: 42px;
-  height: 42px;
-  background-color: #5866f2;
-  /* Default blue, can be dynamic later */
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  font-size: 1.4rem;
-  font-weight: 800;
-  flex-shrink: 0;
-  box-shadow: 0 4px 6px -1px rgba(88, 102, 242, 0.2);
-  overflow: hidden;
-  /* Added to clip image corners if using border-radius on image */
+    width: 42px;
+    height: 42px;
+    background-color: #5866f2;
+    /* Default blue, can be dynamic later */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 4px 6px -1px rgba(88, 102, 242, 0.2);
+    overflow: hidden;
+    /* Added to clip image corners if using border-radius on image */
 }
 
 .sidebar-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background-color: #ffffff;
-  /* Contrast for logo if it's transparent */
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #ffffff;
+    /* Contrast for logo if it's transparent */
 }
 
 .company-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .company-name-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .company-name {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #1e293b;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
 }
 
 .header-arrow {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  flex-shrink: 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.dashboard-sidebar:not(.open) .dashboard-sidebar-nav {
+    transform: translateX(-250px);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .dashboard-sidebar-nav {
-  flex: 1;
-  padding: 20px 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+    flex: 1;
+    padding: 20px 12px;
+    margin-top: 64px;
+    /* Space for fixed header */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-sidebar-nav::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
 
 .dashboard-sidebar-nav::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .dashboard-sidebar-nav::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 3px;
+    background: #e2e8f0;
+    border-radius: 3px;
 }
 
 .dashboard-sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+    background: #cbd5e1;
 }
 
 .nav-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin: 24px 0 12px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 24px 0 12px 12px;
 }
 
 .nav-title:first-child {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .dashboard-sidebar-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .dashboard-sidebar-nav li {
-  margin-bottom: 4px;
+    margin-bottom: 4px;
 }
 
 .dashboard-sidebar-nav li a {
-  display: flex;
-  align-items: center;
-  color: #475569;
-  text-decoration: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    color: #475569;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    gap: 12px;
 }
 
 .dashboard-sidebar-nav li a .nav-icon {
-  font-size: 1.1rem;
-  color: #64748b;
-  transition: all 0.2s ease;
+    font-size: 1.1rem;
+    color: #64748b;
+    transition: all 0.2s ease;
 }
 
 .dashboard-sidebar-nav li a:hover {
-  background-color: #f8fafc;
-  color: #1e293b;
+    background-color: #f8fafc;
+    color: #1e293b;
 }
 
 .dashboard-sidebar-nav li a:hover .nav-icon {
-  color: #1e293b;
+    color: #1e293b;
 }
 
 .dashboard-sidebar-nav li a.active {
-  background-color: #eef2ff;
-  color: #5866f2;
+    background-color: #eef2ff;
+    color: #5866f2;
 }
 
 .dashboard-sidebar-nav li a.active .nav-icon {
-  color: #5866f2;
+    color: #5866f2;
+}
+
+/* Notification Badge in Sidebar */
+.nav-link-with-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    position: relative;
+}
+
+.sidebar-notification-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    margin-left: auto;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 @media (max-width: 1024px) {
-  .dashboard-sidebar {
-    position: fixed;
-    top: 0;
-    left: -260px;
-    height: 100vh;
-    z-index: 1000;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
-    width: 260px;
-  }
+    .dashboard-sidebar {
+        position: fixed;
+        top: 0;
+        left: -260px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+        width: 260px;
+    }
 
-  .dashboard-sidebar.open {
-    left: 0;
-  }
+    .dashboard-sidebar.open {
+        left: 0;
+    }
 
-  .mobile-close-btn {
-    display: flex !important;
-  }
+    .mobile-close-btn {
+        display: flex !important;
+    }
 
-  .dashboard-sidebar-header {
-    padding: 12px 16px;
-  }
+    .dashboard-sidebar-header {
+        padding: 12px 16px;
+        position: static;
+        width: auto;
+        border-right: none;
+    }
 
-  .dashboard-sidebar-nav {
-    padding: 16px 12px;
-  }
+    .dashboard-sidebar-nav {
+        padding: 16px 12px;
+    }
 }
 
 @media (max-width: 768px) {
-  .dashboard-sidebar {
-    width: 280px;
-    left: -290px;
-  }
+    .dashboard-sidebar {
+        width: 280px;
+        left: -290px;
+    }
 
-  .dashboard-sidebar-nav li a {
-    padding: 12px 14px;
-    font-size: 0.95rem;
-  }
+    .dashboard-sidebar-nav li a {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
 
-  .nav-title {
-    font-size: 0.7rem;
-    margin: 20px 0 10px 12px;
-  }
+    .nav-title {
+        font-size: 0.7rem;
+        margin: 20px 0 10px 12px;
+    }
 
-  .company-name {
-    font-size: 0.95rem;
-    max-width: 160px;
-  }
+    .company-name {
+        font-size: 0.95rem;
+        max-width: 160px;
+    }
 }
 
 @media (max-width: 480px) {
-  .dashboard-sidebar {
-    width: 85vw;
-    max-width: 300px;
-    left: calc(-85vw - 10px);
-  }
+    .dashboard-sidebar {
+        width: 85vw;
+        max-width: 300px;
+        left: calc(-85vw - 10px);
+    }
 
-  .dashboard-sidebar.open {
-    left: 0;
-  }
+    .dashboard-sidebar.open {
+        left: 0;
+    }
 
-  .dashboard-sidebar-header {
-    padding: 10px 12px;
-  }
+    .dashboard-sidebar-header {
+        padding: 10px 12px;
+    }
 
-  .logo {
-    width: 36px;
-    height: 36px;
-    font-size: 1.2rem;
-  }
+    .logo {
+        width: 36px;
+        height: 36px;
+        font-size: 1.2rem;
+    }
 
-  .company-name {
-    font-size: 0.9rem;
-  }
+    .company-name {
+        font-size: 0.9rem;
+    }
 
-  .dashboard-sidebar-nav {
-    padding: 12px 8px;
-  }
+    .dashboard-sidebar-nav {
+        padding: 12px 8px;
+        margin-top: 0;
+    }
 
-  .dashboard-sidebar-nav li a {
-    padding: 10px 12px;
-    font-size: 0.9rem;
-  }
+    .dashboard-sidebar-nav li a {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
 
-  .dashboard-sidebar-nav li a .nav-icon {
-    font-size: 1rem;
-  }
+    .dashboard-sidebar-nav li a .nav-icon {
+        font-size: 1rem;
+    }
 }

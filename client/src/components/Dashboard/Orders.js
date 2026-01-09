@@ -59,7 +59,7 @@ const Orders = () => {
         return count;
     }, [statusFilter, labelFilter, paymentMethodFilter, paymentStatusFilter, timeframeFilter, startDate, endDate]);
 
-    const statusOptions = ['All Statuses', 'Pending', 'Processing', 'Shipping', 'Delivered', 'Cancelled', 'Refunded'];
+    const statusOptions = ['All Statuses', 'Pending', 'Processing', 'Shipping', 'Delivered', 'Cancelled'];
     const paymentMethodOptions = ['All Methods', 'QR', 'COD'];
     const paymentStatusOptions = ['All Statuses', 'Paid', 'Unpaid', 'Partial', 'Refunded'];
     const timeframeOptions = ['All Time', 'Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Last 3 Months', 'This Year'];
@@ -371,7 +371,7 @@ const Orders = () => {
 
             // If payment status is set to Refunded, automatically set order status to refunded
             if (newStatus === 'Refunded') {
-                updateData.status = 'refunded';
+                updateData.status = 'cancelled';
             }
 
             const response = await axios.put(
@@ -718,7 +718,6 @@ const Orders = () => {
                                 <option value="Shipping">Shipping</option>
                                 <option value="Delivered">Delivered</option>
                                 <option value="Cancelled">Cancelled</option>
-                                <option value="Refunded">Refunded</option>
                             </select>
                         </div>
                         <div className="bulk-divider"></div>

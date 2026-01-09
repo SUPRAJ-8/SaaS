@@ -42,8 +42,8 @@ const Checkout = () => {
     province: '',
     district: '',
     city: '',
-    postalCode: '',
     landmark: '',
+    toll: '',
   });
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -134,7 +134,6 @@ const Checkout = () => {
       formData.province ||
       formData.district ||
       formData.city ||
-      formData.postalCode ||
       formData.landmark;
   };
 
@@ -181,8 +180,8 @@ const Checkout = () => {
         province: formData.province,
         district: formData.district,
         city: formData.city,
-        postalCode: formData.postalCode,
         landmark: formData.landmark,
+        toll: formData.toll,
       },
       items: items,
       payment: { total: total },
@@ -220,11 +219,6 @@ const Checkout = () => {
       setHasUnsavedChanges(false);
       // Clear saved checkout data after successful order
       localStorage.removeItem('checkoutFormData');
-
-      toast.success('Order placed successfully!', {
-        position: 'top-center',
-        autoClose: 3000,
-      });
     } catch (error) {
       console.error('Failed to place order - Full error:', error);
       console.error('Error response:', error.response);

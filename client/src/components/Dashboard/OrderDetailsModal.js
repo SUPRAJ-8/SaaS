@@ -146,7 +146,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
 
     // If payment status is set to Refunded, automatically set order status to refunded
     if (newPaymentStatus === 'Refunded') {
-      setCurrentStatus('refunded');
+      setCurrentStatus('cancelled');
     }
 
     try {
@@ -159,7 +159,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
       };
 
       if (newPaymentStatus === 'Refunded') {
-        updateData.status = 'refunded';
+        updateData.status = 'cancelled';
       }
 
       await axios.put(`/api/orders/${order._id}`, updateData);
@@ -171,7 +171,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
       }
 
       const message = newPaymentStatus === 'Refunded'
-        ? `Payment status updated to "Refunded" and order status set to "refunded"`
+        ? `Payment status updated to "Refunded" and order status set to "cancelled"`
         : `Payment status updated to "${newPaymentStatus}" (order status unchanged)`;
 
       toast.success(message, {
@@ -218,7 +218,6 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                         <option value="shipping">SHIPPING</option>
                         <option value="delivered">DELIVERED</option>
                         <option value="cancelled">CANCELLED</option>
-                        <option value="refunded">REFUNDED</option>
                       </select>
                       <FaChevronDown className="od-badge-chevron" />
                     </div>
@@ -296,12 +295,16 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                         <input type="text" name="province" value={editedDetails.province} onChange={handleInputChange} placeholder="Enter province" />
                       </div>
                       <div className="od-edit-field">
+                        <label>District</label>
+                        <input type="text" name="district" value={editedDetails.district} onChange={handleInputChange} placeholder="Enter district" />
+                      </div>
+                      <div className="od-edit-field">
                         <label>City</label>
                         <input type="text" name="city" value={editedDetails.city} onChange={handleInputChange} placeholder="Enter city" />
                       </div>
                       <div className="od-edit-field">
-                        <label>District</label>
-                        <input type="text" name="district" value={editedDetails.district} onChange={handleInputChange} placeholder="Enter district" />
+                        <label>Tole / Toll</label>
+                        <input type="text" name="toll" value={editedDetails.toll || ''} onChange={handleInputChange} placeholder="Enter toll" />
                       </div>
                       <div className="od-edit-field full-width">
                         <label>Landmark</label>
@@ -335,14 +338,16 @@ const OrderDetailsModal = ({ isOpen, onClose, order, onOrderUpdate }) => {
                         <span className="od-detail-value">{order.customerDetails.province || 'N/A'}</span>
                       </div>
                       <div className="od-detail-item">
+                        <span className="od-detail-label">District:</span>
+                        <span className="od-detail-value">{order.customerDetails.district || 'N/A'}</span>
+                      </div>
+                      <div className="od-detail-item">
                         <span className="od-detail-label">City:</span>
                         <span className="od-detail-value">{order.customerDetails.city || 'N/A'}</span>
                       </div>
                       <div className="od-detail-item">
-                        <span className="od-detail-label">District:</span>
-                        <span className={`od-detail-value ${!order.customerDetails.district ? 'od-italic-na' : ''}`}>
-                          {order.customerDetails.district || 'N/A'}
-                        </span>
+                        <span className="od-detail-label">Tole / Toll:</span>
+                        <span className="od-detail-value">{order.customerDetails.toll || 'N/A'}</span>
                       </div>
                       <div className="od-detail-item">
                         <span className="od-detail-label">Landmark:</span>

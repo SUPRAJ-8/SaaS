@@ -30,6 +30,8 @@ import Pages from './components/Dashboard/Pages';
 import PageBuilder from './components/Dashboard/PageBuilder';
 import SuperAdminClients from './components/Dashboard/SuperAdminClients';
 import Plugins from './components/Dashboard/Plugins';
+import Analytics from './components/Dashboard/Analytics';
+import Notifications from './components/Dashboard/Notifications';
 import LoginPage from './components/LoginPage';
 import GetStartedPage from './components/GetStartedPage';
 import SignupPage from './components/SignupPage';
@@ -132,6 +134,8 @@ function AppRouter() {
               {/* Template Builder Route - Reuses PageBuilder in template mode */}
               <Route path="template-builder/:id" element={<PageBuilder mode="template" />} />
               <Route path="plugins" element={<Plugins />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
             {/* Redirect root to /dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

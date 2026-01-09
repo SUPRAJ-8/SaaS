@@ -1,43 +1,96 @@
-.stat-card {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  flex: 1;
-  min-width: 200px;
-  text-align: center;
+.stat-card-premium {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    min-height: 140px;
+    box-sizing: border-box;
 }
 
-.stat-card-icon {
-  font-size: 2.5rem; /* 40px */
-  margin-bottom: 1rem;
+.stat-card-premium:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-.stat-card-title {
-  font-size: 0.875rem; /* 14px */
-  color: #64748b; /* Slate 500 */
-  margin: 0 0 0.5rem 0;
-  font-weight: 500;
+.stat-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.stat-card-value {
-  font-size: 2.25rem; /* 36px */
-  font-weight: 700;
-  color: #1e293b; /* Slate 800 */
-  margin: 0;
+.stat-card-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
-.stat-card-breakdown {
-  margin-top: 1rem;
+.stat-card-display-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.1;
 }
 
-.breakdown-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem; /* 14px */
-  color: #475569; /* Slate 600 */
+.stat-card-trend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: fit-content;
 }
 
-.breakdown-item:not(:last-child) {
-  margin-bottom: 0.25rem;
+.stat-card-trend.up {
+    color: #10b981;
+    background-color: #ecfdf5;
+}
+
+.stat-card-trend.down,
+.stat-card-trend.drop {
+    color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.trend-icon {
+    font-size: 1rem;
+}
+
+.stat-card-icon-wrapper {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-card-icon-inner {
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 1400px) {
+    .stat-card-display-value {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stat-card-premium {
+        padding: 20px;
+    }
 }

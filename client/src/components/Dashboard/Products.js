@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint, FaArchive, FaCheck, FaTimes, FaFileAlt } from 'react-icons/fa';
+import { FaTrashAlt, FaEdit, FaChevronLeft, FaChevronRight, FaInbox, FaFileExport, FaPlus, FaFilter, FaSearch, FaPrint, FaArchive, FaCheck, FaTimes, FaFileAlt, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Products.css';
@@ -21,6 +21,7 @@ const Products = () => {
   const [itemsPerPage] = useState(10);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: 'single', product: null });
   const [isSaving, setIsSaving] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -67,21 +68,52 @@ const Products = () => {
     }
   };
 
-  // Filter and Paginate
-  const filteredProducts = React.useMemo(() => {
-    return products.filter(p => {
+  // Filter and Sort
+  const sortedProducts = React.useMemo(() => {
+    let filtered = products.filter(p => {
       const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
       const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [products, statusFilter, searchTerm]);
+
+    if (sortConfig.key !== null) {
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+
+        if (sortConfig.key === 'inventory') {
+          aValue = calculateInventory(a);
+          bValue = calculateInventory(b);
+        } else {
+          aValue = a[sortConfig.key];
+          bValue = b[sortConfig.key];
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return filtered;
+  }, [products, statusFilter, searchTerm, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, searchTerm]);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentItems = filteredProducts.slice(
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+  const currentItems = sortedProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -404,12 +436,48 @@ const Products = () => {
                 </th>
                 <th>#</th>
                 <th>Image</th>
-                <th>Name</th>
-                <th>Inventory</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Updated</th>
+                <th onClick={() => requestSort('name')} className="sortable-header">
+                  Name
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'name' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('inventory')} className="sortable-header">
+                  Inventory
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'inventory' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'inventory' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('sellingPrice')} className="sortable-header">
+                  Price
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'sellingPrice' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'sellingPrice' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('status')} className="sortable-header">
+                  Status
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('createdAt')} className="sortable-header">
+                  Created
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'createdAt' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
+                <th onClick={() => requestSort('updatedAt')} className="sortable-header">
+                  Updated
+                  <span className="sort-icon-group">
+                    <FaArrowUp className={`sort-icon ${sortConfig.key === 'updatedAt' && sortConfig.direction === 'ascending' ? 'active' : ''}`} />
+                    <FaArrowDown className={`sort-icon ${sortConfig.key === 'updatedAt' && sortConfig.direction === 'descending' ? 'active' : ''}`} />
+                  </span>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -488,7 +556,7 @@ const Products = () => {
         </div>
         <div className="table-footer">
           <div className="showing-results">
-            Showing <span className="text-bold">{filteredProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> of <span className="text-bold">{filteredProducts.length}</span> results
+            Showing <span className="text-bold">{sortedProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-bold">{Math.min(currentPage * itemsPerPage, sortedProducts.length)}</span> of <span className="text-bold">{sortedProducts.length}</span> results
           </div>
           <div className="pagination-controls">
             <button

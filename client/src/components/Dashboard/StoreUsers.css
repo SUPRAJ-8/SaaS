@@ -263,19 +263,38 @@
 }
 
 .store-users-page .sortable-header {
-  padding-right: 28px !important;
   cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.store-users-page .sortable-header:hover {
+  background-color: #f1f5f9;
 }
 
 .store-users-page .sort-icon-group {
   display: inline-flex;
   flex-direction: column;
   vertical-align: middle;
-  font-size: 0.625rem;
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  margin-left: 8px;
+}
+
+.store-users-page .sort-icon {
+  font-size: 0.65rem;
+  height: 7px;
+  color: #cbd5e1;
+  transition: color 0.2s;
+}
+
+.store-users-page .sort-icon.active {
+  color: #4f46e5;
+}
+
+@media (max-width: 768px) {
+  .store-users-page .sort-icon-group {
+    display: none !important;
+  }
 }
 
 .store-users-page .users-table td {
