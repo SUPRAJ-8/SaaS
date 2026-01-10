@@ -7,7 +7,7 @@ import { useDispatchCart } from './CartProvider';
 import axios from 'axios';
 import API_URL from '../../apiConfig';
 import NotFound from '../../pages/NotFound';
-import { getShopPath, resolveImageUrl } from '../../themeUtils';
+import { getShopPath, resolveImageUrl, getTenantId } from '../../themeUtils';
 
 const ProductCard = ({ product }) => {
     const [currency, setCurrency] = useState({ symbol: 'NPR', position: 'before' });
@@ -144,21 +144,15 @@ const CategoryProducts = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Detect subdomain to pass as header for tenant resolution
-                const hostname = window.location.hostname;
-                let subdomain = null;
-                if (hostname.endsWith('.localhost')) {
-                    subdomain = hostname.split('.')[0];
-                } else if (hostname.endsWith('.nepostore.xyz') && hostname !== 'nepostore.xyz' && hostname !== 'www.nepostore.xyz') {
-                    subdomain = hostname.split('.')[0];
-                }
+                // Detect tenant (subdomain or custom domain)
+                const tenantId = getTenantId();
 
                 const config = {
                     withCredentials: true
                 };
 
-                if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'localhost') {
-                    config.headers = { 'x-subdomain': subdomain };
+                if (tenantId) {
+                    config.headers = { 'x-subdomain': tenantId };
                 }
 
                 // Fetch categories

@@ -46,24 +46,41 @@ const corsOptions = {
     // Normalize origin (remove trailing slash if present)
     const normalizedOrigin = origin.replace(/\/$/, '');
 
-    // Check if the origin matches any of our base domains or localhost
-    // Also allow local network IPs (192.168.x.x, 10.x.x.x, 172.x.x.x) for development testing
-    const isAllowed = allowedOrigins.includes(normalizedOrigin) ||
+    // Check standard allowed origins first
+    const isStandardOrigin = allowedOrigins.includes(normalizedOrigin) ||
       normalizedOrigin.includes('localhost') ||
       normalizedOrigin.includes('nepostore.xyz') ||
       normalizedOrigin.startsWith('http://192.168.') ||
       normalizedOrigin.startsWith('http://10.') ||
       normalizedOrigin.startsWith('http://172.');
 
-    if (isAllowed) {
-      // CRITICAL: Return the specific origin string
-      // This ensures Access-Control-Allow-Origin is set to the specific origin, not '*'
-      console.log('[CORS] ✓ Allowing origin:', normalizedOrigin);
-      callback(null, normalizedOrigin);
-    } else {
-      console.log('[CORS] ✗ BLOCKED origin:', normalizedOrigin);
-      callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
+    if (isStandardOrigin) {
+      console.log('[CORS] ✓ Allowing standard origin:', normalizedOrigin);
+      return callback(null, normalizedOrigin);
     }
+
+    // Dynamic check for custom domains
+    // Extract hostname: https://www.example.com -> www.example.com
+    const hostname = normalizedOrigin.replace(/^https?:\/\//, '').split(':')[0];
+
+    // We need to use req-less database check here
+    Client.findOne({
+      $or: [
+        { customDomain: hostname },
+        { customDomain: hostname.replace(/^www\./, '') } // Check without www too
+      ]
+    }).then(tenant => {
+      if (tenant) {
+        console.log(`[CORS] ✓ Allowing custom domain origin: ${normalizedOrigin} (Store: ${tenant.name})`);
+        callback(null, normalizedOrigin);
+      } else {
+        console.log('[CORS] ✗ BLOCKED origin (no tenant found):', normalizedOrigin);
+        callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
+      }
+    }).catch(err => {
+      console.error('[CORS] DB Error during origin check:', err);
+      callback(null, false); // Block on DB error for safety
+    });
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -164,14 +181,22 @@ const subdomainHandler = async (req, res, next) => {
 
   if (!isMainDomain || headerSubdomain) {
     try {
-      const query = headerSubdomain ? { subdomain: headerSubdomain } : { customDomain: host };
+      let query;
+      if (headerSubdomain) {
+        // If the header looks like a domain (has dots), query by customDomain
+        query = headerSubdomain.includes('.') ? { customDomain: headerSubdomain } : { subdomain: headerSubdomain };
+      } else {
+        // Fallback to host header for custom domains
+        query = { customDomain: host };
+      }
+
       const tenantClient = await Client.findOne(query);
       if (tenantClient) {
         req.tenantClient = tenantClient;
         return next();
       }
     } catch (err) {
-      console.error('Custom domain lookup error:', err);
+      console.error('Custom domain/subdomain lookup error:', err);
     }
   }
 

@@ -5,8 +5,9 @@ import '../ProductStyles.css';
 import './NexusLayout.css';
 import NexusHeader from './NexusHeader';
 import NexusFooter from './NexusFooter';
-import { applyStoreSettings } from '../../../themeUtils';
+import { applyStoreSettings, getTenantId } from '../../../themeUtils';
 import axios from 'axios';
+import API_URL from '../../../apiConfig';
 
 const NexusLayout = () => {
     const location = useLocation();
@@ -15,28 +16,20 @@ const NexusLayout = () => {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const hostname = window.location.hostname;
-                const parts = hostname.split('.');
-                let subdomain = null;
-                if (parts.length > 2 || (hostname.endsWith('.localhost') && parts.length > 1)) {
-                    const firstPart = parts[0];
-                    if (firstPart !== 'app' && firstPart !== 'www') {
-                        subdomain = firstPart;
-                    }
-                }
+                const tenantId = getTenantId();
 
                 let response;
-                if (subdomain) {
-                    // If on a store subdomain, always use public API first
+                if (tenantId) {
+                    // Always use public API for shop tenants (subdomain or custom domain)
                     try {
-                        response = await axios.get(`/api/store-settings/public/${subdomain}`);
+                        response = await axios.get(`${API_URL}/api/store-settings/public/${tenantId}`);
                     } catch (e) {
-                        console.warn("Public settings fetch failed for subdomain:", subdomain);
+                        console.warn("Public settings fetch failed for tenant:", tenantId);
                     }
                 } else {
-                    // Fallback for app subdomain or localhost (trying to get logged-in user's store)
+                    // Fallback for app platform or internal testing
                     try {
-                        response = await axios.get('/api/store-settings');
+                        response = await axios.get(`${API_URL}/api/store-settings`);
                     } catch (e) {
                         console.warn("Private settings fetch failed");
                     }

@@ -112,7 +112,7 @@ const SectionTemplateModal = ({ isOpen, onClose, onSelect }) => {
                         description: t.description || 'Custom Dynamic Section',
                         type: 'dynamic', // Important: Identify as dynamic
                         templateData: t, // Pass full template data (schema, structure)
-                        defaultContent: {} // Dynamic defaults are handled by schema
+                        defaultContent: t.defaultSettings || {} // Carry over default settings
                     }));
                     setDynamicTemplates(formatted);
                 } catch (err) {

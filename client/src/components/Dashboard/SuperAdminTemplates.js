@@ -37,9 +37,11 @@ const SuperAdminTemplates = () => {
         description: '',
         thumbnail: '',
         category: 'General',
-        type: 'section', // section or page
+        type: 'dynamic', // dynamic or component
         baseType: 'hero-modern', // The component key from SECTION_TEMPLATES
-        content: '', // The JSON content
+        fields: '[]',
+        defaultSettings: '{}',
+        structure: '{}',
     });
 
     const [editingTemplate, setEditingTemplate] = useState(null);
@@ -114,7 +116,9 @@ const SuperAdminTemplates = () => {
             setEditingTemplate(template);
             setFormData({
                 ...template,
-                content: typeof template.content === 'object' ? JSON.stringify(template.content, null, 2) : template.content
+                fields: JSON.stringify(template.fields || template.schema || [], null, 2),
+                defaultSettings: JSON.stringify(template.defaultSettings || {}, null, 2),
+                structure: JSON.stringify(template.structure || {}, null, 2)
             });
         } else {
             setEditingTemplate(null);
@@ -125,9 +129,11 @@ const SuperAdminTemplates = () => {
                 thumbnail: '',
                 version: '1.0.0',
                 category: 'General',
-                type: 'section',
+                type: 'dynamic',
                 baseType: 'hero-modern',
-                content: ''
+                fields: '[\n  { "key": "heading", "type": "text", "label": "Heading" }\n]',
+                defaultSettings: '{\n  "heading": "Welcome to our store"\n}',
+                structure: '{}'
             });
         }
         setIsModalOpen(true);
@@ -142,9 +148,11 @@ const SuperAdminTemplates = () => {
         e.preventDefault();
 
         try {
-            if (formData.content) JSON.parse(formData.content);
+            if (formData.fields) JSON.parse(formData.fields);
+            if (formData.defaultSettings) JSON.parse(formData.defaultSettings);
+            if (formData.structure) JSON.parse(formData.structure);
         } catch (e) {
-            toast.error('Invalid JSON content format');
+            toast.error('Invalid JSON format in fields, settings, or structure');
             return;
         }
 
@@ -152,7 +160,9 @@ const SuperAdminTemplates = () => {
         try {
             const payload = {
                 ...formData,
-                content: formData.content ? JSON.parse(formData.content) : {}
+                fields: JSON.parse(formData.fields),
+                defaultSettings: JSON.parse(formData.defaultSettings),
+                structure: JSON.parse(formData.structure)
             };
 
             if (editingTemplate) {
@@ -166,10 +176,7 @@ const SuperAdminTemplates = () => {
             fetchTemplates();
         } catch (error) {
             console.error('Error saving template:', error);
-            // toast.error(error.response?.data?.msg || 'Failed to save template');
-            // Mock success
-            toast.success('Template saved (Mock)');
-            setIsModalOpen(false);
+            toast.error(error.response?.data?.msg || 'Failed to save template');
         } finally {
             setIsSaving(false);
         }
@@ -361,6 +368,14 @@ const SuperAdminTemplates = () => {
                                         <input type="text" name="thumbnail" value={formData.thumbnail} onChange={handleInputChange} required />
                                     </div>
                                     <div className="form-group-sa">
+                                        <label>Template Engine Type</label>
+                                        <select name="type" value={formData.type} onChange={handleInputChange} className="form-select-sa" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                                            <option value="dynamic">Dynamic (JSON Layout)</option>
+                                            <option value="component">Standard (React Component)</option>
+                                        </select>
+                                        <small style={{ color: '#6b7280' }}>Dynamic uses JSON structure/schema. Standard maps to a hardcoded component.</small>
+                                    </div>
+                                    <div className="form-group-sa">
                                         <label>Category</label>
                                         <select name="category" value={formData.category} onChange={handleInputChange} className="form-select-sa" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                                             <option value="General">General</option>
@@ -385,15 +400,39 @@ const SuperAdminTemplates = () => {
                                 </div>
 
                                 <div className="m-section">
-                                    <div className="form-group-sa high">
-                                        <label><FaCode /> Template JSON Content</label>
+                                    <div className="form-group-sa">
+                                        <label><FaMagic /> Editor Fields Schema (JSON)</label>
                                         <textarea
-                                            name="content"
-                                            value={formData.content}
+                                            name="fields"
+                                            value={formData.fields}
                                             onChange={handleInputChange}
                                             required
                                             className="code-editor-sa"
-                                            placeholder='{"type": "section", "style": {...}}'
+                                            style={{ height: '150px' }}
+                                            placeholder='[{"key": "heading", "type": "text"}]'
+                                        />
+                                    </div>
+                                    <div className="form-group-sa">
+                                        <label><FaShapes /> Default Settings (JSON)</label>
+                                        <textarea
+                                            name="defaultSettings"
+                                            value={formData.defaultSettings}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="code-editor-sa"
+                                            style={{ height: '150px' }}
+                                            placeholder='{"heading": "Hello World"}'
+                                        />
+                                    </div>
+                                    <div className="form-group-sa">
+                                        <label><FaCode /> HTML Structure (Optional JSON)</label>
+                                        <textarea
+                                            name="structure"
+                                            value={formData.structure}
+                                            onChange={handleInputChange}
+                                            className="code-editor-sa"
+                                            style={{ height: '100px' }}
+                                            placeholder='{"tag": "section", "children": []}'
                                         />
                                     </div>
                                 </div>

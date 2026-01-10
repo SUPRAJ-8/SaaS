@@ -1,7 +1,8 @@
 .pages-management {
-    padding: 20px;
+    padding: 0px;
     background-color: #f8fafc;
     min-height: calc(100vh - 64px);
+    animation: fadeIn 0.5s ease-in-out;
 }
 
 .pages-management .page-header {
@@ -71,7 +72,8 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    /* Changed overflow to visible so action menus aren't cut off */
+    overflow: visible;
 }
 
 .pages-table {
@@ -83,11 +85,12 @@
     text-align: left;
     padding: 16px 20px;
     background: #f1f5f9;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .pages-table td {
@@ -95,6 +98,40 @@
     border-bottom: 1px solid #f1f5f9;
     font-size: 14px;
     color: #1e293b;
+    vertical-align: middle;
+    text-align: left;
+}
+
+/* Specific Column Widths & Alignment */
+.th-title,
+.td-title {
+    width: 40%;
+}
+
+.th-sections,
+.td-sections {
+    width: 15%;
+}
+
+.th-status,
+.td-status {
+    width: 15%;
+}
+
+.th-date,
+.td-date {
+    width: 20%;
+}
+
+.th-actions,
+.td-actions {
+    width: 10%;
+    text-align: right !important;
+}
+
+.td-actions .actions-dropdown {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .clickable-row:hover {
@@ -110,6 +147,19 @@
 .page-title-text {
     font-weight: 600;
     color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.home-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .page-url {
@@ -158,6 +208,21 @@
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
+.status-badge.default {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    letter-spacing: 0.05em;
+    width: 100px;
+    text-align: center;
+}
+
 .actions-dropdown {
     position: relative;
 }
@@ -180,14 +245,16 @@
 .actions-menu {
     position: absolute;
     right: 0;
-    top: 100%;
+    top: calc(100% + 5px);
     background: white;
     border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    width: 160px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    width: 170px;
     display: none;
-    z-index: 10;
+    z-index: 50;
+    /* Increased z-index */
     border: 1px solid #e2e8f0;
+    padding: 6px 0;
 }
 
 .actions-dropdown:hover .actions-menu {
@@ -336,7 +403,6 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
 }
 
 .add-page-modal {
@@ -345,9 +411,7 @@
     width: 90%;
     max-width: 440px;
     border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    animation: slideUp 0.3s ease-out;
 }
 
 .add-page-modal .modal-header {
@@ -448,6 +512,95 @@
 .add-page-modal .create-btn:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
+}
+
+/* Delete Confirmation Modal */
+.delete-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.delete-modal {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: slideUp 0.3s ease-out;
+}
+
+.delete-modal-icon {
+    width: 64px;
+    height: 64px;
+    background: #fef2f2;
+    color: #ef4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 20px;
+}
+
+.delete-modal h3 {
+    font-size: 20px;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.delete-modal p {
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 28px;
+}
+
+.delete-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.delete-modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-cancel-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.delete-cancel-btn:hover {
+    background: #e2e8f0;
+}
+
+.delete-confirm-btn {
+    background: #ef4444;
+    border: none;
+    color: white;
+}
+
+.delete-confirm-btn:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
 }
 
 @keyframes fadeIn {

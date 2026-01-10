@@ -4,11 +4,69 @@ const Website = require('../models/Website');
 const Client = require('../models/Client');
 const { ensureAuthenticated } = require('../middleware/auth');
 
-// Helper to find or create website for client
 const findOrCreateWebsite = async (clientId) => {
+    const client = await Client.findById(clientId);
+    const activeThemeId = client?.settings?.selectedThemeId || 'nexus';
+
     let website = await Website.findOne({ clientId });
+    let needsHome = false;
+
     if (!website) {
         website = new Website({ clientId, pages: [] });
+        needsHome = true;
+    } else {
+        // --- DEDUPLICATION & NORMALIZATION STEP ---
+        // Some users might have legacy data with both "" and "/" slugs.
+        // We normalize everything to "" for home page and remove duplicates.
+        const seenSlugs = new Set();
+        const uniquePages = [];
+        let modified = false;
+
+        for (const p of website.pages) {
+            const themeKey = `${p.themeId || 'nexus'}_${(p.slug || '').replace(/^\//, '')}`;
+
+            // If we've seen this theme/slug combo before, skip it (deduplicate)
+            if (seenSlugs.has(themeKey)) {
+                console.log(`[Deduper] Removing duplicate page: ${themeKey}`);
+                modified = true;
+                continue;
+            }
+
+            // Normalize the slug in the record if it has a leading slash
+            if (p.slug && p.slug.startsWith('/')) {
+                p.slug = p.slug.replace(/^\//, '');
+                modified = true;
+            }
+
+            seenSlugs.add(themeKey);
+            uniquePages.push(p);
+        }
+
+        if (modified) {
+            website.pages = uniquePages;
+            await website.save();
+        }
+        // -------------------------------------------
+
+        // Check if a Home page exists FOR THE ACTIVE THEME
+        const homePage = website.pages.find(p =>
+            (p.slug === '' || p.slug === '/') &&
+            (p.themeId === activeThemeId || (!p.themeId && activeThemeId === 'nexus'))
+        );
+        if (!homePage) {
+            needsHome = true;
+        }
+    }
+
+    if (needsHome) {
+        website.pages.push({
+            title: 'Home Page',
+            slug: '', // Standardized empty slug for home
+            status: 'published',
+            themeId: activeThemeId,
+            content: '[]',
+            lastModified: new Date()
+        });
         await website.save();
     }
     return website;
@@ -19,7 +77,8 @@ const findOrCreateWebsite = async (clientId) => {
 // @access  Private
 router.get('/', ensureAuthenticated, async (req, res) => {
     try {
-        const website = await findOrCreateWebsite(req.user.clientId);
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const website = await findOrCreateWebsite(clientId);
         res.json(website.pages);
     } catch (err) {
         console.error(err.message);
@@ -32,26 +91,30 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 // @access  Private
 router.post('/', ensureAuthenticated, async (req, res) => {
     console.log('📥 [POST] /api/client-pages | Body:', req.body);
-    const { id, title, content, slug = '', status, themeId } = req.body;
+    let { id, title, content, slug = '', status, themeId } = req.body;
+
+    // Normalize slug: remove leading slash if present
+    const cleanSlug = slug.replace(/^\//, '');
 
     try {
-        const website = await findOrCreateWebsite(req.user.clientId);
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const website = await findOrCreateWebsite(clientId);
 
         let pageIndex = -1;
 
-        // If an ID is provided, look for that specific page
-        if (id && id.length > 20) { // Check if it looks like a Mongo ID
+        // If an ID is provided, look for that specific page (must be 24-char hex)
+        if (id && id.length === 24 && /^[0-9a-fA-F]+$/.test(id)) {
             pageIndex = website.pages.findIndex(p => p._id.toString() === id);
         } else {
-            // Otherwise try to match by slug AND themeId
-            pageIndex = website.pages.findIndex(p => p.slug === slug && (p.themeId === themeId || (!p.themeId && themeId === 'nexus')));
+            // Otherwise try to match by normalized slug AND themeId
+            pageIndex = website.pages.findIndex(p => (p.slug || '').replace(/^\//, '') === cleanSlug && (p.themeId === themeId || (!p.themeId && themeId === 'nexus')));
         }
 
         if (pageIndex > -1) {
             // Update existing
             website.pages[pageIndex].title = title;
             website.pages[pageIndex].content = content;
-            website.pages[pageIndex].slug = slug;
+            website.pages[pageIndex].slug = cleanSlug;
             website.pages[pageIndex].status = status || website.pages[pageIndex].status;
             website.pages[pageIndex].themeId = themeId || website.pages[pageIndex].themeId || 'nexus';
         } else {
@@ -59,7 +122,7 @@ router.post('/', ensureAuthenticated, async (req, res) => {
             website.pages.push({
                 title,
                 content,
-                slug,
+                slug: cleanSlug,
                 status: status || 'published',
                 themeId: themeId || 'nexus'
             });
@@ -78,40 +141,127 @@ router.post('/', ensureAuthenticated, async (req, res) => {
 // @access  Public
 router.get('/public/:subdomain', async (req, res) => {
     try {
-        const client = await Client.findOne({ subdomain: req.params.subdomain });
+        let client = req.tenantClient;
+        if (!client) {
+            client = await Client.findOne({ subdomain: req.params.subdomain });
+        }
+
         if (!client) {
             return res.status(404).json({ msg: 'Store not found' });
         }
 
         const website = await Website.findOne({ clientId: client._id });
         if (!website) {
-            return res.json([]); // No pages yet
+            return res.json({}); // No website/pages yet
         }
 
         // Optional: Filter by slug if query param provided
         const { slug } = req.query;
 
         // Get the active theme from client settings
-        const activeThemeId = client.settings?.selectedThemeId || 'ecommerce';
+        const activeThemeId = client.settings?.selectedThemeId || 'nexus';
+
+        console.log(`[Public Page Fetch] Subdomain: ${req.params.subdomain}, Slug: ${slug}, ActiveTheme: ${activeThemeId}`);
+        if (website && website.pages) {
+            console.log('[Public Page Fetch] Available Pages:', website.pages.map(p => ({ slug: p.slug, status: p.status, themeId: p.themeId })));
+        }
 
         if (slug !== undefined) {
-            const page = website.pages.find(p =>
-                p.slug === slug &&
-                p.status === 'published' &&
-                (p.themeId === activeThemeId || (!p.themeId && activeThemeId === 'nexus'))
-            );
-            if (!page) return res.status(404).json({ msg: 'Page not found for active theme' });
+            const cleanTargetSlug = slug.replace(/^\//, '');
+
+            // Try to find a published page first, then fall back to draft if it matches
+            let page = website.pages.find(p => {
+                const dbSlug = (p.slug || '').replace(/^\//, '');
+
+                // CRITICAL FIX: If we are looking for home page (cleanTargetSlug === ''), 
+                // accept matches for empty string, '/', OR if the slug equals the page ID.
+                const pId = p._id ? p._id.toString() : '';
+                const isHomeMatch = cleanTargetSlug === '' && (dbSlug === '' || dbSlug === '/' || dbSlug === pId);
+
+                if (cleanTargetSlug === '') {
+                    console.log(`[Home Match Check] ID: ${pId}, dbSlug: ${dbSlug}, isHomeMatch: ${isHomeMatch}`);
+                }
+
+                return (dbSlug === cleanTargetSlug || isHomeMatch) &&
+                    p.status === 'published' &&
+                    (p.themeId === activeThemeId || (!p.themeId && activeThemeId === 'nexus'));
+            });
+
+            // If not found, check for a draft (so users can see their work-in-progress immediately)
+            if (!page) {
+                page = website.pages.find(p => {
+                    const dbSlug = (p.slug || '').replace(/^\//, '');
+
+                    const isHomeMatch = cleanTargetSlug === '' && (dbSlug === '' || dbSlug === '/' || dbSlug === (p._id ? p._id.toString() : ''));
+
+                    return (dbSlug === cleanTargetSlug || isHomeMatch) &&
+                        (p.themeId === activeThemeId || (!p.themeId && activeThemeId === 'nexus'));
+                });
+            }
+            // Fallback for single page
+            if (!page && activeThemeId !== 'nexus') {
+                page = website.pages.find(p => p.slug === slug && p.status === 'published' && p.themeId === 'nexus');
+            }
+
+            if (!page) return res.status(404).json({ msg: 'Page not found' });
             return res.json(page);
         }
 
         // Return all published pages for current theme
-        const publishedPages = website.pages.filter(p =>
+        let publishedPages = website.pages.filter(p =>
             p.status === 'published' &&
             (p.themeId === activeThemeId || (!p.themeId && activeThemeId === 'nexus'))
         );
+
+        // Fallback: If no pages found for active theme but pages exist for 'nexus', 
+        // it means user customized in builder but hasn't fully switched theme yet.
+        if (publishedPages.length === 0 && activeThemeId !== 'nexus') {
+            publishedPages = website.pages.filter(p => p.status === 'published' && p.themeId === 'nexus');
+        }
+
         res.json(publishedPages);
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/client-pages/:id
+// @desc    Delete a page from the website
+// @access  Private
+router.delete('/:id', ensureAuthenticated, async (req, res) => {
+    try {
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const website = await Website.findOne({ clientId });
+        if (!website) {
+            return res.status(404).json({ msg: 'Website not found' });
+        }
+
+        const originalCount = website.pages.length;
+
+        // Find the page first to check if it's the home page
+        const pageToDelete = website.pages.find(p => p._id.toString() === req.params.id);
+
+        if (!pageToDelete) {
+            return res.status(404).json({ msg: 'Page not found' });
+        }
+
+        // Prevent deletion of Home Page (empty slug)
+        if (!pageToDelete.slug || pageToDelete.slug === '') {
+            return res.status(400).json({ msg: 'Cannot delete the system Home Page.' });
+        }
+
+        website.pages = website.pages.filter(p => p._id.toString() !== req.params.id);
+
+        if (website.pages.length === originalCount) {
+            // Should be caught above, but safety check
+            return res.status(404).json({ msg: 'Page not found' });
+        }
+
+        await website.save();
+        res.json({ msg: 'Page removed', pages: website.pages });
+    } catch (err) {
+        console.error('Delete page error:', err.message);
         res.status(500).send('Server Error');
     }
 });

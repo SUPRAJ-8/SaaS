@@ -6,7 +6,7 @@ import { ThemeContext } from '../../contexts/ThemeContext';
 import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import axios from 'axios';
-import { getShopPath, resolveImageUrl } from '../../themeUtils';
+import { getShopPath, resolveImageUrl, getTenantId } from '../../themeUtils';
 
 // Import Templates
 import ProductGridTemplate from '../Dashboard/templates/ProductGridTemplate';
@@ -16,6 +16,7 @@ import FAQTemplate from '../Dashboard/templates/FAQTemplate';
 import RichTextTemplate from '../Dashboard/templates/RichTextTemplate';
 import ModernHeroTemplate from '../Dashboard/templates/ModernHeroTemplate';
 import NotFound from '../../pages/NotFound';
+import DynamicSection from '../Dashboard/DynamicSection';
 
 const SECTION_TEMPLATES = {
   'product-grid': ProductGridTemplate,
@@ -239,10 +240,10 @@ const RecentlyViewedSection = ({ products }) => (
 );
 
 const ProductList = () => {
-  const { theme } = useContext(ThemeContext) || { theme: { id: 'ecommerce' } };
+  const { theme } = useContext(ThemeContext) || { theme: { id: 'nexus' } };
   const storedThemeId = localStorage.getItem('themeId');
-  const activeThemeId = theme?.id || storedThemeId || 'ecommerce';
-  const isDynamicTheme = activeThemeId !== 'ecommerce';
+  const activeThemeId = theme?.id || (typeof theme === 'string' ? theme : null) || storedThemeId || 'nexus';
+  const isDynamicTheme = activeThemeId === 'nexus' || activeThemeId === 'portfolio' || activeThemeId !== 'ecommerce';
   const { slug } = useParams();
   const [allProducts, setAllProducts] = useState([]);
   const [popularProducts, setPopularProducts] = useState([]);
@@ -333,21 +334,15 @@ const ProductList = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Construct Axios config for categories (similar to productService)
-        const hostname = window.location.hostname;
-        let subdomain = null;
-        if (hostname.endsWith('.localhost')) {
-          subdomain = hostname.split('.')[0];
-        } else if (hostname.endsWith('.nepostore.xyz') && hostname !== 'nepostore.xyz' && hostname !== 'www.nepostore.xyz') {
-          subdomain = hostname.split('.')[0];
-        }
+        // Detect tenant (subdomain or custom domain)
+        const tenantId = getTenantId();
 
         const categoryConfig = {
           withCredentials: true
         };
 
-        if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'localhost') {
-          categoryConfig.headers = { 'x-subdomain': subdomain };
+        if (tenantId) {
+          categoryConfig.headers = { 'x-subdomain': tenantId };
         }
 
         const [popular, featured, all, catsResponse] = await Promise.all([
@@ -394,104 +389,85 @@ const ProductList = () => {
     fetchData();
   }, []);
 
-  const [loadingDynamic, setLoadingDynamic] = useState(isDynamicTheme);
+  const [loadingDynamic, setLoadingDynamic] = useState(true);
 
-  // Load dynamic sections for Dynamic Themes
+  // Load dynamic sections for ALL themes (Custom pages support)
   useEffect(() => {
-    if (isDynamicTheme) {
-      setLoadingDynamic(true);
-      const fetchDynamicContent = async () => {
-        let currentSlug = slug || 'new-page'; // Default to home/new-page if no slug
+    setLoadingDynamic(true);
+    const fetchDynamicContent = async () => {
+      let currentSlug = slug || ''; // Normalize slug
 
-        // 1. Check if we are on a real shop subdomain
-        const hostname = window.location.hostname;
-        const parts = hostname.split('.');
-        let subdomain = null;
+      // 1. Detect tenant (subdomain or custom domain)
+      const tenantId = getTenantId();
 
-        if (hostname.endsWith('.localhost')) {
-          subdomain = parts[0];
-        } else if (hostname.endsWith('.nepostore.xyz')) {
-          subdomain = parts[0];
-        } else if (parts.length > 2) {
-          subdomain = parts[0];
-        }
-
-        // 2. Fetch from API if on a shop subdomain
-        if (subdomain && subdomain !== 'app' && subdomain !== 'www' && subdomain !== 'localhost') {
-          try {
-            // If slug is empty, we want the home page (slug: "")
-            const targetSlug = slug || '';
-
-            const response = await axios.get(`${API_URL}/api/client-pages/public/${subdomain}?slug=${targetSlug}`);
-            if (response.data && response.data.content) {
-              setDynamicSections(JSON.parse(response.data.content));
+      // 2. Fetch from API if on a shop domain/subdomain
+      if (tenantId) {
+        try {
+          const targetSlug = currentSlug;
+          // Use tenantId in URL as well to ensure consistent routing
+          const response = await axios.get(`${API_URL}/api/client-pages/public/${tenantId}?slug=${targetSlug}`);
+          if (response.data && response.data.content) {
+            const sections = JSON.parse(response.data.content);
+            if (sections.length > 0) {
+              setDynamicSections(sections);
+              setPageNotFound(false);
               setLoadingDynamic(false);
               return;
             }
-          } catch (error) {
-            // Ignore 404s (page not found) as we fallback to standard view
-            if (!error.response || error.response.status !== 404) {
-              console.error('Failed to fetch dynamic sections from API:', error);
-            }
+          }
+        } catch (error) {
+          if (!error.response || error.response.status !== 404) {
+            console.error('Failed to fetch dynamic sections from API:', error);
           }
         }
+      }
 
-        // 3. Fallback: LocalStorage (for Dashboard Preview or if API fails context)
-        // We need to map the slug (from URL) to the page ID (used for storage keys)
-        currentSlug = slug || ''; // Normalize home slug
-        let pageId = null;
+      // 3. Fallback: LocalStorage (for Dashboard Preview)
+      let pageId = null;
+      try {
+        const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
+        const pageEntry = savedPages.find(p => p.slug === currentSlug);
+        if (pageEntry) pageId = pageEntry.id;
+      } catch (e) { }
 
+      let savedSections = null;
+      if (pageId) savedSections = localStorage.getItem(`page_${pageId}_sections`);
+      if (!savedSections) savedSections = localStorage.getItem(`page_${currentSlug}_sections`);
+      if (!savedSections && !currentSlug) savedSections = localStorage.getItem('page_new-page_sections');
+
+      if (savedSections) {
         try {
-          const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
-          const pageEntry = savedPages.find(p => p.slug === currentSlug);
-          if (pageEntry) {
-            pageId = pageEntry.id;
+          const sections = JSON.parse(savedSections);
+          if (sections.length > 0) {
+            setDynamicSections(sections);
+            setPageNotFound(false);
+            setLoadingDynamic(false);
+            return;
           }
         } catch (e) {
-          console.error("Error finding page ID from slug:", e);
+          console.error('Failed to parse local dynamic sections:', e);
         }
-
-        // Try different keys in priority: 
-        // 1. the specific page ID (e.g. page_3_sections)
-        // 2. the direct slug (e.g. page_vision_sections)
-        // 3. common fallbacks for home page
-        let savedSections = null;
-        if (pageId) savedSections = localStorage.getItem(`page_${pageId}_sections`);
-        if (!savedSections) savedSections = localStorage.getItem(`page_${currentSlug}_sections`);
-        if (!savedSections && !slug) {
-          savedSections = localStorage.getItem('page_new-page_sections');
-        }
-
-        if (savedSections) {
-          try {
-            setDynamicSections(JSON.parse(savedSections));
-            setPageNotFound(false);
-          } catch (e) {
-            console.error('Failed to load dynamic sections from local:', e);
-            setDynamicSections([]);
-            if (slug && slug !== 'products') setPageNotFound(true);
-          }
-        } else {
-          // If no sections found and we have a custom slug, it's a 404
-          if (slug && slug !== 'products') {
-            setPageNotFound(true);
-          } else {
-            setPageNotFound(false);
-          }
-        }
-        setLoadingDynamic(false);
-      };
-
-      fetchDynamicContent();
-    } else {
-      // If not dynamic, behavior depends on slug
-      if (slug && slug !== 'products') {
-        setPageNotFound(true);
-      } else {
-        setPageNotFound(false);
       }
-    }
-  }, [activeThemeId, slug, isDynamicTheme]);
+
+      // 4. Default behaviors if no dynamic content found
+      setDynamicSections([]);
+
+      // Special internal routes that are NOT dynamic
+      if (slug === 'products') {
+        setPageNotFound(false);
+      } else if (!slug) {
+        // Home page: never show 404, we'll fall back to theme default if no sections
+        setPageNotFound(false);
+      } else {
+        // It's a custom slug (like /about) but no content was found -> 404
+        setPageNotFound(true);
+      }
+
+      setLoadingDynamic(false);
+    };
+
+    fetchDynamicContent();
+  }, [slug]);
 
 
   const toggleColor = (color) => {
@@ -507,8 +483,8 @@ const ProductList = () => {
     return <NotFound />;
   }
 
-  // Show loading spinner if waiting for dynamic content logic to resolve (Dynamic themes only)
-  if (isDynamicTheme && loadingDynamic) {
+  // Show loading spinner if waiting for dynamic content logic to resolve
+  if (loadingDynamic && (isDynamicTheme || (slug && slug !== 'products'))) {
     return (
       <div className="product-list-page nexus-theme">
         <div style={{ minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -740,15 +716,41 @@ const ProductList = () => {
           </div>
         )}
 
-      {((isDynamicTheme) && slug !== 'products' && dynamicSections.length > 0) && (
+      {/* Custom Dynamic Content (rendered if sections were found for this slug) */}
+      {(slug !== 'products' && dynamicSections.length > 0) && (
         <div className="nexus-dynamic-content">
           {dynamicSections.length > 0 && (
             dynamicSections.map((section, index) => {
+              // 1. Handle New Dynamic Builder Sections
+              if (section.type === 'dynamic' || section.templateData?.structure) {
+                let content = {};
+                try {
+                  content = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+                } catch (e) { console.error("Error parsing section content:", e); }
+
+                return (
+                  <div key={section.id || index} className="dynamic-section-wrapper">
+                    <DynamicSection
+                      structure={section.templateData?.structure}
+                      content={content}
+                      styles={section.templateData?.styles}
+                    />
+                  </div>
+                );
+              }
+
+              // 2. Handle Legacy/Static Templates
               const TemplateComponent = SECTION_TEMPLATES[section.type];
               if (!TemplateComponent) return null;
+
+              let staticContent = {};
+              try {
+                staticContent = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+              } catch (e) { staticContent = section.content; }
+
               return (
                 <div key={section.id || index} className="dynamic-section-wrapper">
-                  <TemplateComponent content={section.content} />
+                  <TemplateComponent content={staticContent} />
                 </div>
               );
             })

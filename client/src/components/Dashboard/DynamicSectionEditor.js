@@ -33,6 +33,21 @@ const DynamicSectionEditor = ({ schema, content, onChange }) => {
     return (
         <div className="dynamic-editor-container">
             {schema.map((field) => {
+                // 1. Dependency Logic: Hide field if it depends on another field's value
+                if (field.dependsOn) {
+                    const dependsOnField = field.dependsOn.field;
+                    const expectedValue = field.dependsOn.value;
+                    const currentValue = content[dependsOnField];
+
+                    // Special case for boolean/toggle: if value is true, check truthiness
+                    if (expectedValue === true && !currentValue) return null;
+                    if (expectedValue === false && currentValue) return null;
+                    // General case
+                    if (expectedValue !== true && expectedValue !== false && currentValue !== expectedValue) {
+                        return null;
+                    }
+                }
+
                 // Group Header
                 if (field.type === 'header') {
                     return (
@@ -84,16 +99,13 @@ const DynamicSectionEditor = ({ schema, content, onChange }) => {
                             />
                         )}
 
-                        {/* INPUT: Boolean (Checkbox / Toggle) */}
-                        {field.type === 'boolean' && (
-                            <div
-                                className={`checkbox-standard ${content[field.key] ? 'checked' : ''}`}
-                                onClick={() => updateField(field.key, !content[field.key])}
-                            >
-                                <div className="checkbox-icon">
-                                    {content[field.key] ? <FaEye /> : <FaEyeSlash />}
+                        {/* INPUT: Boolean / Toggle */}
+                        {(field.type === 'boolean' || field.type === 'toggle') && (
+                            <div className="toggle-wrapper" onClick={() => updateField(field.key, !content[field.key])}>
+                                <div className={`saas-toggle ${content[field.key] ? 'on' : 'off'}`}>
+                                    <div className="toggle-handle"></div>
                                 </div>
-                                <span>{field.label}</span>
+                                <span className="toggle-label-text">{content[field.key] ? 'Enabled' : 'Disabled'}</span>
                             </div>
                         )}
 
@@ -116,15 +128,19 @@ const DynamicSectionEditor = ({ schema, content, onChange }) => {
                         {/* INPUT: Select / Dropdown */}
                         {field.type === 'select' && (
                             <select
-                                value={content[field.key] || field.options?.[0]?.value || ''}
+                                value={content[field.key] || (typeof field.options?.[0] === 'object' ? field.options[0].value : field.options?.[0]) || ''}
                                 onChange={(e) => updateField(field.key, e.target.value)}
                                 className="dynamic-select"
                             >
-                                {field.options && field.options.map(opt => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
+                                {field.options && field.options.map(opt => {
+                                    const value = typeof opt === 'string' ? opt : opt.value;
+                                    const label = typeof opt === 'string' ? opt.charAt(0).toUpperCase() + opt.slice(1) : opt.label;
+                                    return (
+                                        <option key={value} value={value}>
+                                            {label}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         )}
                     </div>

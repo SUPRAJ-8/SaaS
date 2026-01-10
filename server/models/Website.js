@@ -63,12 +63,13 @@ WebsiteSchema.pre('save', function (next) {
 
     for (const page of this.pages) {
       const themeId = page.themeId || 'nexus';
-      const slug = page.slug || '';
+      // Treat '' and '/' as the same (home page)
+      let slug = (page.slug || '').replace(/^\//, '');
 
       if (!slugThemeMap[themeId]) slugThemeMap[themeId] = [];
 
       if (slugThemeMap[themeId].includes(slug)) {
-        return next(new Error(`Duplicate slug "${slug}" found for theme "${themeId}".`));
+        return next(new Error(`Duplicate slug "${page.slug}" found for theme "${themeId}".`));
       }
       slugThemeMap[themeId].push(slug);
     }

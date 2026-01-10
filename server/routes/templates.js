@@ -33,7 +33,7 @@ router.get('/admin', async (req, res) => {
 // @desc    Create a new template
 router.post('/', async (req, res) => {
     try {
-        const { id, name, type, schema, structure, styles, baseType, category, description, thumbnail } = req.body;
+        const { id, name, type, schema, fields, defaultSettings, structure, styles, baseType, category, description, thumbnail } = req.body;
 
         // Check if ID exists
         const existing = await Template.findOne({ id });
@@ -46,6 +46,8 @@ router.post('/', async (req, res) => {
             name,
             type: type || 'dynamic',
             schema: schema || [],
+            fields: fields || [],
+            defaultSettings: defaultSettings || {},
             structure: structure || {},
             styles: styles || '',
             baseType,
@@ -76,10 +78,12 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ msg: 'Template not found' });
         }
 
-        const { name, schema, structure, styles, isActive, category, description, thumbnail } = req.body;
+        const { name, schema, fields, defaultSettings, structure, styles, isActive, category, description, thumbnail } = req.body;
 
         if (name) template.name = name;
         if (schema) template.schema = schema;
+        if (fields) template.fields = fields;
+        if (defaultSettings) template.defaultSettings = defaultSettings;
         if (structure) template.structure = structure;
         if (styles !== undefined) template.styles = styles;
         if (isActive !== undefined) template.isActive = isActive;

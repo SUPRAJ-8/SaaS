@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import StatCard from './StatCard';
-import { FaExternalLinkAlt, FaMoneyBillWave, FaShoppingCart, FaBoxOpen, FaPaintBrush, FaEye, FaUser, FaChevronRight } from 'react-icons/fa';
+import { FaMoneyBillWave, FaShoppingCart, FaBoxOpen, FaPaintBrush, FaEye, FaUser, FaChevronRight } from 'react-icons/fa';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import API_URL from '../../apiConfig';
 import OnboardingModal from './OnboardingModal';
 import PricingModal from './PricingModal';
-import { isToday, isThisMonth, isSameMonth, subMonths, startOfMonth, endOfMonth, startOfToday, subDays, isSameDay, formatDistanceToNow } from 'date-fns';
+import { isToday, isThisMonth, isSameMonth, subMonths, startOfToday, subDays, isSameDay, formatDistanceToNow } from 'date-fns';
 import './DashboardHome.css';
 
 const DashboardHome = () => {
@@ -19,7 +19,7 @@ const DashboardHome = () => {
   const [loading, setLoading] = useState(true);
   const [kpiTab, setKpiTab] = useState('All Time');
   const [chartType, setChartType] = useState('Both');
-  const [processedChartData, setProcessedChartData] = useState([]);
+  // Placeholder state for chart data
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPricing, setShowPricing] = useState(false);

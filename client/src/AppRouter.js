@@ -81,8 +81,8 @@ function AppRouter() {
   // In development, treat plain localhost as dashboard (app subdomain) for easier testing
   // Unless a tenant query param explicitly says otherwise
   const tenantParam = new URLSearchParams(window.location.search).get('tenant');
-  const isLandingPage = isMainLanding;
-  const isDashboardSubdomain = isDashboard || (hostname === 'localhost' && (!tenantParam || tenantParam === 'app'));
+  const isLandingPage = isMainLanding || (hostname === 'localhost' && !tenantParam);
+  const isDashboardSubdomain = isDashboard || (hostname === 'localhost' && tenantParam === 'app');
   const isShopSubdomain = isNepoSubdomain || isLocalhostShop || isCustomDomain || (hostname === 'localhost' && tenantParam && tenantParam !== 'app');
 
   const baseDomain = (hostname.endsWith('.localhost') || hostname === 'localhost') ? 'localhost' : 'nepostore.xyz';
@@ -145,6 +145,14 @@ function AppRouter() {
             </Route>
             {/* Redirect root to /dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+            {/* Super Admin Route */}
+            <Route path="/super-admin" element={
+              <ProtectedRoute>
+                <SuperAdminClients />
+              </ProtectedRoute>
+            } />
+
             <Route path="*" element={<NotFound />} />
           </>
         )}

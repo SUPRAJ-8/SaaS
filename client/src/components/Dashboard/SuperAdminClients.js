@@ -29,6 +29,7 @@ import { toast } from 'react-toastify';
 import API_URL from '../../apiConfig';
 import ConfirmationModal from './ConfirmationModal';
 import SuperAdminThemes from './SuperAdminThemes';
+import SuperAdminTemplates from './SuperAdminTemplates';
 import './SuperAdminDashboard.css';
 
 // Helper function to get API URL with fallback - defined outside to prevent reference changes
@@ -348,6 +349,9 @@ const SuperAdminClients = () => {
                     </div>
                     <div className={`sidebar-item ${activeTab === 'themes' ? 'active' : ''}`} onClick={() => setActiveTab('themes')}>
                         <FaLayerGroup className="sidebar-icon" /> Themes Manager
+                    </div>
+                    <div className={`sidebar-item ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => setActiveTab('templates')}>
+                        <FaFileAlt className="sidebar-icon" /> Templates Manager
                     </div>
                     <div className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
                         <FaCog className="sidebar-icon" /> Settings
@@ -837,6 +841,8 @@ const SuperAdminClients = () => {
                     </div>
                 ) : activeTab === 'themes' ? (
                     <SuperAdminThemes />
+                ) : activeTab === 'templates' ? (
+                    <SuperAdminTemplates />
                 ) : (
                     <div className="other-tab-placeholder">
                         <header className="top-nav">

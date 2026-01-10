@@ -136,3 +136,31 @@ export const resolveImageUrl = (imagePath, API_URL) => {
     // 3. Append API_URL (which might be empty if using proxy)
     return `${API_URL}${cleanPath}`;
 };
+
+// Unified helper to get the tenant identifier (subdomain or custom domain)
+export const getTenantId = () => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split('.');
+
+    // localhost:3000?tenant=...
+    if (hostname === 'localhost') {
+        return new URLSearchParams(window.location.search).get('tenant') || null;
+    }
+
+    if (hostname.endsWith('.localhost')) {
+        return parts[0] === 'app' ? null : parts[0];
+    }
+
+    if (hostname.endsWith('.nepostore.xyz')) {
+        const subdomain = parts[0];
+        if (subdomain === 'app' || subdomain === 'www') return null;
+        return subdomain;
+    }
+
+    // Custom domain
+    if (!hostname.includes('nepostore.xyz') && !hostname.includes('localhost')) {
+        return hostname;
+    }
+
+    return null;
+};

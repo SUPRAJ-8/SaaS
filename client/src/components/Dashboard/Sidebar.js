@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import axios from 'axios';
-import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaPaintBrush, FaFileAlt, FaChevronRight, FaPlug, FaTimes, FaChartLine, FaBell } from 'react-icons/fa';
+import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaFileAlt, FaChevronRight, FaPlug, FaTimes, FaChartLine, FaBell } from 'react-icons/fa';
 import StoresModal from './StoresModal';
 import API_URL from '../../apiConfig';
 import './Sidebar.css';
@@ -9,25 +9,30 @@ import './Sidebar.css';
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [isStoresModalOpen, setIsStoresModalOpen] = useState(false);
   const [client, setClient] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchClientInfo = async () => {
     try {
       const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
-      if (userRes.data && userRes.data.clientId) {
-        // Use populated data if available or fetch from safe endpoint
-        if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
-          setClient(userRes.data.clientId);
-        } else {
-          const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
-          setClient(clientRes.data);
-        }
+      if (userRes.data) {
+        setUserRole(userRes.data.role); // Store user role
 
-        // Fetch unread notifications count
-        const notesRes = await axios.get(`${API_URL}/api/notifications`, { withCredentials: true });
-        if (Array.isArray(notesRes.data)) {
-          const unread = notesRes.data.filter(n => n.status === 'unread').length;
-          setUnreadCount(unread);
+        if (userRes.data.clientId) {
+          // Use populated data if available or fetch from safe endpoint
+          if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+            setClient(userRes.data.clientId);
+          } else {
+            const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+            setClient(clientRes.data);
+          }
+
+          // Fetch unread notifications count
+          const notesRes = await axios.get(`${API_URL}/api/notifications`, { withCredentials: true });
+          if (Array.isArray(notesRes.data)) {
+            const unread = notesRes.data.filter(n => n.status === 'unread').length;
+            setUnreadCount(unread);
+          }
         }
       }
     } catch (error) {
@@ -112,6 +117,20 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           <li><NavLink to="/dashboard/plugins" onClick={handleNavClick}><FaPlug className="nav-icon" /> Plugins</NavLink></li>
           <li><NavLink to="/dashboard/store-settings" onClick={handleNavClick}><FaCog className="nav-icon" /> Store Settings</NavLink></li>
         </ul>
+
+        {/* Super Admin Link - Only visible to superadmins */}
+        {userRole === 'superadmin' && (
+          <>
+            <h3 className="nav-title">Administration</h3>
+            <ul>
+              <li>
+                <NavLink to="/super-admin" onClick={handleNavClick} className="super-admin-link">
+                  <FaUsers className="nav-icon" /> Super Admin
+                </NavLink>
+              </li>
+            </ul>
+          </>
+        )}
       </nav>
     </aside>
   );

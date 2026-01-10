@@ -12,14 +12,54 @@ const Pages = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const { theme: activeTheme } = useContext(ThemeContext) || {};
-    const activeThemeId = activeTheme?.id || localStorage.getItem('themeId') || 'ecommerce';
+    // Use state for activeThemeId so we can update it when client settings load
+    const [activeThemeId, setActiveThemeId] = useState(activeTheme?.id || (typeof activeTheme === 'string' ? activeTheme : null) || localStorage.getItem('themeId') || 'nexus');
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newPageTitle, setNewPageTitle] = useState('');
-
+    const [newPageSlug, setNewPageSlug] = useState('');
     const [pages, setPages] = useState([]);
+    const [client, setClient] = useState(null);
+
+    // Delete Confirmation Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [pageToDelete, setPageToDelete] = useState(null);
+
+    // Rename Modal State
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [pageToRename, setPageToRename] = useState(null);
+    const [renameTitle, setRenameTitle] = useState('');
+    const [renameSlug, setRenameSlug] = useState('');
 
     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch current user and client info
+                const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
+                if (userRes.data && userRes.data.clientId) {
+                    let clientData = null;
+                    if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+                        clientData = userRes.data.clientId;
+                    } else {
+                        const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+                        clientData = clientRes.data;
+                    }
+
+                    if (clientData) {
+                        setClient(clientData);
+                        // Update activeThemeId based on authoritative server settings
+                        if (clientData.settings && clientData.settings.selectedThemeId) {
+                            console.log('Syncing Pages theme filter to server setting:', clientData.settings.selectedThemeId);
+                            setActiveThemeId(clientData.settings.selectedThemeId);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching client info for Pages:", error);
+            }
+        };
+        fetchData();
+
         const fetchPages = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/client-pages`, { withCredentials: true });
@@ -29,10 +69,10 @@ const Pages = () => {
                     localStorage.setItem('site_pages', JSON.stringify(response.data));
                 } else {
                     const initialPages = [
-                        { id: 1, title: 'Home Page', slug: '', status: 'Active', lastModified: '2025-12-20', type: 'Core', themeId: 'ecommerce' },
-                        { id: 2, title: 'Checkout Page', slug: 'checkout', status: 'Active', lastModified: '2025-12-19', type: 'Core', themeId: 'ecommerce' },
-                        { id: 3, title: 'Nexus Home', slug: '', status: 'Active', lastModified: '2025-12-21', type: 'Core', themeId: 'nexus' },
-                        { id: 4, title: 'Product Landing', slug: 'landing', status: 'Inactive', lastModified: '2025-12-21', type: 'Custom', themeId: 'nexus' },
+                        { id: 1, title: 'Home Page', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'ecommerce' },
+                        { id: 2, title: 'Checkout', slug: 'checkout', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'ecommerce' },
+                        { id: 3, title: 'Home Page', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'nexus' },
+                        { id: 4, title: 'About Us', slug: 'about', status: 'Inactive', lastModified: new Date().toISOString().split('T')[0], type: 'Custom', themeId: 'nexus' },
                     ];
                     setPages(initialPages);
                     localStorage.setItem('site_pages', JSON.stringify(initialPages));
@@ -49,59 +89,109 @@ const Pages = () => {
         fetchPages();
     }, []);
 
-    const filteredPages = pages.filter(page =>
-        page.themeId === activeThemeId &&
-        (page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            page.slug.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredPages = pages.filter(page => {
+        // Fallback for older pages: if no themeId, treat as 'nexus'
+        const pageTheme = page.themeId || 'nexus';
+        const matchesTheme = pageTheme === activeThemeId;
+        const matchesSearch = page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            page.slug.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTheme && matchesSearch;
+    });
 
     const handleAddPage = () => {
         setIsAddModalOpen(true);
     };
 
-    const confirmAddPage = () => {
+    const confirmAddPage = async () => {
         const title = newPageTitle.trim();
         if (!title) {
             toast.error('Please enter a page title');
             return;
         }
 
-        const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
-        const newId = Date.now();
-        const newPage = {
-            id: newId,
-            title: title,
-            slug: slug,
-            status: 'Inactive',
-            lastModified: new Date().toISOString().split('T')[0],
-            type: 'Custom',
-            themeId: activeThemeId
-        };
+        // Use provided slug or auto-generate from title
+        let slugToUse = (newPageSlug.trim() !== ''
+            ? newPageSlug.toLowerCase().replace(/\s+/g, '-')
+            : newPageTitle.toLowerCase().replace(/\s+/g, '-')).replace(/^\//, '');
 
-        const updatedPages = [...pages, newPage];
-        setPages(updatedPages);
-        localStorage.setItem('site_pages', JSON.stringify(updatedPages));
+        // Ensure home page logic is respected: if it's empty or /, save as /
+        if (slugToUse === '' || slugToUse === '/') slugToUse = '/';
 
-        setIsAddModalOpen(false);
-        setNewPageTitle('');
+        try {
+            // Save to backend immediately
+            const payload = {
+                title: newPageTitle,
+                slug: slugToUse,
+                status: 'draft',
+                type: 'Custom',
+                themeId: activeThemeId,
+                content: '[]' // Initialize with empty content
+            };
 
-        toast.success('Page created! Redirecting to builder...');
-        setTimeout(() => {
-            navigate(`/dashboard/page-builder/${newId}`);
-        }, 1000);
+            const response = await axios.post(`${API_URL}/api/client-pages`, payload, { withCredentials: true });
+
+            if (response.data) {
+                // The server returns the updated list of pages. Find the one we just added.
+                // We match by slug and title to be safe.
+                const allPages = response.data;
+                const createdPage = allPages.find(p => p.slug === slugToUse && p.title === newPageTitle);
+
+                if (createdPage) {
+                    setPages(allPages);
+                    localStorage.setItem('site_pages', JSON.stringify(allPages));
+
+                    setIsAddModalOpen(false);
+                    setNewPageTitle('');
+                    setNewPageSlug('');
+
+                    toast.success('Page created! Redirecting to builder...');
+                    setTimeout(() => {
+                        navigate(`/dashboard/page-builder/${createdPage._id}`);
+                    }, 500);
+                } else {
+                    toast.error('Page created but could not be located. Refreshing...');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to create page:', error);
+            const msg = error.response?.data?.msg || 'Failed to create page on server.';
+            toast.error(msg);
+        }
     };
 
     const handleEditPage = (id) => {
         navigate(`/dashboard/page-builder/${id}`);
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        const updatedPages = pages.map(p =>
-            p.id === id ? { ...p, status: newStatus } : p
-        );
-        setPages(updatedPages);
-        localStorage.setItem('site_pages', JSON.stringify(updatedPages));
-        toast.success(`Page marked as ${newStatus}`);
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            // Find the page content to preserve it
+            const pageToUpdate = pages.find(p => (p._id || p.id) === id);
+            if (!pageToUpdate) return;
+
+            // Update on server if it's a real page
+            if (typeof id === 'string' || pageToUpdate._id) {
+                const dbId = pageToUpdate._id || id;
+                await axios.post(`${API_URL}/api/client-pages`, {
+                    id: dbId,
+                    title: pageToUpdate.title,
+                    slug: pageToUpdate.slug,
+                    status: newStatus === 'Active' ? 'published' : 'draft',
+                    themeId: pageToUpdate.themeId
+                }, { withCredentials: true });
+            }
+
+            const updatedPages = pages.map(p =>
+                (p._id || p.id) === id ? { ...p, status: newStatus } : p
+            );
+            setPages(updatedPages);
+            localStorage.setItem('site_pages', JSON.stringify(updatedPages));
+            toast.success(`Page marked as ${newStatus}`);
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error('Failed to update page status');
+        }
     };
 
     const getSectionCount = (id) => {
@@ -113,12 +203,107 @@ const Pages = () => {
         }
     };
 
-    const handleDeletePage = (id) => {
-        if (window.confirm('Are you sure you want to delete this page?')) {
-            const updatedPages = pages.filter(p => p.id !== id);
+    const handleViewPage = (slug) => {
+        if (!client) {
+            window.open(slug ? `/${slug}` : '/', '_blank');
+            return;
+        }
+
+        // Use custom domain if available
+        if (client.customDomain) {
+            const baseUrl = client.customDomain.startsWith('http') ? client.customDomain : `https://${client.customDomain}`;
+            window.open(`${baseUrl}${slug ? `/${slug}` : '/'}`, '_blank');
+            return;
+        }
+
+        const { hostname, protocol, port } = window.location;
+        let baseDomain = hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost';
+        let targetProtocol = hostname.includes('nepostore.xyz') ? 'https:' : protocol;
+        let targetPort = port ? `:${port}` : (hostname.includes('nepostore.xyz') ? '' : ':3000');
+
+        const shopUrl = `${targetProtocol}//${client.subdomain}.${baseDomain}${targetPort}${slug ? `/${slug}` : '/'}`;
+        window.open(shopUrl, '_blank');
+    };
+
+    const handleOpenDeleteModal = (page) => {
+        if (!page.slug || page.slug === '') {
+            toast.error('The Home page is a system requirement and cannot be deleted.');
+            return;
+        }
+        setPageToDelete(page);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeletePage = async () => {
+        if (!pageToDelete) return;
+
+        try {
+            // If it's a real page from DB, call API. If mock, just filter.
+            if (typeof pageToDelete.id === 'string' || pageToDelete._id) {
+                const id = pageToDelete._id || pageToDelete.id;
+                await axios.delete(`${API_URL}/api/client-pages/${id}`, { withCredentials: true });
+            }
+
+            const updatedPages = pages.filter(p => (p._id || p.id) !== (pageToDelete._id || pageToDelete.id));
             setPages(updatedPages);
             localStorage.setItem('site_pages', JSON.stringify(updatedPages));
             toast.success('Page deleted successfully');
+        } catch (error) {
+            console.error('Error deleting page:', error);
+            toast.error('Failed to delete page');
+        } finally {
+            setIsDeleteModalOpen(false);
+            setPageToDelete(null);
+        }
+    };
+
+    const handleOpenRenameModal = (page) => {
+        setPageToRename(page);
+        setRenameTitle(page.title);
+        setRenameSlug(page.slug || '');
+        setIsRenameModalOpen(true);
+    };
+
+    const confirmRenamePage = async () => {
+        if (!renameTitle.trim()) {
+            toast.error('Page title cannot be empty');
+            return;
+        }
+
+        try {
+            let slugToUse = renameSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/^\//, '');
+            if (slugToUse === '') slugToUse = '/';
+
+            // Validate slug if it's not the home page (home page must have empty slug/id match)
+            if (pageToRename.slug === '' || pageToRename.slug === '/' || pageToRename.slug === (pageToRename._id || pageToRename.id)) {
+                // Trying to rename home page title is fine, but slug must remain special usually.
+                // For now, we allow slug edit unless it's strictly locked.
+            }
+
+            const payload = {
+                id: pageToRename._id || pageToRename.id,
+                title: renameTitle,
+                slug: slugToUse === '/' ? '' : slugToUse, // Normalize / to empty if needed for backend
+                // Preserve other fields
+                status: pageToRename.status,
+                themeId: pageToRename.themeId
+            };
+
+            await axios.post(`${API_URL}/api/client-pages`, payload, { withCredentials: true });
+
+            // Update local state
+            const updatedPages = pages.map(p =>
+                (p._id || p.id) === (pageToRename._id || pageToRename.id)
+                    ? { ...p, title: renameTitle, slug: payload.slug }
+                    : p
+            );
+            setPages(updatedPages);
+            localStorage.setItem('site_pages', JSON.stringify(updatedPages));
+            toast.success('Page renamed successfully');
+            setIsRenameModalOpen(false);
+        } catch (error) {
+            console.error('Error renaming page:', error);
+            toast.error('Failed to rename page');
         }
     };
 
@@ -150,48 +335,66 @@ const Pages = () => {
                 <table className="pages-table">
                     <thead>
                         <tr>
-                            <th>Title</th>
-                            <th>Total sections</th>
-                            <th>Status</th>
-                            <th>Last Modified</th>
-                            <th>Actions</th>
+                            <th className="th-title">Title</th>
+                            <th className="th-sections">Total sections</th>
+                            <th className="th-status">Status</th>
+                            <th className="th-date">Last Modified</th>
+                            <th className="th-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredPages.length > 0 ? (
                             filteredPages.map(page => (
-                                <tr key={page.id} onClick={() => handleEditPage(page.id)} className="clickable-row">
-                                    <td>
+                                <tr key={page._id || page.id} onClick={() => handleEditPage(page._id || page.id)} className="clickable-row">
+                                    <td className="td-title">
                                         <div className="page-title-cell">
-                                            <span className="page-title-text">{page.title}</span>
-                                            <span className="page-url">/shop{page.slug ? `/${page.slug}` : ''}</span>
+                                            <span className="page-title-text">
+                                                {page.title}
+                                                {(!page.slug || page.slug === '' || page.slug === '/' || page.slug === (page._id || page.id)) && <span className="home-badge">Home</span>}
+                                            </span>
+                                            <span className="page-url">
+                                                {(page.slug && page.slug !== '/' && page.slug !== (page._id || page.id)) ? `/${page.slug}` : '/'}
+                                            </span>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td className="td-sections">
                                         <div className="section-count-badge">
-                                            {getSectionCount(page.id)} Sections
+                                            {getSectionCount(page._id || page.id)} Sections
                                         </div>
                                     </td>
-                                    <td>
-                                        <select
-                                            className={`status-select ${page.status.toLowerCase()}`}
-                                            value={page.status}
-                                            onChange={(e) => handleStatusChange(page.id, e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
+                                    <td className="td-status">
+                                        {(!page.slug || page.slug === '') ? (
+                                            <span className="status-badge default">Default</span>
+                                        ) : (
+                                            <select
+                                                className={`status-select ${page.status.toLowerCase()}`}
+                                                value={page.status}
+                                                onChange={(e) => handleStatusChange(page._id || page.id, e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <option value="Active">Active</option>
+                                                <option value="Inactive">Inactive</option>
+                                            </select>
+                                        )}
                                     </td>
-                                    <td>{page.lastModified}</td>
-                                    <td onClick={(e) => e.stopPropagation()}>
+                                    <td className="td-date">
+                                        {(() => {
+                                            const dateVal = page.lastModified || page.createdAt || page.updatedAt;
+                                            if (!dateVal) return new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+                                            return new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+                                        })()}
+                                    </td>
+                                    <td className="td-actions" onClick={(e) => e.stopPropagation()}>
                                         <div className="actions-dropdown">
                                             <button className="action-dot-btn"><FaEllipsisV /></button>
                                             <div className="actions-menu">
-                                                <button onClick={() => handleEditPage(page.id)}><FaEdit /> Edit</button>
-                                                <button onClick={() => window.open(`/shop/${page.slug}`, '_blank')}><FaEye /> View</button>
-                                                <button><FaCopy /> Duplicate</button>
-                                                <button className="delete-btn" onClick={() => handleDeletePage(page.id)}><FaTrash /> Delete</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEditPage(page._id || page.id); }}><FaEdit /> Edit</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleOpenRenameModal(page); }}><FaEdit /> Edit Name</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleViewPage(page.slug); }}><FaEye /> View</button>
+                                                <button onClick={(e) => e.stopPropagation()}><FaCopy /> Duplicate</button>
+                                                {page.slug !== '' && page.slug !== '/' && page.slug !== (page._id || page.id) && (
+                                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); handleOpenDeleteModal(page); }}><FaTrash /> Delete</button>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -226,10 +429,121 @@ const Pages = () => {
                                 autoFocus
                                 onKeyDown={(e) => e.key === 'Enter' && confirmAddPage()}
                             />
+
+                            <label style={{ marginTop: '15px', display: 'block' }}>URL Slug</label>
+                            <div className="slug-input-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <span style={{
+                                    padding: '12px 10px 12px 16px',
+                                    background: '#f1f5f9',
+                                    border: '1.5px solid #e2e8f0',
+                                    borderRight: 'none',
+                                    borderRadius: '10px 0 0 10px',
+                                    color: '#64748b',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }}>/</span>
+                                <input
+                                    type="text"
+                                    placeholder="page-url"
+                                    value={newPageSlug}
+                                    onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                                    style={{
+                                        borderRadius: '0 10px 10px 0',
+                                        borderLeft: 'none',
+                                        width: '100%'
+                                    }}
+                                    onKeyDown={(e) => e.key === 'Enter' && confirmAddPage()}
+                                />
+                            </div>
                         </div>
                         <div className="modal-footer">
                             <button className="cancel-btn" onClick={() => setIsAddModalOpen(false)}>Cancel</button>
                             <button className="create-btn" onClick={confirmAddPage}>Create Page</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="delete-modal-overlay" onClick={() => setIsDeleteModalOpen(false)}>
+                    <div className="delete-modal" onClick={e => e.stopPropagation()}>
+                        <div className="delete-modal-icon">
+                            <FaTrash />
+                        </div>
+                        <h3>Delete Page?</h3>
+                        <p>
+                            Are you sure you want to delete <strong>{pageToDelete?.title}</strong>?
+                            This action cannot be undone and the page will be permanently removed.
+                        </p>
+                        <div className="delete-modal-actions">
+                            <button
+                                className="delete-cancel-btn"
+                                onClick={() => setIsDeleteModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-confirm-btn"
+                                onClick={confirmDeletePage}
+                            >
+                                Yes, Delete Page
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rename Modal */}
+            {isRenameModalOpen && (
+                <div className="add-page-modal-overlay" onClick={() => setIsRenameModalOpen(false)}>
+                    <div className="add-page-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Edit Page Name</h3>
+                            <button className="close-x" onClick={() => setIsRenameModalOpen(false)}><FaPlus style={{ transform: 'rotate(45deg)' }} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <label>Page Name</label>
+                            <input
+                                type="text"
+                                placeholder="Enter page name"
+                                value={renameTitle}
+                                onChange={(e) => setRenameTitle(e.target.value)}
+                                autoFocus
+                            />
+
+                            {/* Allow slug edit only if it's NOT the home page to prevent breaking the site root */}
+                            {!(pageToRename?.slug === '' || pageToRename?.slug === '/' || pageToRename?.slug === (pageToRename?._id || pageToRename?.id)) && (
+                                <>
+                                    <label style={{ marginTop: '15px', display: 'block' }}>URL Slug</label>
+                                    <div className="slug-input-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <span style={{
+                                            padding: '12px 10px 12px 16px',
+                                            background: '#f1f5f9',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRight: 'none',
+                                            borderRadius: '10px 0 0 10px',
+                                            color: '#64748b',
+                                            fontSize: '14px',
+                                            fontWeight: '500'
+                                        }}>/</span>
+                                        <input
+                                            type="text"
+                                            placeholder="page-url"
+                                            value={renameSlug}
+                                            onChange={(e) => setRenameSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                                            style={{
+                                                borderRadius: '0 10px 10px 0',
+                                                borderLeft: 'none',
+                                                width: '100%'
+                                            }}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="cancel-btn" onClick={() => setIsRenameModalOpen(false)}>Cancel</button>
+                            <button className="create-btn" onClick={confirmRenamePage}>Save Changes</button>
                         </div>
                     </div>
                 </div>

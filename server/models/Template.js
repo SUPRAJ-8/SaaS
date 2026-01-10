@@ -27,6 +27,18 @@ const templateSchema = new Schema({
         }
     ],
 
+    // User's simple section template fields
+    fields: [
+        {
+            key: { type: String },
+            type: { type: String }, // text, color, boolean, image, etc.
+            label: { type: String },
+            default: { type: Schema.Types.Mixed },
+            options: [{ label: String, value: String }]
+        }
+    ],
+    defaultSettings: { type: Object, default: {} },
+
     // For "dynamic" type, this defines the HTML structure
     structure: { type: Object }, // JSON tree
 

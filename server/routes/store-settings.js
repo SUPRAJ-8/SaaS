@@ -82,20 +82,22 @@ router.put('/', ensureAuthenticated, async (req, res) => {
 // NOTE: This route MUST come before /public/:subdomain to avoid route conflicts
 router.get('/delivery-regions/:subdomain', async (req, res) => {
     try {
-        console.log('📍 Fetching delivery regions for subdomain:', req.params.subdomain);
-        // Case insensitive search for subdomain
-        const client = await Client.findOne({
-            subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
-        });
+        let client = req.tenantClient;
 
         if (!client) {
-            console.log('❌ Client not found for subdomain:', req.params.subdomain);
+            console.log('📍 Fetching delivery regions by subdomain:', req.params.subdomain);
+            client = await Client.findOne({
+                subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
+            });
+        }
+
+        if (!client) {
+            console.log('❌ Client not found for domain/subdomain:', req.params.subdomain);
             return res.status(404).json({ msg: 'Store not found' });
         }
 
-        // Return delivery regions from settings
-        const settings = client.settings || {};
-        const deliveryCharge = settings.deliveryCharge || {};
+        const settingsData = client.settings || {};
+        const deliveryCharge = settingsData.deliveryCharge || {};
         const regions = deliveryCharge.allRegions || [];
 
         console.log('✅ Returning', regions.length, 'delivery regions for', client.name);
@@ -111,21 +113,23 @@ router.get('/delivery-regions/:subdomain', async (req, res) => {
 // @access  Public
 router.get('/public/:subdomain', async (req, res) => {
     try {
-        // Case insensitive search for subdomain
-        const client = await Client.findOne({
-            subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
-        });
+        let client = req.tenantClient;
+
+        if (!client) {
+            client = await Client.findOne({
+                subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
+            });
+        }
 
         if (!client) {
             return res.status(404).json({ msg: 'Store not found' });
         }
 
-        // Return settings with fallback for storeName
-        const settings = client.settings || {};
-        if (!settings.storeName) {
-            settings.storeName = client.name;
+        const settingsData = client.settings || {};
+        if (!settingsData.storeName) {
+            settingsData.storeName = client.name;
         }
-        res.json(settings);
+        res.json(settingsData);
     } catch (err) {
         console.error('Error fetching public store settings:', err.message);
         res.status(500).send('Server Error');

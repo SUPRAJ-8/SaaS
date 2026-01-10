@@ -17,24 +17,31 @@ const getApiUrl = () => {
     return 'http://localhost:5002';
   }
 
-  const isProd = hostname.includes('nepostore.xyz');
+  const isMainDomain = hostname.includes('nepostore.xyz');
+  const isLocalhost = hostname.includes('localhost');
+  const isProd = isMainDomain && !isLocalhost;
 
   if (isProd) {
-    // If on production domain but no env var, assume backend is on api subdomain
     return 'https://api.nepostore.xyz';
   }
 
-  // 3. Development: If using subdomains on localhost (e.g. app.localhost, nepostore.localhost),
-  // For 'app' subdomain, we want to use the proxy (relative path) so cookies/sessions work
-  // For other subdomains, use direct backend
-  if (hostname.includes('localhost') && hostname !== 'localhost') {
+  // 3. Custom Domains (e.g. mystore.com)
+  if (!isMainDomain && !isLocalhost) {
+    // If we're on a custom domain in production environment
+    if (process.env.NODE_ENV === 'production' || !hostname.includes('.test')) {
+      return 'https://api.nepostore.xyz';
+    }
+    // Otherwise assume it's a local custom domain test
+    return 'http://localhost:5002';
+  }
+
+  // 4. Development: If using subdomains on localhost (e.g. app.localhost, nepostore.localhost),
+  if (isLocalhost && hostname !== 'localhost') {
     const parts = hostname.split('.');
     const subdomain = parts[0];
-    // For app subdomain, use proxy (empty string) - proxy should forward to backend
-    // For tenant stores, use direct backend
     if (subdomain === 'app') {
       return ''; // Use proxy for app subdomain
-    } else if (subdomain !== 'www' && subdomain !== 'localhost') {
+    } else {
       return 'http://localhost:5002';
     }
   }

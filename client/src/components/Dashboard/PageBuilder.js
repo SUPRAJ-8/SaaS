@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope, FaCheck, FaChevronDown } from 'react-icons/fa';
 import './PageBuilder.css';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -90,7 +90,7 @@ const SortableProductItem = ({ id, product }) => {
 
 
 
-const SortableSection = ({ section, index, selectedSectionId, setSelectedSectionId, removeSection, duplicateSection, SECTION_TEMPLATES }) => {
+const SortableSection = ({ section, index, selectedSectionId, setSelectedSectionId, removeSection, duplicateSection, SECTION_TEMPLATES, sections, setSections }) => {
     const {
         attributes,
         listeners,
@@ -103,12 +103,13 @@ const SortableSection = ({ section, index, selectedSectionId, setSelectedSection
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? 1000 : 1,
-        position: 'relative'
+        opacity: isDragging ? 0.5 : 1,
+        position: 'relative',
+        zIndex: isDragging ? 999 : 'auto'
     };
 
     // 1. Determine Dynamic Status
-    const isDynamic = section.type === 'dynamic' || (section.templateData && section.templateData.structure);
+    const isDynamic = section.type === 'dynamic' || (section.templateData && (section.templateData.structure || section.templateData.fields));
 
     // 2. Parse Content Safely
     let content = {};
@@ -135,6 +136,40 @@ const SortableSection = ({ section, index, selectedSectionId, setSelectedSection
                     <div className="toolbar-icons">
                         <button className="toolbar-btn drag" title="Drag to reorder" {...attributes} {...listeners}>
                             <FaGripVertical />
+                        </button>
+                        <button
+                            className="toolbar-btn move-up"
+                            title="Move Up"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (index > 0) {
+                                    const updated = [...sections];
+                                    const temp = updated[index];
+                                    updated[index] = updated[index - 1];
+                                    updated[index - 1] = temp;
+                                    setSections(updated);
+                                }
+                            }}
+                            disabled={index === 0}
+                        >
+                            <FaChevronDown style={{ transform: 'rotate(180deg)' }} />
+                        </button>
+                        <button
+                            className="toolbar-btn move-down"
+                            title="Move Down"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (index < sections.length - 1) {
+                                    const updated = [...sections];
+                                    const temp = updated[index];
+                                    updated[index] = updated[index + 1];
+                                    updated[index + 1] = temp;
+                                    setSections(updated);
+                                }
+                            }}
+                            disabled={index === sections.length - 1}
+                        >
+                            <FaChevronDown />
                         </button>
                         <button
                             className="toolbar-btn edit"
@@ -247,9 +282,15 @@ const PageBuilder = ({ mode = 'page' }) => {
     const [pageMetadata, setPageMetadata] = useState(null);
     const [isHeroDragging, setIsHeroDragging] = useState(false);
 
-    // Get active theme from context
-    const { theme: activeTheme } = useContext(ThemeContext) || {};
-    const activeThemeId = 'nexus';
+    // Get active theme from context or settings
+    const { theme: activeThemeFromContext } = useContext(ThemeContext) || {};
+    const [activeThemeId, setActiveThemeId] = useState('nexus'); // Default to nexus
+    const [clientData, setClientData] = useState(null);
+    const [allPages, setAllPages] = useState([]);
+
+    // URL Dropdown State
+    const [isUrlDropdownOpen, setIsUrlDropdownOpen] = useState(false);
+    const [urlSearchQuery, setUrlSearchQuery] = useState('');
 
     // Force re-render stuff
     const [footerUpdateTrigger, setFooterUpdateTrigger] = useState(0);
@@ -268,14 +309,71 @@ const PageBuilder = ({ mode = 'page' }) => {
     const HeaderComponent = currentTheme.header;
     const FooterComponent = currentTheme.footer;
 
-    // Load page metadata (slug, title) on mount
-    useEffect(() => {
-        const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
-        const page = savedPages.find(p => String(p.id) === String(id));
-        if (page) {
-            setPageMetadata(page);
+    // Calculate display URL
+    const displayUrl = useMemo(() => {
+        if (mode === 'template') return pageMetadata?.title || 'Template';
+
+        if (!clientData) return 'Loading URL...';
+
+        let base = '';
+        if (clientData.customDomain) {
+            base = `https://${clientData.customDomain}`;
+        } else if (clientData.subdomain) {
+            const isDev = window.location.hostname.includes('localhost');
+            const domain = isDev ? 'localhost:3000' : 'nepostore.xyz';
+            const proto = isDev ? 'http' : 'https';
+            base = `${proto}://${clientData.subdomain}.${domain}`;
+        } else {
+            base = '/shop';
         }
-    }, [id]);
+
+        if (id === 'new') return `${base}/new-page`;
+
+        const isHomePage = pageMetadata && (
+            !pageMetadata.slug ||
+            pageMetadata.slug === '' ||
+            pageMetadata.slug === '/' ||
+            pageMetadata.slug === (pageMetadata._id || pageMetadata.id)
+        );
+        // If meta not loaded yet but we have id, show id pending...
+        const slugPart = isHomePage ? '' : `/${pageMetadata?.slug || '...'}`;
+
+        return `${base}${slugPart}`;
+    }, [mode, pageMetadata, clientData, id]);
+
+    // Load page metadata and actual client theme on mount
+    useEffect(() => {
+        const fetchMetadataAndTheme = async () => {
+            try {
+                // 1. Fetch site settings to get the real active theme and domain info
+                const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+                if (clientRes.data) {
+                    setClientData(clientRes.data);
+                    if (clientRes.data.settings && clientRes.data.settings.selectedThemeId) {
+                        setActiveThemeId(clientRes.data.settings.selectedThemeId);
+                    }
+                } else if (activeThemeFromContext?.id) {
+                    setActiveThemeId(activeThemeFromContext.id);
+                }
+
+                // 2. Load page metadata from local storage or API
+                const savedPages = JSON.parse(localStorage.getItem('site_pages') || '[]');
+                const page = savedPages.find(p => String(p.id) === String(id));
+                if (page) {
+                    setPageMetadata(page);
+                }
+
+                // 3. (New) Fetch all pages for the dropdown (URL selector)
+                const pagesRes = await axios.get(`${API_URL}/api/client-pages`, { withCredentials: true });
+                setAllPages(pagesRes.data || []);
+
+            } catch (err) {
+                console.warn('Failed to fetch data in PageBuilder:', err.message);
+            }
+        };
+
+        fetchMetadataAndTheme();
+    }, [id, activeThemeFromContext]);
 
     // 1. Immediate Local Save (Redundancy)
     useEffect(() => {
@@ -300,12 +398,15 @@ const PageBuilder = ({ mode = 'page' }) => {
                     }, { withCredentials: true });
                     console.log('✅ Template auto-saved');
                 } else {
+                    let cleanSlug = (pageMetadata?.slug || (id === 'new' ? 'new-page' : id)).replace(/^\//, '');
+                    if (cleanSlug === '' && id !== 'new') cleanSlug = '/';
+
                     const pageData = {
-                        id: pageMetadata?._id, // Include DB ID if we have it
-                        slug: pageMetadata?.slug || (id === 'new' ? 'new-page' : id),
+                        id: pageMetadata?._id || id, // Include DB ID if we have it
+                        slug: cleanSlug,
                         title: pageMetadata?.title || (id === 'new' ? 'New Page' : (id.charAt(0).toUpperCase() + id.slice(1))),
                         content: JSON.stringify(sections),
-                        status: 'draft', // Auto-save as draft? Or published?
+                        status: pageMetadata?.status || 'published', // Maintain existing status or default to published
                         themeId: activeThemeId
                     };
 
@@ -364,9 +465,10 @@ const PageBuilder = ({ mode = 'page' }) => {
                         // Wrap in section structure
                         const sectionWrapper = [{
                             id: 'template_edit_section',
-                            type: targetTemplate.baseType || 'hero-modern',
+                            type: targetTemplate.type === 'dynamic' ? 'dynamic' : (targetTemplate.baseType || 'hero-modern'),
                             title: targetTemplate.name,
-                            content: JSON.stringify(content)
+                            content: JSON.stringify(content),
+                            templateData: targetTemplate
                         }];
                         setSections(sectionWrapper);
                         // Select it immediately
@@ -558,11 +660,17 @@ const PageBuilder = ({ mode = 'page' }) => {
     };
 
     const handleTemplateSelect = (template) => {
+        const isDynamic = template.type === 'dynamic' || template.templateData?.type === 'dynamic';
+
+        // Extract the actual template object
+        const tData = template.templateData || template;
+
         const newSection = {
             id: Date.now(),
-            type: template.id,
+            type: isDynamic ? 'dynamic' : template.id,
             title: template.name,
-            content: JSON.stringify(template.defaultContent) // Store as string for flexibility
+            content: JSON.stringify(tData.defaultSettings || template.defaultContent || {}),
+            templateData: tData
         };
         const updatedSections = [...sections];
         updatedSections.splice(targetSectionIndex, 0, newSection);
@@ -713,7 +821,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                     </button>
                     <div className="page-info">
                         <h2>{mode === 'template' ? 'Editing Template' : (id === 'new' ? 'Create New Page' : 'Editing Page')}</h2>
-                        <span>{mode === 'template' ? (pageMetadata?.title || 'Template') : `/shop/${id === 'new' ? 'page-slug' : id}`}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#64748b' }}>{displayUrl}</span>
                     </div>
                 </div>
 
@@ -806,6 +914,8 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                     removeSection={mode === 'template' ? () => toast.info('Cannot remove base section in template mode') : removeSection}
                                                     duplicateSection={mode === 'template' ? () => toast.info('Cannot duplicate in template mode') : duplicateSection}
                                                     SECTION_TEMPLATES={SECTION_TEMPLATES}
+                                                    sections={sections}
+                                                    setSections={setSections}
                                                 />
                                                 {mode !== 'template' && (
                                                     <div className="add-section-zone">
@@ -861,28 +971,10 @@ const PageBuilder = ({ mode = 'page' }) => {
                     {!selectedSectionId ? (
                         <div className="no-section-selected">
                             <div className="page-settings-editor">
-                                <h3>Page Settings</h3>
-                                <div className="property-group">
-                                    <label>Page Title</label>
-                                    <input
-                                        type="text"
-                                        value={pageMetadata?.title || ''}
-                                        onChange={(e) => setPageMetadata(prev => ({ ...prev, title: e.target.value }))}
-                                        placeholder="Enter page title"
-                                    />
-                                </div>
-                                <div className="property-group">
-                                    <label>URL Slug</label>
-                                    <div className="slug-input-wrapper">
-                                        <span className="slug-prefix">/shop/</span>
-                                        <input
-                                            type="text"
-                                            value={pageMetadata?.slug || ''}
-                                            onChange={(e) => setPageMetadata(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
-                                            placeholder="page-url"
-                                        />
+                                <div className="page-settings-editor">
+                                    <div className="page-settings-info">
+                                        <p align="center" style={{ padding: '50px 20px', color: '#94a3b8' }}>Select a section on the left to edit its content.</p>
                                     </div>
-                                    <small className="field-hint">The path where this page will be accessible.</small>
                                 </div>
                                 <div className="page-settings-info">
                                     <p>Select a section on the left to edit its specific content and styling.</p>
@@ -906,10 +998,10 @@ const PageBuilder = ({ mode = 'page' }) => {
                                 return (
                                     <>
                                         {/* Dynamic Schema-Based Editor */}
-                                        {(section.type === 'dynamic' || (section.templateData && section.templateData.schema)) && (
+                                        {(section.type === 'dynamic' || (section.templateData && (section.templateData.schema || section.templateData.fields))) && (
                                             <DynamicSectionEditor
                                                 key={selectedSectionId}
-                                                schema={section.templateData?.schema}
+                                                schema={section.templateData?.fields || section.templateData?.schema}
                                                 content={content}
                                                 onChange={(newContent) => updateSectionContent(selectedSectionId, newContent)}
                                             />

@@ -31,12 +31,14 @@ export const SiteSettingsProvider = ({ children }) => {
                 subdomain = parts[0];
             } else if (hostname.endsWith('.nepostore.xyz')) {
                 subdomain = parts[0];
-            } else if (parts.length > 2) { // Generic subdomain support
-                subdomain = parts[0];
+            } else if (!hostname.includes('nepostore.xyz') && !hostname.includes('localhost')) {
+                // It's a custom domain, we use the hostname itself to fetch
+                subdomain = hostname;
             }
 
-            // If it's a valid shop subdomain (not app, www, or local root)
-            if (subdomain && subdomain !== 'app' && subdomain !== 'www' && subdomain !== 'localhost') {
+            // If it's a valid shop domain/subdomain
+            const isMainApp = subdomain === 'app' || subdomain === 'www';
+            if (subdomain && !isMainApp && hostname !== 'localhost') {
                 try {
                     const response = await axios.get(`${API_URL}/api/store-settings/public/${subdomain}`);
                     if (response.data) {
