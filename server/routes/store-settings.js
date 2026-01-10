@@ -122,7 +122,8 @@ router.get('/public/:subdomain', async (req, res) => {
         }
 
         if (!client) {
-            return res.status(404).json({ msg: 'Store not found' });
+            console.log(`[Public Settings] ℹ️ Store not found for: ${req.params.subdomain}. (Returning empty settings)`);
+            return res.json({});
         }
 
         const settingsData = client.settings || {};

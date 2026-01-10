@@ -203,7 +203,10 @@ router.get('/public/:subdomain', async (req, res) => {
                 page = website.pages.find(p => p.slug === slug && p.status === 'published' && p.themeId === 'nexus');
             }
 
-            if (!page) return res.status(404).json({ msg: 'Page not found' });
+            if (!page) {
+                console.log(`[Public Page Fetch] ℹ️ Page not found for slug: "${slug}" on tenant: ${req.params.subdomain}. (Returning null)`);
+                return res.json(null);
+            }
             return res.json(page);
         }
 
