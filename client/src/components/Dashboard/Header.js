@@ -21,9 +21,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         console.log('📍 Header: current_user data:', userData);
 
         if (userData?.clientId) {
-          // If clientId is an object with data, use it.
-          if (typeof userData.clientId === 'object' && userData.clientId.subdomain) {
-            console.log('✅ Header: Using populated client data:', userData.clientId.subdomain);
+          // If clientId is an object with data (subdomain or custom domain), use it.
+          if (typeof userData.clientId === 'object' && (userData.clientId.subdomain || userData.clientId.customDomain)) {
+            console.log('✅ Header: Using populated client data');
             setClient(userData.clientId);
           } else {
             // Otherwise fetch from our new safe endpoint that doesn't require super-admin permissions

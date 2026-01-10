@@ -38,8 +38,8 @@ const DashboardHome = () => {
 
         // Fetch client details using the safe endpoint
         try {
-          // If populated by backend, use it directly
-          if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+          // If populated by backend with either subdomain or custom domain, use it directly
+          if (typeof userRes.data.clientId === 'object' && (userRes.data.clientId.subdomain || userRes.data.clientId.customDomain)) {
             console.log('✅ DashboardHome: Client data already populated');
             setClient(userRes.data.clientId);
           } else {
