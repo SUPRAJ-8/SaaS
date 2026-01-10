@@ -1,38 +1,35 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function (app) {
-    console.log('🔧 Setting up proxy middleware for /api and /auth routes');
-    // Proxy API and Auth requests to the backend
+    console.log('🔧 Setting up proxy middleware for /api, /auth, and /uploads routes');
+
+    // Proxy configuration with pathFilter to prevent stripping prefixes
     const proxyOptions = {
         target: 'http://localhost:5002',
-        changeOrigin: false, // Preserve the original Host header (crucial for subdomain detection)
-        secure: false,       // Handle self-signed certs if any (not needed for localhost but good practice)
-        logLevel: 'debug',
+        changeOrigin: true, // Change origin to match target for cookie/session support
+        secure: false,
+        pathFilter: ['/api', '/auth', '/uploads'], // Matches these paths but preserves them
         onProxyReq: (proxyReq, req, res) => {
+            // Preserve original host for subdomain detection on backend
+            // Use headers.host or req.hostname as appropriate
+            const originalHost = req.headers.host || req.hostname;
+            proxyReq.setHeader('X-Forwarded-Host', originalHost);
+            proxyReq.setHeader('X-Original-Host', originalHost);
+
+            // Log all proxy requests for debugging
             console.log(`[PROXY] ${req.method} ${req.url} -> http://localhost:5002${req.url}`);
-        },
-        onProxyRes: (proxyRes, req, res) => {
-            console.log(`[PROXY RESPONSE] ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`);
         },
         onError: (err, req, res) => {
             console.error('[PROXY ERROR]', err.message);
-            console.error('[PROXY ERROR] Request URL:', req.url);
             if (!res.headersSent) {
                 res.status(500).json({ error: 'Proxy error', message: err.message });
             }
         }
     };
 
-    // Create the proxy middleware instance
-    const proxy = createProxyMiddleware(proxyOptions);
+    // Apply proxy to all requests, it will only filter based on pathFilter
+    app.use(createProxyMiddleware(proxyOptions));
 
-    // Use a manual middleware wrapper to ensure paths are NOT stripped by Express
-    app.use((req, res, next) => {
-        if (req.url.startsWith('/api') || req.url.startsWith('/auth') || req.url.startsWith('/uploads')) {
-            return proxy(req, res, next);
-        }
-        next();
-    });
 
-    console.log('✅ Proxy middleware configured for /api and /auth routes (prefix-preserving mode)');
+    console.log('✅ Proxy middleware configured.');
 };

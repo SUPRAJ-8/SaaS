@@ -15,17 +15,33 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userRes = await axios.get(`${API_URL}/auth/current_user`);
-        setUser(userRes.data);
+        const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
+        const userData = userRes.data;
+        setUser(userData);
+        console.log('📍 Header: current_user data:', userData);
 
-        if (userRes.data?.clientId) {
-          const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
-          setClient(clientRes.data);
+        if (userData?.clientId) {
+          // If clientId is an object with data, use it.
+          if (typeof userData.clientId === 'object' && userData.clientId.subdomain) {
+            console.log('✅ Header: Using populated client data:', userData.clientId.subdomain);
+            setClient(userData.clientId);
+          } else {
+            // Otherwise fetch from our new safe endpoint that doesn't require super-admin permissions
+            console.log('🔄 Header: Fetching client data from my-store...');
+            const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+            console.log('✅ Header: my-store response:', clientRes.data);
+            setClient(clientRes.data);
+            if (!clientRes.data.subdomain) {
+              console.warn('⚠️ Header: Client from my-store has NO subdomain!', clientRes.data);
+            }
+          }
 
           // Fetch unread notifications count
-          const notesRes = await axios.get(`${API_URL}/api/notifications`);
-          const unread = notesRes.data.filter(n => n.status === 'unread').length;
-          setUnreadCount(unread);
+          const notesRes = await axios.get(`${API_URL}/api/notifications`, { withCredentials: true });
+          if (Array.isArray(notesRes.data)) {
+            const unread = notesRes.data.filter(n => n.status === 'unread').length;
+            setUnreadCount(unread);
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -52,7 +68,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         redirectUrl = 'https://app.nepostore.xyz/login';
       } else if (hostname.includes('app.localhost')) {
         // Development with subdomain
-        redirectUrl = 'http://app.localhost:3000/login';
+        const currentPort = window.location.port ? `:${window.location.port}` : ':3000';
+        redirectUrl = `${window.location.protocol}//app.localhost${currentPort}/login`;
       } else {
         // Development: use relative path
         redirectUrl = '/login';
@@ -69,16 +86,35 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const handleVisitStore = (e) => {
     e.preventDefault();
-    if (!client || !client.subdomain) return;
+    if (!client) {
+      console.warn('Cannot visit store: Client data not loaded');
+      return;
+    }
 
-    const hostname = window.location.hostname;
+    // Prioritize Custom Domain if available
+    if (client.customDomain) {
+      const url = client.customDomain.startsWith('http') ? client.customDomain : `https://${client.customDomain}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (!client.subdomain) {
+      console.warn('Cannot visit store: No subdomain set');
+      return;
+    }
+
+    const { hostname, protocol, port } = window.location;
     let baseDomain = hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost';
-    let protocol = hostname.includes('nepostore.xyz') ? 'https:' : 'http:';
-    let port = hostname.includes('nepostore.xyz') ? '' : ':3000';
+    let targetProtocol = hostname.includes('nepostore.xyz') ? 'https:' : protocol;
 
-    const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+    // In local development, we often use port 3000 for the frontend
+    let targetPort = port ? `:${port}` : (hostname.includes('nepostore.xyz') ? '' : ':3000');
+
+    const shopUrl = `${targetProtocol}//${client.subdomain}.${baseDomain}${targetPort}`;
+    console.log(`[Visit Store] Redirecting to: ${shopUrl}`);
     window.open(shopUrl, '_blank', 'noopener,noreferrer');
   };
+
 
   return (
     <header className={`dashboard-header ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
@@ -112,7 +148,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <button
           className="header-visit-store-btn"
           onClick={handleVisitStore}
-          disabled={!client?.subdomain}
+          disabled={!client?.subdomain && !client?.customDomain}
           title="View Live Store"
         >
           <FaEye /> <span>View Store</span>

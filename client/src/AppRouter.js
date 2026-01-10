@@ -40,7 +40,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 
 
-const Issue = () => <h2>Issue</h2>;
+import ComingSoon from './components/Dashboard/ComingSoon';
+
+const Issue = () => <ComingSoon title="Issue Reporting" description="We're building a comprehensive issue tracking system to help you manage store queries and problems better." />;
+
 
 const ExternalRedirect = ({ url }) => {
   React.useEffect(() => {
@@ -75,9 +78,12 @@ function AppRouter() {
   const isCustomDomain = !hostname.endsWith('nepostore.xyz') && !hostname.includes('localhost');
 
   // Decision flags
-  const isLandingPage = isMainLanding || (hostname === 'localhost' && !new URLSearchParams(window.location.search).get('tenant'));
-  const isDashboardSubdomain = isDashboard || (hostname === 'localhost' && new URLSearchParams(window.location.search).get('tenant') === 'app');
-  const isShopSubdomain = isNepoSubdomain || isLocalhostShop || isCustomDomain || (hostname === 'localhost' && new URLSearchParams(window.location.search).get('tenant') && new URLSearchParams(window.location.search).get('tenant') !== 'app');
+  // In development, treat plain localhost as dashboard (app subdomain) for easier testing
+  // Unless a tenant query param explicitly says otherwise
+  const tenantParam = new URLSearchParams(window.location.search).get('tenant');
+  const isLandingPage = isMainLanding;
+  const isDashboardSubdomain = isDashboard || (hostname === 'localhost' && (!tenantParam || tenantParam === 'app'));
+  const isShopSubdomain = isNepoSubdomain || isLocalhostShop || isCustomDomain || (hostname === 'localhost' && tenantParam && tenantParam !== 'app');
 
   const baseDomain = (hostname.endsWith('.localhost') || hostname === 'localhost') ? 'localhost' : 'nepostore.xyz';
   const dashboardUrl = `${protocol}//app.${baseDomain}${port}/dashboard`;

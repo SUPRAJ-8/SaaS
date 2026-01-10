@@ -50,13 +50,17 @@ const Checkout = () => {
 
   const [coupon, setCoupon] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [availableCoupons, setAvailableCoupons] = useState([]); // Will be fetched from API in a real app
+  const [availableCoupons, setAvailableCoupons] = useState([]);
   const couponRef = useRef(null);
   const shippingFormRef = useRef(null);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+  // Delivery charge states
+  const [deliverySettings, setDeliverySettings] = useState(null);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
 
   // Load saved data from localStorage on mount
   useEffect(() => {
@@ -92,6 +96,68 @@ const Checkout = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges, items, isOrderComplete]);
+
+  // Fetch delivery settings
+  useEffect(() => {
+    const fetchDeliverySettings = async () => {
+      try {
+        const hostname = window.location.hostname;
+        const subdomain = hostname.split('.')[0];
+
+        if (subdomain && subdomain !== 'localhost' && subdomain !== 'app' && subdomain !== 'www') {
+          const response = await axios.get(`${API_URL}/api/store-settings/public/${subdomain}`);
+          if (response.data.deliveryCharge) {
+            setDeliverySettings(response.data.deliveryCharge);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching delivery settings:', error);
+      }
+    };
+    fetchDeliverySettings();
+  }, []);
+
+  // Calculate delivery charge when city or cart changes
+  useEffect(() => {
+    if (!deliverySettings || !formData.city || items.length === 0) {
+      setDeliveryCharge(0);
+      return;
+    }
+
+    // Calculate total weight (assuming each item has a weight property, default to 1kg if not)
+    const totalWeight = items.reduce((sum, item) => {
+      const itemWeight = item.weight || 1; // Default 1kg per item
+      return sum + (itemWeight * item.quantity);
+    }, 0);
+
+    // Determine weight bracket
+    let weightBracket;
+    if (totalWeight <= 1) weightBracket = '0-1';
+    else if (totalWeight <= 2) weightBracket = '1-2';
+    else if (totalWeight <= 3) weightBracket = '2-3';
+    else if (totalWeight <= 5) weightBracket = '3-5';
+    else if (totalWeight <= 10) weightBracket = '5-10';
+    else weightBracket = '10+';
+
+    // Get region-specific config or use global rates
+    const regionConfig = deliverySettings.regions?.[formData.city];
+
+    // Check if delivery is enabled for this region
+    if (regionConfig && regionConfig.enabled === false) {
+      setDeliveryCharge(0);
+      return;
+    }
+
+    // Get rate: region-specific rate > global rate > 0
+    let rate = 0;
+    if (regionConfig?.rates?.[weightBracket]) {
+      rate = parseFloat(regionConfig.rates[weightBracket]);
+    } else if (deliverySettings.global?.[weightBracket]) {
+      rate = parseFloat(deliverySettings.global[weightBracket]);
+    }
+
+    setDeliveryCharge(rate || 0);
+  }, [deliverySettings, formData.city, items]);
 
   const handleApplyCoupon = () => {
     // Here you would typically validate the coupon and apply the discount
@@ -184,7 +250,11 @@ const Checkout = () => {
         toll: formData.toll,
       },
       items: items,
-      payment: { total: total },
+      payment: {
+        subtotal: total,
+        deliveryCharge: deliveryCharge,
+        total: total + deliveryCharge
+      },
       placedOn: new Date().toISOString(),
       status: 'pending',
       // These fields can be populated as needed
@@ -344,10 +414,7 @@ const Checkout = () => {
                       <label htmlFor="email">Email</label>
                       <input type="email" id="email" value={formData.email} onChange={handleGeneralInfoChange} placeholder="Enter your email address" />
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="orderNote">Order Note (optional)</label>
-                      <input type="text" id="orderNote" value={formData.orderNote} onChange={handleGeneralInfoChange} placeholder="eg: I want to order this product for my family." />
-                    </div>
+
                   </div>
 
                   <AddressForm addressData={formData} onAddressChange={handleAddressChange} />
@@ -422,11 +489,11 @@ const Checkout = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="delivery-icon"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
                     Delivery Charge
                   </span>
-                  <span>FREE</span>
+                  <span>{deliveryCharge > 0 ? `Rs. ${deliveryCharge.toFixed()}` : 'FREE'}</span>
                 </div>
                 <div className="summary-row order-total">
                   <strong>Total:</strong>
-                  <strong>NPR {total.toFixed()}</strong>
+                  <strong>NPR {(total + deliveryCharge).toFixed()}</strong>
                 </div>
                 <div className="apply-coupon" ref={couponRef}>
                   <div className="coupon-header">

@@ -37,14 +37,22 @@ const Plugins = () => {
 
     const fetchPluginData = async () => {
         try {
-            const userRes = await axios.get(`${API_URL}/auth/current_user`);
+            const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
             if (userRes.data && userRes.data.clientId) {
-                const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
-                setClient(clientRes.data);
+                // Use populated data if available or fetch from safe endpoint
+                let clientData;
+                if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+                    clientData = userRes.data.clientId;
+                } else {
+                    const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+                    clientData = clientRes.data;
+                }
+
+                setClient(clientData);
 
                 // If a plugin is already selected (e.g. after refresh), update its value
                 if (selectedPlugin) {
-                    const value = clientRes.data.settings?.[selectedPlugin.configKey] || '';
+                    const value = clientData.settings?.[selectedPlugin.configKey] || '';
 
                     // For WhatsApp, split country code and number
                     if (selectedPlugin.id === 'whatsapp' && value) {

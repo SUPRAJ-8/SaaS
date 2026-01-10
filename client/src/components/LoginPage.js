@@ -34,13 +34,11 @@ const LoginPage = () => {
         console.log('User data:', response.data.user);
         toast.success('Successfully logged in! Redirecting...');
 
-        // Use window.location.replace to prevent going back to login page
+        // Use navigate for client-side routing to preserve session
         setTimeout(() => {
           console.log('🔄 Redirecting to dashboard...');
-          const dashboardUrl = `${window.location.protocol}//${window.location.host}/dashboard`;
-          console.log('Target URL:', dashboardUrl);
-          window.location.replace(dashboardUrl);
-        }, 300); // reduced delay slightly but kept it for cookie processing
+          navigate('/dashboard', { replace: true });
+        }, 500); // Increased delay to ensure session cookie is set
 
         return true;
       }

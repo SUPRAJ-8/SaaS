@@ -8,8 +8,9 @@ const { ensureAuthenticated } = require('../middleware/auth');
 // @access  Private
 router.get('/', ensureAuthenticated, async (req, res) => {
     try {
-        // req.user.clientId comes from the session/user object, which we updated in switch-store
-        const client = await Client.findById(req.user.clientId);
+        // req.user.clientId comes from the session/user object
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({ msg: 'Store not found' });
         }
@@ -23,6 +24,24 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
+// @route   GET api/store-settings/my-store
+// @desc    Get the full client object for the current user (subdomain, domain etc)
+// @access  Private
+router.get('/my-store', ensureAuthenticated, async (req, res) => {
+    try {
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+        res.json(client);
+    } catch (err) {
+        console.error('Error fetching own client:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 
 // @route   PUT api/store-settings
 // @desc    Update settings for the current authenticated user's active store
@@ -53,6 +72,36 @@ router.put('/', ensureAuthenticated, async (req, res) => {
         res.json(client.settings);
     } catch (err) {
         console.error('Error updating store settings:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/store-settings/delivery-regions/:subdomain
+// @desc    Get delivery regions for a store by subdomain (for checkout page)
+// @access  Public
+// NOTE: This route MUST come before /public/:subdomain to avoid route conflicts
+router.get('/delivery-regions/:subdomain', async (req, res) => {
+    try {
+        console.log('📍 Fetching delivery regions for subdomain:', req.params.subdomain);
+        // Case insensitive search for subdomain
+        const client = await Client.findOne({
+            subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
+        });
+
+        if (!client) {
+            console.log('❌ Client not found for subdomain:', req.params.subdomain);
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+
+        // Return delivery regions from settings
+        const settings = client.settings || {};
+        const deliveryCharge = settings.deliveryCharge || {};
+        const regions = deliveryCharge.allRegions || [];
+
+        console.log('✅ Returning', regions.length, 'delivery regions for', client.name);
+        res.json({ regions });
+    } catch (err) {
+        console.error('Error fetching delivery regions:', err.message);
         res.status(500).send('Server Error');
     }
 });

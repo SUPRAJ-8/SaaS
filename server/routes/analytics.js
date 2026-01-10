@@ -15,11 +15,14 @@ const getDateRange = (range, startDate, endDate) => {
             start = new Date(new Date().getFullYear(), 0, 1);
         } else if (range === '90 Days') {
             start.setDate(end.getDate() - 90);
+        } else if (range === 'All Time') {
+            start = new Date(0); // Beginning of time
         } else {
             // Default 30 Days
             start.setDate(end.getDate() - 30);
         }
     }
+
 
     // Ensure 24h coverage
     start.setHours(0, 0, 0, 0);
@@ -58,19 +61,61 @@ router.get('/stats', ensureAuthenticated, async (req, res) => {
             placedOn: { $gte: prevStart, $lte: prevEnd }
         });
 
-        const calculateMetrics = (orders) => {
-            const revenue = orders
-                .filter(o => o.status !== 'cancelled')
-                .reduce((acc, order) => acc + (order.payment?.total || 0), 0);
+        // Fetch all products for this client to get cost prices
+        const products = await Product.find({ clientId });
+        const productMap = {};
+        products.forEach(p => {
+            productMap[p._id.toString()] = p;
+        });
 
-            const completedOrders = orders.filter(o => o.status === 'delivered').length;
-            const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+        const calculateMetrics = (orders) => {
+            let revenue = 0;
+            let profit = 0;
+            let completedOrders = 0;
+            let cancelledOrders = 0;
+
+            orders.forEach(order => {
+                if (order.status !== 'cancelled') {
+                    revenue += (order.payment?.total || 0);
+
+                    // Calculate profit for this order
+                    if (order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            const productId = item.product?.toString();
+                            const product = productMap[productId];
+                            let costPrice = 0;
+
+                            if (product) {
+                                if (product.hasVariants && item.variant) {
+                                    // Try to match variant string "Color / Size"
+                                    const variantStr = item.variant.replace(/Variant:\s*/i, '').toLowerCase();
+                                    const variant = product.variants.find(v => {
+                                        const vName = `${v.color || ''} / ${v.size || ''}`.toLowerCase();
+                                        const vNameAlt = `${v.size || ''} / ${v.color || ''}`.toLowerCase();
+                                        return vName === variantStr || vNameAlt === variantStr ||
+                                            variantStr.includes(v.color?.toLowerCase()) && variantStr.includes(v.size?.toLowerCase());
+                                    });
+                                    costPrice = variant ? (variant.costPrice || 0) : (product.costPrice || 0);
+                                } else {
+                                    costPrice = product.costPrice || 0;
+                                }
+                            }
+
+                            profit += (item.quantity || 0) * ((item.price || 0) - costPrice);
+                        });
+                    }
+                }
+
+                if (order.status === 'delivered') completedOrders++;
+                if (order.status === 'cancelled') cancelledOrders++;
+            });
 
             // Unique customers
             const uniqueCustomers = new Set(orders.map(o => o.customerDetails?.email).filter(Boolean)).size;
 
             return {
                 revenue,
+                profit,
                 orders: orders.length,
                 customers: uniqueCustomers,
                 completedOrders,
@@ -81,11 +126,7 @@ router.get('/stats', ensureAuthenticated, async (req, res) => {
         const currentMetrics = calculateMetrics(currentOrders);
         const prevMetrics = calculateMetrics(prevOrders);
 
-        // Calculate Conversion (orders / total items? No, logic missing for visits. Mocking conversion for now based on orders)
-        // Let's assume a mock constant visit rate or just skip conversion growth effectively to 0. 
-        // Or better: Use items sold vs orders? 
-        // User asked to make it work. Since we don't track visits, we'll return 0 for conversion or a placeholder.
-        // Let's keep conversion as a placeholder or remove it. I'll keep it static for now as 2.5% to avoid breaking UI.
+        // Calculate Conversion
         const conversion = 2.5;
 
         // Calculate Growth %
@@ -96,6 +137,7 @@ router.get('/stats', ensureAuthenticated, async (req, res) => {
 
         res.json({
             revenue: currentMetrics.revenue,
+            profit: currentMetrics.profit,
             orders: currentMetrics.orders,
             customers: currentMetrics.customers,
             conversion: conversion,
@@ -103,12 +145,14 @@ router.get('/stats', ensureAuthenticated, async (req, res) => {
             cancelledOrders: currentMetrics.cancelledOrders,
 
             revenueGrowth: calcGrowth(currentMetrics.revenue, prevMetrics.revenue),
+            profitGrowth: calcGrowth(currentMetrics.profit, prevMetrics.profit),
             ordersGrowth: calcGrowth(currentMetrics.orders, prevMetrics.orders),
             customersGrowth: calcGrowth(currentMetrics.customers, prevMetrics.customers),
             completedGrowth: calcGrowth(currentMetrics.completedOrders, prevMetrics.completedOrders),
             cancelledGrowth: calcGrowth(currentMetrics.cancelledOrders, prevMetrics.cancelledOrders),
             conversionGrowth: 0
         });
+
 
     } catch (err) {
         console.error('Error fetching analytics stats:', err);

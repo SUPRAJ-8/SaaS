@@ -5,6 +5,7 @@ import { FaUpload, FaTrashAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa
 import API_URL from '../../apiConfig';
 import './Customers.css';
 import './StoreSettings.css';
+import DeliverySettings from './DeliverySettings';
 
 const StoreSettings = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -1263,7 +1264,11 @@ const StoreSettings = () => {
 
         {activeTab === 'delivery-charge' && (
           <div className="tab-content">
-            <p className="coming-soon">Delivery Charge - Coming Soon</p>
+            <DeliverySettings
+              storeData={storeData}
+              setStoreData={setStoreData}
+              onSave={(newData) => saveSettingsToApi(newData, 'Delivery rates saved successfully!')}
+            />
           </div>
         )}
 

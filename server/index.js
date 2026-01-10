@@ -147,7 +147,10 @@ app.use((req, res, next) => {
 
 // Middleware to handle subdomain routing
 const subdomainHandler = async (req, res, next) => {
-  const host = req.hostname;
+  // Check for forwarded host from proxy first (for subdomain support with changeOrigin: true)
+  const rawHost = req.headers['x-forwarded-host'] || req.headers['x-original-host'] || req.hostname;
+  // Remove port if present
+  const host = rawHost.split(':')[0];
   const headerSubdomain = req.headers['x-subdomain'];
 
   // 1. Try Custom Domain first (Fastest lookup)
@@ -157,6 +160,7 @@ const subdomainHandler = async (req, res, next) => {
     host === 'app.nepostore.xyz' ||
     host === 'localhost' ||
     host.endsWith('.localhost');
+
 
   if (!isMainDomain || headerSubdomain) {
     try {

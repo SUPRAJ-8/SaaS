@@ -33,10 +33,10 @@ router.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) { return next(err); }
     req.session = null; // Clear the session cookie
-    
+
     // Determine redirect URL based on environment
     let redirectUrl = 'http://localhost:3000'; // Default for development
-    
+
     // Check if we're in production
     const origin = req.get('origin') || req.get('referer') || '';
     if (origin.includes('nepostore.xyz')) {
@@ -49,7 +49,7 @@ router.get('/logout', (req, res, next) => {
       // Development: redirect to main domain
       redirectUrl = 'http://localhost:3000';
     }
-    
+
     res.redirect(redirectUrl);
   });
 });
@@ -59,11 +59,15 @@ router.get('/logout', (req, res, next) => {
 // @access  Public
 router.get('/current_user', (req, res) => {
   console.log('📍 /auth/current_user called');
-  console.log('Session exists:', !!req.session);
-  console.log('Session passport:', req.session?.passport);
   console.log('User in session:', !!req.user);
-  console.log('User data:', req.user ? { id: req.user._id, name: req.user.name, email: req.user.email } : 'No user');
-  console.log('Cookies:', req.headers.cookie);
+  if (req.user) {
+    console.log('User details:', {
+      id: req.user._id,
+      email: req.user.email,
+      clientIdType: typeof req.user.clientId,
+      hasClientIdSubdomain: !!(req.user.clientId && req.user.clientId.subdomain)
+    });
+  }
 
   if (!req.user) {
     return res.status(401).json({ msg: 'Not Authenticated' });

@@ -93,10 +93,12 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   console.log('🔓 Deserializing user ID:', id);
   try {
-    const user = await User.findById(id);
+    // Populate clientId to get subdomain and other store info directly in req.user
+    const user = await User.findById(id).populate('clientId');
     console.log('✅ User found:', user ? user.email : 'Not found');
     done(null, user);
   } catch (err) {
+
     console.error('❌ Deserialize error:', err);
     done(err, null);
   }

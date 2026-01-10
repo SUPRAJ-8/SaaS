@@ -27,19 +27,29 @@ const DashboardHome = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const userRes = await axios.get(`${API_URL}/auth/current_user`);
+        const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
         if (!userRes.data || !userRes.data.clientId) {
+          console.log('⚠️ DashboardHome: No user or clientId found', userRes.data);
           setLoading(false);
           return;
         }
         setUser(userRes.data);
+        console.log('📍 DashboardHome: User loaded', userRes.data.email);
 
-        // Fetch client details
+        // Fetch client details using the safe endpoint
         try {
-          const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
-          setClient(clientRes.data);
+          // If populated by backend, use it directly
+          if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+            console.log('✅ DashboardHome: Client data already populated');
+            setClient(userRes.data.clientId);
+          } else {
+            console.log('🔄 DashboardHome: Fetching client data from my-store');
+            const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+            console.log('✅ DashboardHome: Client data fetched from my-store', clientRes.data?.subdomain);
+            setClient(clientRes.data);
+          }
         } catch (err) {
-          console.error('Error fetching client:', err);
+          console.error('❌ DashboardHome: Error fetching client info:', err);
         }
 
         // Onboarding/Pricing check
@@ -50,10 +60,11 @@ const DashboardHome = () => {
         }
 
         // Real counts
-        const productsRes = await axios.get(`${API_URL}/api/products`);
+        const productsRes = await axios.get(`${API_URL}/api/products`, { withCredentials: true });
         setProductsCount(productsRes.data?.length || 0);
 
-        const ordersRes = await axios.get(`${API_URL}/api/orders`);
+        const ordersRes = await axios.get(`${API_URL}/api/orders`, { withCredentials: true });
+
         const fetchedOrders = ordersRes.data || [];
         setOrders(fetchedOrders);
       } catch (error) {
@@ -78,14 +89,14 @@ const DashboardHome = () => {
 
       hours.forEach(h => {
         const filtered = orders.filter(o => {
-          const od = new Date(o.createdAt);
+          const od = new Date(o.placedOn);
           return od.toDateString() === today && od.getHours() >= h && od.getHours() < h + 2;
         });
 
         const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
         result.push({
           name: label,
-          Revenue: filtered.reduce((acc, o) => acc + (o.payment?.total || 0), 0),
+          Revenue: filtered.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.payment?.total || 0), 0),
           Orders: filtered.length
         });
       });
@@ -99,13 +110,13 @@ const DashboardHome = () => {
         const targetDay = d.getDate();
 
         const filtered = orders.filter(o => {
-          const od = new Date(o.createdAt);
+          const od = new Date(o.placedOn);
           return od.getFullYear() === targetYear && od.getMonth() === targetMonth && od.getDate() === targetDay;
         });
 
         result.push({
           name: i.toString(),
-          Revenue: filtered.reduce((acc, o) => acc + (o.payment?.total || 0), 0),
+          Revenue: filtered.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.payment?.total || 0), 0),
           Orders: filtered.length
         });
       }
@@ -117,12 +128,12 @@ const DashboardHome = () => {
         const month = d.getMonth();
         const year = d.getFullYear();
         const filtered = orders.filter(o => {
-          const od = new Date(o.createdAt);
+          const od = new Date(o.placedOn);
           return od.getMonth() === month && od.getFullYear() === year;
         });
         result.push({
           name: monthNames[month],
-          Revenue: filtered.reduce((acc, o) => acc + (o.payment?.total || 0), 0),
+          Revenue: filtered.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.payment?.total || 0), 0),
           Orders: filtered.length
         });
       }
@@ -165,28 +176,48 @@ const DashboardHome = () => {
 
   const handleVisitStore = (e) => {
     e.preventDefault();
-    if (!client || !client.subdomain) return;
+    if (!client) {
+      console.warn('Cannot visit store: Client data not loaded');
+      return;
+    }
 
-    const hostname = window.location.hostname;
+    // Prioritize Custom Domain if available
+    if (client.customDomain) {
+      const url = client.customDomain.startsWith('http') ? client.customDomain : `https://${client.customDomain}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (!client.subdomain) {
+      console.warn('Cannot visit store: No subdomain set');
+      return;
+    }
+
+    const { hostname, protocol, port } = window.location;
     let baseDomain = hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost';
-    let protocol = hostname.includes('nepostore.xyz') ? 'https:' : 'http:';
-    let port = hostname.includes('nepostore.xyz') ? '' : ':3000';
+    let targetProtocol = hostname.includes('nepostore.xyz') ? 'https:' : protocol;
 
-    const shopUrl = `${protocol}//${client.subdomain}.${baseDomain}${port}`;
+    // In local development, we often use port 3000 for the frontend
+    let targetPort = port ? `:${port}` : (hostname.includes('nepostore.xyz') ? '' : ':3000');
+
+    const shopUrl = `${targetProtocol}//${client.subdomain}.${baseDomain}${targetPort}`;
     window.open(shopUrl, '_blank', 'noopener,noreferrer');
   };
+
 
   // KPI Filtering Logic
   const filteredStats = React.useMemo(() => {
     let filtered = orders;
 
     if (kpiTab === 'Daily') {
-      filtered = orders.filter(order => isToday(new Date(order.createdAt)));
+      filtered = orders.filter(order => isToday(new Date(order.placedOn)));
     } else if (kpiTab === 'Monthly') {
-      filtered = orders.filter(order => isThisMonth(new Date(order.createdAt)));
+      filtered = orders.filter(order => isThisMonth(new Date(order.placedOn)));
     }
 
-    const revenue = filtered.reduce((acc, order) => acc + (order.payment?.total || 0), 0);
+    const revenue = filtered
+      .filter(o => o.status !== 'cancelled')
+      .reduce((acc, order) => acc + (order.payment?.total || 0), 0);
     return {
       revenue,
       ordersCount: filtered.length
@@ -202,16 +233,16 @@ const DashboardHome = () => {
     if (kpiTab === 'Daily') {
       const today = startOfToday();
       const yesterday = subDays(today, 1);
-      currentSet = orders.filter(o => isSameDay(new Date(o.createdAt), today));
-      previousSet = orders.filter(o => isSameDay(new Date(o.createdAt), yesterday));
+      currentSet = orders.filter(o => isSameDay(new Date(o.placedOn), today));
+      previousSet = orders.filter(o => isSameDay(new Date(o.placedOn), yesterday));
       label = "yesterday";
     } else {
       // Monthly or All Time: compare this month vs last month
       const today = new Date();
       const lastMonth = subMonths(today, 1);
 
-      currentSet = orders.filter(o => isThisMonth(new Date(o.createdAt)));
-      previousSet = orders.filter(o => isSameMonth(new Date(o.createdAt), lastMonth));
+      currentSet = orders.filter(o => isThisMonth(new Date(o.placedOn)));
+      previousSet = orders.filter(o => isSameMonth(new Date(o.placedOn), lastMonth));
       label = "last month";
     }
 
@@ -221,8 +252,8 @@ const DashboardHome = () => {
       return val;
     };
 
-    const currRev = currentSet.reduce((acc, o) => acc + (o.payment?.total || 0), 0);
-    const prevRev = previousSet.reduce((acc, o) => acc + (o.payment?.total || 0), 0);
+    const currRev = currentSet.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.payment?.total || 0), 0);
+    const prevRev = previousSet.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.payment?.total || 0), 0);
 
     const currOrd = currentSet.length;
     const prevOrd = previousSet.length;
@@ -262,7 +293,7 @@ const DashboardHome = () => {
           <button
             className="website-link-btn-premium"
             onClick={handleVisitStore}
-            disabled={!client?.subdomain}
+            disabled={!client?.subdomain && !client?.customDomain}
           >
             <FaEye /> View Live Store
           </button>
@@ -289,7 +320,8 @@ const DashboardHome = () => {
         <div className="stats-grid-premium">
           <StatCard
             title={kpiTab === 'All Time' ? "Total Revenue" : `${kpiTab} Revenue`}
-            value={`Rs ${filteredStats.revenue.toLocaleString()}`}
+            value={`Rs. ${filteredStats.revenue.toLocaleString()}`}
+
             icon={<FaMoneyBillWave />}
             iconBgColor="#e6fffa"
             iconColor="#319795"

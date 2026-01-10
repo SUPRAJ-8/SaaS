@@ -61,6 +61,10 @@
   margin: 0;
 }
 
+.shipping-form {
+  width: 100%;
+}
+
 .general-info-container,
 .address-form-container {
   border: 1px solid #ddd;

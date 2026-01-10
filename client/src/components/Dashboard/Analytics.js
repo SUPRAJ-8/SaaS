@@ -9,8 +9,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import {
     FaCalendarAlt, FaFilter, FaDownload, FaEllipsisV, FaChevronRight,
     FaArrowUp, FaArrowDown, FaChevronLeft, FaChartLine, FaShoppingBag, FaUsers,
-    FaCheckCircle, FaTimesCircle, FaChevronDown
+    FaCheckCircle, FaTimesCircle, FaChevronDown, FaMoneyBillWave
 } from 'react-icons/fa';
+
 import API_URL from '../../apiConfig';
 import './Analytics.css';
 
@@ -21,18 +22,20 @@ const Analytics = () => {
     const [endDate, setEndDate] = useState(null);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [stats, setStats] = useState({
-        revenue: 125430,
-        orders: 452,
-        customers: 128,
-        conversion: 3.2,
-        revenueGrowth: 12.5,
-        ordersGrowth: 8.2,
-        customersGrowth: -2.4,
-        conversionGrowth: 0.5,
-        completedOrders: 384,
-        cancelledOrders: 28,
-        completedGrowth: 10.2,
-        cancelledGrowth: -5.4
+        revenue: 0,
+        profit: 0,
+        orders: 0,
+        customers: 0,
+        conversion: 0,
+        revenueGrowth: 0,
+        profitGrowth: 0,
+        ordersGrowth: 0,
+        customersGrowth: 0,
+        conversionGrowth: 0,
+        completedOrders: 0,
+        cancelledOrders: 0,
+        completedGrowth: 0,
+        cancelledGrowth: 0
     });
 
     const [salesData, setSalesData] = useState([]);
@@ -120,11 +123,13 @@ const Analytics = () => {
 
     const getComparisonLabel = () => {
         switch (timeRange) {
+            case 'All Time': return 'overall';
             case '30 Days': return 'vs prev 30 days';
             case '90 Days': return 'vs prev 90 days';
             case 'YTD': return 'vs prev period';
             default: return 'vs prev period';
         }
+
     };
 
     const StatCard = ({ title, value, growth, icon, colorClass }) => (
@@ -168,7 +173,7 @@ const Analytics = () => {
                 </div>
                 <div className="header-right">
                     <div className="time-range-segmented-control">
-                        {['30 Days', '90 Days', 'YTD'].map(range => (
+                        {['All Time', '30 Days', '90 Days', 'YTD'].map(range => (
                             <button
                                 key={range}
                                 className={`range-pill ${timeRange === range ? 'active' : ''}`}
@@ -250,10 +255,17 @@ const Analytics = () => {
             <div className="analytics-stats-grid-premium">
                 <StatCard
                     title="Total Revenue"
-                    value={`Rs. ${stats.revenue.toLocaleString()}`}
+                    value={`Rs. ${(stats.revenue || 0).toLocaleString()}`}
                     growth={stats.revenueGrowth}
                     icon={<FaChartLine />}
                     colorClass="indigo"
+                />
+                <StatCard
+                    title="Total Profit"
+                    value={`Rs. ${(stats.profit || 0).toLocaleString()}`}
+                    growth={stats.profitGrowth}
+                    icon={<FaMoneyBillWave />}
+                    colorClass="emerald"
                 />
                 <StatCard
                     title="Total Orders"
@@ -274,14 +286,14 @@ const Analytics = () => {
                     value={`${stats.conversion}%`}
                     growth={stats.conversionGrowth}
                     icon={<FaFilter />}
-                    colorClass="emerald"
+                    colorClass="blue"
                 />
                 <StatCard
                     title="Completed Orders"
                     value={stats.completedOrders}
                     growth={stats.completedGrowth}
                     icon={<FaCheckCircle />}
-                    colorClass="blue"
+                    colorClass="indigo"
                 />
                 <StatCard
                     title="Cancelled Orders"
@@ -291,6 +303,7 @@ const Analytics = () => {
                     colorClass="rose"
                 />
             </div>
+
 
             <div className="analytics-charts-row">
                 <div className="chart-card-premium sales-overview">

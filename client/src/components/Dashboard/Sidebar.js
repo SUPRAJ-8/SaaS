@@ -13,20 +13,28 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const fetchClientInfo = async () => {
     try {
-      const userRes = await axios.get(`${API_URL}/auth/current_user`);
+      const userRes = await axios.get(`${API_URL}/auth/current_user`, { withCredentials: true });
       if (userRes.data && userRes.data.clientId) {
-        const clientRes = await axios.get(`${API_URL}/api/super-admin/clients/${userRes.data.clientId}`);
-        setClient(clientRes.data);
+        // Use populated data if available or fetch from safe endpoint
+        if (typeof userRes.data.clientId === 'object' && userRes.data.clientId.subdomain) {
+          setClient(userRes.data.clientId);
+        } else {
+          const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+          setClient(clientRes.data);
+        }
 
         // Fetch unread notifications count
-        const notesRes = await axios.get(`${API_URL}/api/notifications`);
-        const unread = notesRes.data.filter(n => n.status === 'unread').length;
-        setUnreadCount(unread);
+        const notesRes = await axios.get(`${API_URL}/api/notifications`, { withCredentials: true });
+        if (Array.isArray(notesRes.data)) {
+          const unread = notesRes.data.filter(n => n.status === 'unread').length;
+          setUnreadCount(unread);
+        }
       }
     } catch (error) {
       console.error('Error fetching sidebar client info:', error);
     }
   };
+
 
   useEffect(() => {
     fetchClientInfo();

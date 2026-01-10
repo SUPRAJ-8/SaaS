@@ -208,12 +208,12 @@
 }
 
 .dashboard-sidebar-nav li a:hover {
-    background-color: #f8fafc;
-    color: #1e293b;
+    background-color: #eef2ff;
+    color: #5866f2;
 }
 
 .dashboard-sidebar-nav li a:hover .nav-icon {
-    color: #1e293b;
+    color: #5866f2;
 }
 
 .dashboard-sidebar-nav li a.active {
