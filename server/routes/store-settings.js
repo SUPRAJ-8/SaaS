@@ -49,24 +49,43 @@ router.get('/my-store', ensureAuthenticated, async (req, res) => {
 router.put('/', ensureAuthenticated, async (req, res) => {
     try {
         const settings = req.body;
+        const clientId = req.user.clientId?._id || req.user.clientId;
 
-        // Find by ID and update the settings field
+        // Fetch current client to compare domain
+        const currentClient = await Client.findById(clientId);
+        if (!currentClient) {
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+
+        const newDomain = settings.customDomain?.trim()?.toLowerCase() || null;
+        const oldDomain = currentClient.customDomain;
+
+        let domainStatus = currentClient.customDomainStatus || 'none';
+
+        if (newDomain !== oldDomain) {
+            // Domain has changed or removed
+            domainStatus = newDomain ? 'pending' : 'none';
+        }
+
+        // Merge settings to prevent data loss when saving partial fields (like just customDomain)
+        const updatedSettings = { ...currentClient.settings, ...settings };
+
+        // Find by ID and update
         const client = await Client.findByIdAndUpdate(
-            req.user.clientId,
+            clientId,
             {
                 $set: {
-                    settings: settings,
-                    seoSettings: settings.seoSettings,
-                    subdomain: settings.subdomain?.trim() === '' ? null : settings.subdomain?.toLowerCase(),
-                    customDomain: settings.customDomain?.trim() === '' ? null : settings.customDomain?.toLowerCase()
+                    settings: updatedSettings,
+                    seoSettings: settings.seoSettings || currentClient.seoSettings,
+                    subdomain: settings.subdomain !== undefined
+                        ? (settings.subdomain?.trim() === '' ? null : settings.subdomain?.toLowerCase())
+                        : currentClient.subdomain,
+                    customDomain: newDomain,
+                    customDomainStatus: domainStatus
                 }
             },
             { new: true }
         );
-
-        if (!client) {
-            return res.status(404).json({ msg: 'Store not found' });
-        }
 
         console.log(`✅ Settings updated for store: ${client.name}`);
         res.json(client.settings);
@@ -133,6 +152,59 @@ router.get('/public/:subdomain', async (req, res) => {
         res.json(settingsData);
     } catch (err) {
         console.error('Error fetching public store settings:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/store-settings/verify-domain
+// @desc    Verify custom domain DNS
+// @access  Private
+router.post('/verify-domain', ensureAuthenticated, async (req, res) => {
+    const dns = require('dns').promises;
+    try {
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const client = await Client.findById(clientId);
+
+        if (!client || !client.customDomain) {
+            return res.status(400).json({ msg: 'No custom domain configured' });
+        }
+
+        const domain = client.customDomain;
+        let isConfigured = false;
+        let details = '';
+
+        try {
+            // Check for CNAME
+            const cnames = await dns.resolveCname(domain);
+            if (cnames.some(c => c.toLowerCase().includes('nepostore.xyz'))) {
+                isConfigured = true;
+                details = 'CNAME correct';
+            }
+        } catch (e) {
+            // Try A Record
+            try {
+                const addresses = await dns.resolve4(domain);
+                const serverIp = '123.45.67.89'; // Replace with real server IP later
+                if (addresses.includes(serverIp)) {
+                    isConfigured = true;
+                    details = 'A record correct';
+                }
+            } catch (aErr) {
+                details = 'DNS records not found or incorrect';
+            }
+        }
+
+        if (isConfigured) {
+            client.customDomainStatus = 'verified';
+            await client.save();
+            return res.json({ success: true, msg: 'Domain verified successfully!', details });
+        } else {
+            client.customDomainStatus = 'error';
+            await client.save();
+            return res.status(400).json({ success: false, msg: details });
+        }
+    } catch (err) {
+        console.error('Error verifying domain:', err);
         res.status(500).send('Server Error');
     }
 });

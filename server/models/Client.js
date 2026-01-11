@@ -31,6 +31,11 @@ const clientSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  customDomainStatus: {
+    type: String,
+    enum: ['pending', 'verified', 'error', 'none'],
+    default: 'none'
+  },
   subscriptionPlan: {
     type: String,
     enum: ['free', 'basic', 'pro', 'platinum', 'enterprise'],

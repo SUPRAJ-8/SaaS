@@ -1,0 +1,368 @@
+.custom-domain-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.custom-domain-modal-content {
+    background: white;
+    width: 100%;
+    max-width: 900px;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header-section {
+    margin-bottom: 2rem;
+}
+
+.modal-header-section h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.modal-header-section p {
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+/* Stepper */
+.domain-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    padding: 0 2rem;
+    position: relative;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+    background: white;
+    padding: 0 10px;
+}
+
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 8px;
+    border: 2px solid #e2e8f0;
+}
+
+.step-item.active .step-circle {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.step-item.completed .step-circle {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.step-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.step-item.active .step-label {
+    color: #1e293b;
+}
+
+.step-line {
+    position: absolute;
+    top: 16px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 0;
+}
+
+.step-line-progress {
+    height: 100%;
+    background: #3b82f6;
+    transition: width 0.3s ease;
+}
+
+/* Step Content Container */
+.step-content-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Step 1 */
+.step-input-group {
+    margin: 2rem 0;
+}
+
+.step-input-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.step-input-group input {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+/* Step 2 */
+.step-sub-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.sub-header-circle {
+    width: 40px;
+    height: 40px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step-sub-header h3 {
+    margin-bottom: 4px;
+    color: #1e293b;
+}
+
+.step-sub-header p {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.dns-alert {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.alert-icon {
+    color: #64748b;
+    margin-top: 3px;
+}
+
+.alert-text h4 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.alert-text p {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.dns-records-grid {
+    margin-bottom: 2rem;
+}
+
+.dns-record-header {
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.record-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.record-field label {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.copy-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.copy-input-wrapper input {
+    background: transparent;
+    border: none;
+    padding: 0.6rem 0.8rem;
+    width: 100%;
+    font-size: 0.9rem;
+    color: #1e293b;
+    pointer-events: none;
+}
+
+.copy-btn {
+    background: white;
+    border-left: 1px solid #e2e8f0;
+    padding: 0.6rem 0.8rem;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.copy-btn:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
+}
+
+.note-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.note-icon {
+    color: #2563eb;
+    margin-top: 3px;
+}
+
+.note-text h4 {
+    font-size: 0.9rem;
+    color: #1e40af;
+    margin-bottom: 4px;
+}
+
+.note-text p {
+    font-size: 0.85rem;
+    color: #1e40af;
+}
+
+/* Step 3 */
+.verification-status-box {
+    text-align: center;
+    padding: 2rem;
+}
+
+.status-icon-big {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.status-icon-big.pending {
+    color: #f59e0b;
+}
+
+.status-icon-big.verified {
+    color: #10b981;
+}
+
+.status-icon-big.error {
+    color: #ef4444;
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+}
+
+.btn-next,
+.btn-verify {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-next:disabled,
+.btn-verify:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.close-x {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

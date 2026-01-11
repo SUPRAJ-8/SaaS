@@ -1,9 +1,8 @@
 const ensureAuthenticated = (req, res, next) => {
     if (req.isAuthenticated && req.isAuthenticated()) {
         // Check for concurrent login validation
-        // req.user is fresh from DB (via deserializeUser)
-        // If user has a currentSessionId recorded, it MUST match the session's sessionId
-        if (req.user.currentSessionId && req.user.currentSessionId !== req.session.sessionId) {
+        // ONLY if both the session has an ID and the user record has a recorded session ID
+        if (req.user.currentSessionId && req.session.sessionId && req.user.currentSessionId !== req.session.sessionId) {
             console.log(`🚫 Concurrent login detected for user ${req.user.email}. Invalidating session.`);
             req.session = null; // Clear session (cookie-session)
             return res.status(401).json({

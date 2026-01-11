@@ -1,0 +1,183 @@
+.domains-container {
+    padding: 2rem;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+.domains-header {
+    margin-bottom: 2.5rem;
+}
+
+.domains-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.domains-header p {
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.domains-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.75rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-icon-wrapper {
+    font-size: 1.25rem;
+}
+
+.icon-blue {
+    color: #3b82f6;
+}
+
+.icon-green {
+    color: #10b981;
+}
+
+.icon-orange {
+    color: #f97316;
+}
+
+.domains-table-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+}
+
+.domains-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.domains-table th {
+    text-align: left;
+    padding: 1rem 1.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.domains-table td {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+.col-domain {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.col-store {
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.col-status {
+    width: 150px;
+}
+
+.status-pill {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+}
+
+.pill-verified {
+    background-color: #ecfdf5;
+    color: #10b981;
+}
+
+.pill-pending {
+    background-color: #fffbeb;
+    color: #f59e0b;
+}
+
+.pill-error {
+    background-color: #fef2f2;
+    color: #ef4444;
+}
+
+.col-date {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.col-action {
+    text-align: right;
+    width: 100px;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.btn-delete:hover {
+    color: #ef4444;
+}
+
+.empty-row {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 3rem !important;
+}
+
+/* Base adjustment for sidebar coexistence */
+.saas-admin-container .domains-container {
+    background-color: #f8fafc !important;
+}
+
+/* Ensure light mode colors */
+.saas-admin-container.light-mode .domains-container {
+    background-color: #f8fafc;
+}

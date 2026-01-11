@@ -30,6 +30,8 @@ import API_URL from '../../apiConfig';
 import ConfirmationModal from './ConfirmationModal';
 import SuperAdminThemes from './SuperAdminThemes';
 import SuperAdminTemplates from './SuperAdminTemplates';
+import SuperAdminDomains from './SuperAdminDomains';
+import { FaGlobe } from 'react-icons/fa';
 import './SuperAdminDashboard.css';
 
 // Helper function to get API URL with fallback - defined outside to prevent reference changes
@@ -352,6 +354,9 @@ const SuperAdminClients = () => {
                     </div>
                     <div className={`sidebar-item ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => setActiveTab('templates')}>
                         <FaFileAlt className="sidebar-icon" /> Templates Manager
+                    </div>
+                    <div className={`sidebar-item ${activeTab === 'domains' ? 'active' : ''}`} onClick={() => setActiveTab('domains')}>
+                        <FaGlobe className="sidebar-icon" /> Domains
                     </div>
                     <div className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
                         <FaCog className="sidebar-icon" /> Settings
@@ -842,24 +847,16 @@ const SuperAdminClients = () => {
                 ) : activeTab === 'themes' ? (
                     <SuperAdminThemes />
                 ) : activeTab === 'templates' ? (
-                    <SuperAdminTemplates />
+                    <SuperAdminTemplates theme={theme} />
+                ) : activeTab === 'domains' ? (
+                    <SuperAdminDomains />
                 ) : (
-                    <div className="other-tab-placeholder">
-                        <header className="top-nav">
-                            <div className="page-title-section">
-                                <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-                                <p>Section coming soon</p>
-                            </div>
-                            <div className="top-actions">
-                                <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
-                                    {theme === 'dark' ? <FaSun /> : <FaMoon style={{ color: '#3b82f6' }} />}
-                                </button>
-                            </div>
-                        </header>
+                    <div className="saas-settings-placeholder">
+                        <h2>Settings Page</h2>
+                        <p>SaaS platform configuration coming soon...</p>
                     </div>
-                )
-                }
-            </main >
+                )}
+            </main>
 
             {/* Store Details Modal */}
             {
@@ -971,7 +968,7 @@ const SuperAdminClients = () => {
                     ? "Are you sure you want to delete this tenant and all their associated data? This action cannot be undone."
                     : `Are you sure you want to delete ${selectedClients.length} selected tenants and all their data? This action is permanent.`}
             </ConfirmationModal>
-        </div>
+        </div >
     );
 };
 

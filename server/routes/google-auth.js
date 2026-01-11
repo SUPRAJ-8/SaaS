@@ -12,8 +12,20 @@ router.get('/google', passport.authenticate('google', {
 // @route   GET /auth/google/callback
 // @desc    Google auth callback
 // @access  Public
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login-error' }), (req, res) => {
-  // Successful authentication, redirect to the client's dashboard.
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login-error' }), async (req, res) => {
+  // Successful authentication, setup session ID for concurrent login check
+  if (req.user) {
+    const crypto = require('crypto');
+    const sessionId = crypto.randomBytes(16).toString('hex');
+
+    // Update user record
+    req.user.currentSessionId = sessionId;
+    await req.user.save();
+
+    // Update session
+    req.session.sessionId = sessionId;
+  }
+
   let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
   if (clientUrl.includes('nepostore.xyz')) {

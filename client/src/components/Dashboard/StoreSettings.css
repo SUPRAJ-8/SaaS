@@ -1243,3 +1243,71 @@ textarea[name="constructionMessage"]:focus {
   font-size: 0.7rem;
   font-weight: bold;
 }
+
+/* Custom Domain Setup UI */
+.custom-domain-trigger-wrapper {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+}
+
+.custom-domain-readonly-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: white !important;
+  font-size: 1rem;
+  color: #1e293b;
+  transition: all 0.2s;
+  padding-right: 120px;
+}
+
+.custom-domain-trigger-wrapper:hover .custom-domain-readonly-input {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.domain-status-indicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.setup-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.status-pills-container {
+  display: flex;
+  gap: 8px;
+}
+
+.status-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.pill-verified {
+  background-color: #ecfdf5;
+  color: #10b981;
+}
+
+.pill-pending {
+  background-color: #fffbeb;
+  color: #f59e0b;
+}
+
+.pill-error {
+  background-color: #fef2f2;
+  color: #ef4444;
+}

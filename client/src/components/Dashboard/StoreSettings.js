@@ -6,6 +6,7 @@ import API_URL from '../../apiConfig';
 import './Customers.css';
 import './StoreSettings.css';
 import DeliverySettings from './DeliverySettings';
+import CustomDomainModal from './CustomDomainModal';
 
 const StoreSettings = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -14,6 +15,8 @@ const StoreSettings = () => {
   });
   const [dragActive, setDragActive] = useState({ logo: false, favicon: false });
   const [isSaving, setIsSaving] = useState(false);
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+  const [clientData, setClientData] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     branding: false,
     brandName: false,
@@ -106,6 +109,14 @@ const StoreSettings = () => {
           // Merge API data with defaults
           const mergedData = { ...defaultSettings, ...response.data };
           setStoreData(mergedData);
+
+          // Fetch client data for domain status
+          try {
+            const clientRes = await axios.get(`${API_URL}/api/store-settings/my-store`, { withCredentials: true });
+            setClientData(clientRes.data);
+          } catch (cErr) {
+            console.error('Failed to fetch client data:', cErr);
+          }
 
           // Also update localStorage to keep it in sync for other components
           localStorage.setItem('storeSettings', JSON.stringify(mergedData));
@@ -1274,7 +1285,7 @@ const StoreSettings = () => {
 
         {activeTab === 'domains' && (
           <div className="tab-content">
-            <form onSubmit={handleDomainsSubmit} className="settings-form">
+            <div className="settings-form">
               <div className="form-row">
                 <div className="form-field full-width">
                   <label>Subdomain</label>
@@ -1289,26 +1300,59 @@ const StoreSettings = () => {
                     />
                     <span className="domain-suffix">.nepostore.xyz</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleDomainsSubmit}
+                    className={`save-button ${isSaving ? 'btn-loading' : ''}`}
+                    disabled={isSaving}
+                    style={{ marginTop: '1rem', width: 'fit-content' }}
+                  >
+                    {isSaving ? 'Saving...' : 'Save Subdomain'}
+                  </button>
                 </div>
               </div>
 
-              <div className="form-row">
+              <div className="form-row" style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #f1f5f9' }}>
                 <div className="form-field full-width">
                   <label>Custom Domain</label>
-                  <input
-                    type="text"
-                    name="customDomain"
-                    value={storeData.customDomain}
-                    onChange={handleInputChange}
-                    placeholder="eg: yourstore.com"
-                  />
+                  <div className="custom-domain-trigger-wrapper" onClick={() => setIsDomainModalOpen(true)}>
+                    <input
+                      type="text"
+                      name="customDomain"
+                      value={storeData.customDomain || ''}
+                      readOnly
+                      placeholder="Connect your own domain (eg: yourstore.com)"
+                      className="custom-domain-readonly-input"
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <div className="domain-status-indicator">
+                      {storeData.customDomain ? (
+                        <span className={`status-pill pill-${clientData?.customDomainStatus || 'pending'}`}>
+                          {clientData?.customDomainStatus === 'verified' ? 'CONNECTED' :
+                            clientData?.customDomainStatus === 'error' ? 'ERROR' : 'PENDING'}
+                        </span>
+                      ) : (
+                        <span className="setup-badge">Setup →</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <button type="submit" className={`save-button ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-            </form>
+            <CustomDomainModal
+              isOpen={isDomainModalOpen}
+              onClose={() => setIsDomainModalOpen(false)}
+              currentDomain={storeData.customDomain}
+              initialStatus={clientData?.customDomainStatus}
+              onUpdate={(newDomain, newStatus) => {
+                const updated = { ...storeData, customDomain: newDomain };
+                setStoreData(updated);
+                setClientData(prev => ({ ...prev, customDomainStatus: newStatus }));
+                localStorage.setItem('storeSettings', JSON.stringify(updated));
+                window.dispatchEvent(new Event('storeSettingsUpdated'));
+              }}
+            />
           </div>
         )}
 

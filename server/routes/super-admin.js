@@ -303,4 +303,92 @@ router.post('/bulk-plan', async (req, res) => {
     }
 });
 
+// @route   GET api/super-admin/domains
+// @desc    Get all custom domains managed by the platform
+router.get('/domains', async (req, res) => {
+    try {
+        // Fetch all clients to manage both subdomains and custom domains
+        const clients = await Client.find()
+            .select('name subdomain customDomain customDomainStatus createdAt')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json(clients);
+    } catch (err) {
+        console.error('Error fetching domains:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/super-admin/domains/stats
+// @desc    Get domain stats for super admin dashboard
+router.get('/domains/stats', async (req, res) => {
+    try {
+        const totalDomains = await Client.countDocuments({ customDomain: { $exists: true, $ne: null, $ne: '' } });
+        const connectedDomains = await Client.countDocuments({ customDomain: { $exists: true, $ne: null, $ne: '' }, customDomainStatus: 'verified' });
+        const needsAttention = await Client.countDocuments({ customDomain: { $exists: true, $ne: null, $ne: '' }, customDomainStatus: { $in: ['pending', 'error'] } });
+
+        res.json({
+            totalDomains,
+            connectedDomains,
+            needsAttention
+        });
+    } catch (err) {
+        console.error('Error fetching domain stats:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/super-admin/domains/verify/:id
+// @desc    Manually verify a domain's DNS records
+router.post('/domains/verify/:id', async (req, res) => {
+    const dns = require('dns').promises;
+    try {
+        const client = await Client.findById(req.params.id);
+        if (!client || !client.customDomain) {
+            return res.status(404).json({ msg: 'Domain not found for this client' });
+        }
+
+        const domain = client.customDomain;
+        let isConfigured = false;
+        let details = '';
+
+        try {
+            // Check for CNAME first (most common for subdomains)
+            const cnames = await dns.resolveCname(domain);
+            if (cnames.includes('nepostore.xyz')) {
+                isConfigured = true;
+                details = 'CNAME correct (pointing to nepostore.xyz)';
+            }
+        } catch (e) {
+            // Try A Record lookup
+            try {
+                const addresses = await dns.resolve4(domain);
+                // Replace with your VPS IP later
+                const serverIp = '123.45.67.89'; // Placeholder
+                if (addresses.includes(serverIp)) {
+                    isConfigured = true;
+                    details = `A record correct (pointing to ${serverIp})`;
+                }
+            } catch (aErr) {
+                details = 'No valid A or CNAME record found';
+            }
+        }
+
+        if (isConfigured) {
+            client.customDomainStatus = 'verified';
+            await client.save();
+            return res.json({ success: true, status: 'verified', details });
+        } else {
+            client.customDomainStatus = 'error';
+            await client.save();
+            return res.json({ success: false, status: 'error', details });
+        }
+
+    } catch (err) {
+        console.error('Error verifying domain:', err);
+        res.status(500).json({ msg: 'Verification failed', error: err.message });
+    }
+});
+
 module.exports = router;
