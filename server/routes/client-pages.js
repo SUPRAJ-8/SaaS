@@ -137,23 +137,42 @@ router.post('/', ensureAuthenticated, async (req, res) => {
 });
 
 // @route   GET /api/client-pages/public/:subdomain
-// @desc    Get a specific page or all pages for a subdomain
+// @desc    Get a specific page or all pages for a subdomain/custom domain
 // @access  Public
 router.get('/public/:subdomain', async (req, res) => {
     try {
+        console.log(`[Client Pages] Public page request for: ${req.params.subdomain}, slug: ${req.query.slug || 'none'}`);
+
         let client = req.tenantClient;
+
         if (!client) {
-            client = await Client.findOne({ subdomain: req.params.subdomain });
+            console.log(`[Client Pages] No tenantClient found, searching by subdomain: ${req.params.subdomain}`);
+
+            // Try to find by subdomain or custom domain
+            client = await Client.findOne({
+                $or: [
+                    { subdomain: req.params.subdomain },
+                    { customDomain: req.params.subdomain },
+                    { customDomain: req.params.subdomain.replace(/^www\./, '') },
+                    { customDomain: 'www.' + req.params.subdomain }
+                ]
+            });
         }
 
         if (!client) {
-            return res.status(404).json({ msg: 'Store not found' });
+            console.log(`[Client Pages] ❌ Store not found for: ${req.params.subdomain}`);
+            return res.status(404).json({ msg: 'Store not found', subdomain: req.params.subdomain });
         }
+
+        console.log(`[Client Pages] ✅ Found client: ${client.name} (ID: ${client._id})`);
 
         const website = await Website.findOne({ clientId: client._id });
         if (!website) {
+            console.log(`[Client Pages] ⚠️ No website found for client: ${client.name}`);
             return res.json({}); // No website/pages yet
         }
+
+        console.log(`[Client Pages] Found website with ${website.pages.length} pages`);
 
         // Optional: Filter by slug if query param provided
         const { slug } = req.query;
@@ -207,6 +226,8 @@ router.get('/public/:subdomain', async (req, res) => {
                 console.log(`[Public Page Fetch] ℹ️ Page not found for slug: "${slug}" on tenant: ${req.params.subdomain}. (Returning null)`);
                 return res.json(null);
             }
+
+            console.log(`[Public Page Fetch] ✅ Returning page: ${page.title} (slug: ${page.slug})`);
             return res.json(page);
         }
 
@@ -222,9 +243,10 @@ router.get('/public/:subdomain', async (req, res) => {
             publishedPages = website.pages.filter(p => p.status === 'published' && p.themeId === 'nexus');
         }
 
+        console.log(`[Public Page Fetch] ✅ Returning ${publishedPages.length} published pages`);
         res.json(publishedPages);
     } catch (err) {
-        console.error(err.message);
+        console.error('[Client Pages] Error:', err.message);
         res.status(500).send('Server Error');
     }
 });

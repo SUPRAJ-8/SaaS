@@ -170,67 +170,142 @@ const subdomainHandler = async (req, res, next) => {
   const host = rawHost.split(':')[0];
   const headerSubdomain = req.headers['x-subdomain'];
 
-  // 1. Try Custom Domain first (Fastest lookup)
-  // If the host is not our main domains, it might be a user's custom domain
+  console.log(`[Tenant] Processing request: ${req.method} ${req.path}`);
+  console.log(`[Tenant] Host: ${host}, x-subdomain header: ${headerSubdomain || 'none'}`);
+
+  // 1. Try x-subdomain header first (sent from frontend for custom domains/subdomains)
+  if (headerSubdomain) {
+    try {
+      let query;
+      // If the header looks like a domain (has dots), query by customDomain
+      if (headerSubdomain.includes('.')) {
+        console.log(`[Tenant] Searching by customDomain: ${headerSubdomain}`);
+        query = {
+          $or: [
+            { customDomain: headerSubdomain },
+            { customDomain: headerSubdomain.replace(/^www\./, '') }, // Try without www
+            { customDomain: 'www.' + headerSubdomain } // Try with www
+          ]
+        };
+      } else {
+        console.log(`[Tenant] Searching by subdomain: ${headerSubdomain}`);
+        query = { subdomain: headerSubdomain };
+      }
+
+      const tenantClient = await Client.findOne(query);
+      if (tenantClient) {
+        req.tenantClient = tenantClient;
+        console.log(`[Tenant] ✅ Found tenant via x-subdomain header: ${tenantClient.name} (ID: ${tenantClient._id})`);
+        return next();
+      } else {
+        console.log(`[Tenant] ⚠️ No tenant found for x-subdomain: ${headerSubdomain}`);
+      }
+    } catch (err) {
+      console.error('[Tenant] Error during x-subdomain lookup:', err);
+    }
+  }
+
+  // 2. Check if this is a custom domain (not our main domains)
   const isMainDomain = host === 'nepostore.xyz' ||
     host === 'www.nepostore.xyz' ||
     host === 'app.nepostore.xyz' ||
     host === 'localhost' ||
     host.endsWith('.localhost');
 
-
-  if (!isMainDomain || headerSubdomain) {
+  if (!isMainDomain) {
     try {
-      let query;
-      if (headerSubdomain) {
-        // If the header looks like a domain (has dots), query by customDomain
-        query = headerSubdomain.includes('.') ? { customDomain: headerSubdomain } : { subdomain: headerSubdomain };
-      } else {
-        // Fallback to host header for custom domains
-        query = { customDomain: host };
-      }
+      console.log(`[Tenant] Searching by customDomain (host): ${host}`);
+      const query = {
+        $or: [
+          { customDomain: host },
+          { customDomain: host.replace(/^www\./, '') }, // Try without www
+          { customDomain: 'www.' + host } // Try with www
+        ]
+      };
 
       const tenantClient = await Client.findOne(query);
       if (tenantClient) {
         req.tenantClient = tenantClient;
+        console.log(`[Tenant] ✅ Found tenant via custom domain: ${tenantClient.name} (ID: ${tenantClient._id})`);
         return next();
+      } else {
+        console.log(`[Tenant] ⚠️ No tenant found for custom domain: ${host}`);
       }
     } catch (err) {
-      console.error('Custom domain/subdomain lookup error:', err);
+      console.error('[Tenant] Custom domain lookup error:', err);
     }
   }
 
-  // 2. Fallback to Subdomain logic
+  // 3. Fallback to Subdomain logic (for *.localhost and *.nepostore.xyz)
   const parts = host.split('.');
-  let subdomain = headerSubdomain || null;
+  let subdomain = null;
 
-  if (!subdomain) {
-    if (host.endsWith('.localhost')) {
-      subdomain = parts[0];
-    } else if (host.endsWith('.nepostore.xyz')) {
-      subdomain = parts[0];
-    }
+  if (host.endsWith('.localhost')) {
+    subdomain = parts[0];
+    console.log(`[Tenant] Detected .localhost subdomain: ${subdomain}`);
+  } else if (host.endsWith('.nepostore.xyz')) {
+    subdomain = parts[0];
+    console.log(`[Tenant] Detected .nepostore.xyz subdomain: ${subdomain}`);
   }
 
-  if (subdomain === 'app') {
+  // Skip app subdomain (that's the dashboard)
+  if (subdomain === 'app' || subdomain === 'www' || subdomain === 'api') {
+    console.log(`[Tenant] Skipping reserved subdomain: ${subdomain}`);
     return next();
   }
 
-  if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
+  if (subdomain) {
     try {
+      console.log(`[Tenant] Searching by subdomain: ${subdomain}`);
       const tenantClient = await Client.findOne({ subdomain });
       if (tenantClient) {
         req.tenantClient = tenantClient;
+        console.log(`[Tenant] ✅ Found tenant via subdomain: ${tenantClient.name} (ID: ${tenantClient._id})`);
+      } else {
+        console.log(`[Tenant] ⚠️ No tenant found for subdomain: ${subdomain}`);
       }
     } catch (err) {
-      console.error('Subdomain lookup error:', err);
+      console.error('[Tenant] Subdomain lookup error:', err);
     }
   }
+
+  if (!req.tenantClient) {
+    console.log(`[Tenant] ❌ No tenant identified for this request`);
+  }
+
   next();
 };
 
 // Use the subdomain handler for all incoming requests
 app.use(subdomainHandler);
+
+// Middleware to redirect subdomain to custom domain if configured
+app.use((req, res, next) => {
+  // Only redirect on production (nepostore.xyz domain)
+  const host = req.hostname;
+
+  // Check if this is a nepostore.xyz subdomain (not app, www, or api)
+  if (host.endsWith('.nepostore.xyz')) {
+    const subdomain = host.split('.')[0];
+
+    // Skip reserved subdomains
+    if (subdomain === 'app' || subdomain === 'www' || subdomain === 'api') {
+      return next();
+    }
+
+    // Check if tenant has a custom domain configured
+    if (req.tenantClient && req.tenantClient.customDomain) {
+      const customDomain = req.tenantClient.customDomain;
+      const protocol = req.protocol || 'https';
+      const redirectUrl = `${protocol}://${customDomain}${req.originalUrl}`;
+
+      console.log(`[Redirect] Redirecting ${host} → ${customDomain}`);
+      return res.redirect(301, redirectUrl); // 301 = Permanent redirect
+    }
+  }
+
+  next();
+});
 
 app.get('/', (req, res) => {
   res.send('API for Nepali CMS is running...');

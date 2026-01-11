@@ -428,6 +428,32 @@
     border-left: 4px solid #3b82f6;
 }
 
+.integration-hint code {
+    background-color: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #1e293b;
+}
+
+.integration-hint ol {
+    margin: 0;
+}
+
+.integration-hint li {
+    margin-bottom: 8px;
+}
+
+.integration-hint a {
+    transition: opacity 0.2s;
+}
+
+.integration-hint a:hover {
+    opacity: 0.8;
+}
+
+
 .config-form-group {
     display: flex;
     flex-direction: column;

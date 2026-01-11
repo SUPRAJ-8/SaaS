@@ -353,9 +353,22 @@ const Plugins = () => {
                         </div>
 
                         <div className="modal-body">
-                            <p className="integration-hint">
-                                {selectedPlugin.description}
-                            </p>
+                            {selectedPlugin.id === 'tawkto' ? (
+                                <div className="integration-hint" style={{ width: '90%', marginLeft: '0' }}>
+                                    <strong>📋 How to get your Tawk.to Widget Key:</strong>
+                                    <ol style={{ marginTop: '10px', paddingLeft: '20px', lineHeight: '1.8' }}>
+                                        <li>Go to your <a href="https://dashboard.tawk.to/#/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>Tawk.to Dashboard</a></li>
+                                        <li>Click on <strong>Administration</strong> → <strong>Channels</strong> → <strong>Chat Widget</strong></li>
+                                        <li>Scroll down to find <strong>Direct Chat Link</strong></li>
+                                        <li>Copy the Widget Key (format: <code>YOUR_PROPERTY_ID/YOUR_WIDGET_ID</code>)</li>
+                                        <li>Paste it in the field below</li>
+                                    </ol>
+                                </div>
+                            ) : (
+                                <p className="integration-hint">
+                                    {selectedPlugin.description}
+                                </p>
+                            )}
 
                             <div className="config-form-group">
                                 <label>
@@ -408,7 +421,7 @@ const Plugins = () => {
                                     <input
                                         type="text"
                                         placeholder={
-                                            selectedPlugin.id === 'tawkto' ? 'Enter your tawk.to Widget Key' :
+                                            selectedPlugin.id === 'tawkto' ? 'e.g., 6959f92e11449f197f2b9a73/1je3nanq6' :
                                                 `Enter your ${selectedPlugin.name} credentials...`
                                         }
                                         value={configValue}
@@ -421,7 +434,24 @@ const Plugins = () => {
                                     <FaInfoCircle />
                                     <span>
                                         {selectedPlugin.id === 'whatsapp' && "Enter your phone number without country code (e.g., 9888888888)"}
-                                        {selectedPlugin.id === 'tawkto' && "Enter your tawk.to Widget Key from your tawk.to dashboard."}
+                                        {selectedPlugin.id === 'tawkto' && (
+                                            <>
+                                                Find your Widget Key in your{' '}
+                                                <a
+                                                    href="https://dashboard.tawk.to/#/admin"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: '#3b82f6',
+                                                        textDecoration: 'underline',
+                                                        fontWeight: '600'
+                                                    }}
+                                                >
+                                                    Tawk.to Dashboard
+                                                </a>
+                                                {' '}→ Administration → Channels → Chat Widget → Direct Chat Link
+                                            </>
+                                        )}
                                     </span>
                                 </div>
                             </div>
