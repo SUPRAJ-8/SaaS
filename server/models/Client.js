@@ -60,6 +60,19 @@ const clientSchema = new mongoose.Schema({
     metaDescription: { type: String, trim: true },
     ogImage: { type: String },
     keywords: { type: [String], default: [] }
+  },
+  navbar: {
+    layout: { type: String, default: 'basic' },
+    navbarStyle: { type: String, default: 'basic' },
+    showSearch: { type: Boolean, default: true },
+    longSearch: { type: Boolean, default: false },
+    sticky: { type: Boolean, default: false },
+    showLogo: { type: Boolean, default: true },
+    showStoreName: { type: Boolean, default: true },
+    showIcons: { type: Boolean, default: true },
+    menuAlignment: { type: String, default: 'center' },
+    menuItems: { type: Array, default: [] },
+    settings: { type: Object, default: {} }
   }
 }, { timestamps: true });
 

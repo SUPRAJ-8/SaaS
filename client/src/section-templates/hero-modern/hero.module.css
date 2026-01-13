@@ -32,8 +32,8 @@
 .button {
     display: inline-block;
     padding: 14px 32px;
-    background: #7c3aed;
-    color: white;
+    background: var(--primary, #7c3aed);
+    color: var(--primary-content, white);
     text-decoration: none;
     border-radius: 8px;
     font-weight: 600;

@@ -138,11 +138,13 @@ const ModernHeroTemplate = ({ content }) => {
                     </div>
                 </div>
 
-                <div className="hero-visual">
-                    <div className="visual-image-wrapper">
-                        <img src={resolveImageUrl(imageUrl, API_URL)} alt="Dashboard Preview" />
+                {imageUrl && (
+                    <div className="hero-visual">
+                        <div className="visual-image-wrapper">
+                            <img src={resolveImageUrl(imageUrl, API_URL)} alt="Dashboard Preview" />
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </section>
     );

@@ -70,7 +70,7 @@ const SuperAdminTemplates = () => {
             setTemplates([
                 {
                     _id: '1',
-                    name: 'Hero Section Modern',
+                    name: 'Hero section 1',
                     id: 'hero-modern',
                     description: 'A modern hero section with large title and cta.',
                     thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426',

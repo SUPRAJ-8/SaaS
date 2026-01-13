@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope, FaCheck, FaChevronDown } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope, FaCheck, FaChevronDown, FaPalette, FaInfoCircle } from 'react-icons/fa';
 import './PageBuilder.css';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -10,7 +10,7 @@ import FooterEditorModal from './FooterEditorModal';
 import NavbarEditorModal from './NavbarEditorModal';
 import SectionTemplateModal from './SectionTemplateModal';
 import ProductSelectionModal from './ProductSelectionModal';
-import { applyStoreSettings } from '../../themeUtils';
+import { applyStoreSettings, resolveImageUrl } from '../../themeUtils';
 
 import DynamicSection from './DynamicSection';
 import DynamicSectionEditor from './DynamicSectionEditor';
@@ -272,6 +272,10 @@ const PageBuilder = ({ mode = 'page' }) => {
     const [showProductModal, setShowProductModal] = useState(false);
     const [showRichTextModal, setShowRichTextModal] = useState(false);
     const [showSecondaryIconPicker, setShowSecondaryIconPicker] = useState(false);
+    const [showLayoutEditor, setShowLayoutEditor] = useState(false);
+    const [showHeroContentEditor, setShowHeroContentEditor] = useState(true);
+    const [showPrimaryBtnEditor, setShowPrimaryBtnEditor] = useState(false);
+    const [showSecondaryBtnEditor, setShowSecondaryBtnEditor] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState({
         isOpen: false,
         title: '',
@@ -286,6 +290,7 @@ const PageBuilder = ({ mode = 'page' }) => {
     const { theme: activeThemeFromContext } = useContext(ThemeContext) || {};
     const [activeThemeId, setActiveThemeId] = useState('nexus'); // Default to nexus
     const [clientData, setClientData] = useState(null);
+    const siteSettings = clientData?.settings;
     const [allPages, setAllPages] = useState([]);
 
     // URL Dropdown State
@@ -295,17 +300,29 @@ const PageBuilder = ({ mode = 'page' }) => {
     // Force re-render stuff
     const [footerUpdateTrigger, setFooterUpdateTrigger] = useState(0);
     const [navbarUpdateTrigger, setNavbarUpdateTrigger] = useState(0);
+    const [navbarPreviewData, setNavbarPreviewData] = useState(null); // Live preview state
 
     // Theme Configuration
+
     const themeConfig = useMemo(() => ({
         nexus: {
             header: NexusHeader,
             footer: NexusFooter,
             canvasClass: 'nexus-theme'
+        },
+        ecommerce: {
+            header: EcommerceHeader,
+            footer: EcommerceFooter,
+            canvasClass: 'ecommerce-theme'
+        },
+        portfolio: {
+            header: PortfolioHeader,
+            footer: PortfolioFooter,
+            canvasClass: 'portfolio-theme'
         }
     }), []);
 
-    const currentTheme = themeConfig.nexus;
+    const currentTheme = themeConfig[activeThemeId] || themeConfig.nexus;
     const HeaderComponent = currentTheme.header;
     const FooterComponent = currentTheme.footer;
 
@@ -315,19 +332,36 @@ const PageBuilder = ({ mode = 'page' }) => {
 
         if (!clientData) return 'Loading URL...';
 
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const port = window.location.port ? `:${window.location.port}` : '';
+
+        // Determine if we are on localhost
+        const isLocalhost = hostname === 'localhost' || hostname.includes('127.0.0.1') || hostname.endsWith('.localhost');
+
         let base = '';
-        if (clientData.customDomain) {
+        let queryParams = '';
+
+        if (clientData.customDomain && !isLocalhost) {
             base = `https://${clientData.customDomain}`;
         } else if (clientData.subdomain) {
-            const isDev = window.location.hostname.includes('localhost');
-            const domain = isDev ? 'localhost:3000' : 'nepostore.xyz';
-            const proto = isDev ? 'http' : 'https';
-            base = `${proto}://${clientData.subdomain}.${domain}`;
+            if (isLocalhost) {
+                // Determine if we should use tenant query param or subdomain
+                const isUsingSubdomain = hostname !== 'localhost' && hostname !== '127.0.0.1';
+                if (isUsingSubdomain) {
+                    base = `${protocol}//${clientData.subdomain}.localhost${port}`;
+                } else {
+                    base = `${protocol}//localhost${port}`;
+                    queryParams = `?tenant=${clientData.subdomain}`;
+                }
+            } else {
+                base = `${protocol}//${clientData.subdomain}.nepostore.xyz`;
+            }
         } else {
-            base = '/shop';
+            base = window.location.origin;
         }
 
-        if (id === 'new') return `${base}/new-page`;
+        if (id === 'new') return `${base}/new-page${queryParams}`;
 
         const isHomePage = pageMetadata && (
             !pageMetadata.slug ||
@@ -338,7 +372,11 @@ const PageBuilder = ({ mode = 'page' }) => {
         // If meta not loaded yet but we have id, show id pending...
         const slugPart = isHomePage ? '' : `/${pageMetadata?.slug || '...'}`;
 
-        return `${base}${slugPart}`;
+        if (queryParams && !isHomePage && slugPart !== '/...') {
+            queryParams = `?tenant=${clientData.subdomain}`;
+        }
+
+        return `${base}${slugPart}${queryParams}`;
     }, [mode, pageMetadata, clientData, id]);
 
     // Load page metadata and actual client theme on mount
@@ -452,7 +490,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                     if (!targetTemplate) {
                         // Check mocks
                         const mocks = [
-                            { _id: '1', name: 'Hero Section Modern', baseType: 'hero-modern', content: { title: "Modern Hero", subtitle: "Edit me", showPrimaryBtn: true }, category: 'Hero', isActive: true },
+                            { _id: '1', name: 'Hero section 1', baseType: 'hero-modern', content: { title: "Modern Hero", subtitle: "Edit me", showPrimaryBtn: true }, category: 'Hero', isActive: true },
                             { _id: '2', name: 'Feature Grid', baseType: 'product-grid-basic', content: { title: "Features" }, category: 'Features', isActive: true },
                             { _id: '3', name: 'Rich Text Block', baseType: 'rich-text', content: { html: "<p>Start writing...</p>" }, category: 'General', isActive: true }
                         ];
@@ -491,6 +529,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                 const page = pages.find(p =>
                     p._id === id ||
                     p.slug === id ||
+                    ((id === 'home' || id === '3') && (p.slug === '' || p.slug === '/')) ||
                     (pageMetadata && p.slug === pageMetadata.slug) ||
                     (pageMetadata && p._id === pageMetadata._id)
                 );
@@ -554,13 +593,16 @@ const PageBuilder = ({ mode = 'page' }) => {
         }
 
         try {
-            // Determine the correct slug. 
-            // If it's the static 'Nexus Home' id (3), it should be an empty slug.
+            // Determine the correct slug.
             let finalSlug = pageMetadata?.slug;
+
+            // CRITICAL: Force empty slug if it's clearly the Home Page to prevent duplicates
+            if (pageMetadata?.title === 'Home Page' || id === '3' || id === 'home') {
+                finalSlug = '';
+            }
+
             if (finalSlug === undefined) {
-                if (id === '3') finalSlug = '';
-                else if (id === 'new') finalSlug = 'new-page';
-                else if (id === 'home') finalSlug = '';
+                if (id === 'new') finalSlug = 'new-page';
                 else finalSlug = id;
             }
 
@@ -575,9 +617,16 @@ const PageBuilder = ({ mode = 'page' }) => {
 
             const response = await axios.post(`${API_URL}/api/client-pages`, pageData, { withCredentials: true });
 
-            if (id === 'new' && response.data) {
-                const savedPage = response.data.find(p => p.slug === pageData.slug);
-                if (savedPage) setPageMetadata(savedPage);
+            // CRITICAL: Update pageMetadata with the response from server to ensure we have the correct _id and slug for next saves
+            if (response.data && Array.isArray(response.data)) {
+                const cleanSlug = finalSlug.replace(/^\//, '');
+                const savedPage = response.data.find(p =>
+                    (p._id && p._id === (pageMetadata?._id || pageMetadata?.id)) ||
+                    (p.slug === cleanSlug && (p.themeId === activeThemeId || !p.themeId))
+                );
+                if (savedPage) {
+                    setPageMetadata(savedPage);
+                }
             }
 
             // ALSO Save to LocalStorage for immediate local preview (app.localhost usage)
@@ -788,18 +837,6 @@ const PageBuilder = ({ mode = 'page' }) => {
 
     return (
         <div className="page-builder-container">
-            <NavbarEditorModal
-                isOpen={isNavbarEditorOpen}
-                onClose={() => setIsNavbarEditorOpen(false)}
-                onSave={handleNavbarSave}
-                activeThemeId={activeThemeId}
-            />
-            <FooterEditorModal
-                isOpen={isFooterEditorOpen}
-                onClose={() => setIsFooterEditorOpen(false)}
-                onSave={handleFooterSave}
-                activeThemeId={activeThemeId}
-            />
             <SectionTemplateModal
                 isOpen={isTemplateModalOpen}
                 onClose={() => setIsTemplateModalOpen(false)}
@@ -850,8 +887,18 @@ const PageBuilder = ({ mode = 'page' }) => {
                     <span className={`status-saved ${showSavedNotification ? 'show' : ''}`}>
                         ✓ Changes Saved
                     </span>
-                    <button className="preview-btn-premium" onClick={() => window.open('/shop', '_blank')}>
-                        Preview
+                    <button className="preview-btn-premium" onClick={() => {
+                        if (mode === 'template') {
+                            toast.info('Template previewing is available within the builder canvas.');
+                            return;
+                        }
+                        if (displayUrl && displayUrl.startsWith('http')) {
+                            window.open(displayUrl, '_blank');
+                        } else {
+                            toast.warn('Preview URL is still loading...');
+                        }
+                    }}>
+                        <FaEye /> Preview
                     </button>
                     <button className="save-btn-ghost" onClick={handleSave}>
                         <FaSave />
@@ -875,7 +922,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                             )}
                             <div key={navbarUpdateTrigger}>
                                 <Suspense fallback={<div className="p-4 text-center">Loading Navbar...</div>}>
-                                    <HeaderComponent />
+                                    <HeaderComponent previewSettings={navbarPreviewData} siteSettings={siteSettings} />
                                 </Suspense>
                             </div>
                         </div>
@@ -1293,70 +1340,110 @@ const PageBuilder = ({ mode = 'page' }) => {
                                             </>
                                         )}
 
-                                        <div className="property-row">
-                                            <div className="property-group">
-                                                <label>Top Padding</label>
-                                                <input
-                                                    type="number"
-                                                    value={content.paddingTop !== undefined ? content.paddingTop : 0}
-                                                    placeholder="0"
-                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, paddingTop: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                                                    className="padding-input"
-                                                />
+                                        <div className="layout-accordion-group" style={{ marginTop: '10px' }}>
+                                            <div
+                                                className="accordion-header"
+                                                onClick={() => setShowLayoutEditor(!showLayoutEditor)}
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '12px 14px',
+                                                    background: '#f8fafc',
+                                                    borderRadius: showLayoutEditor ? '12px 12px 0 0' : '12px',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid #e2e8f0',
+                                                    transition: 'all 0.2s ease',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b' }}>LAYOUT & COLOR</span>
+                                                <FaChevronDown style={{
+                                                    fontSize: '12px',
+                                                    color: '#94a3b8',
+                                                    transition: 'transform 0.3s',
+                                                    transform: showLayoutEditor ? 'rotate(180deg)' : 'rotate(0deg)'
+                                                }} />
                                             </div>
-                                            <div className="property-group">
-                                                <label>Bottom Padding</label>
-                                                <input
-                                                    type="number"
-                                                    value={content.paddingBottom !== undefined ? content.paddingBottom : 0}
-                                                    placeholder="0"
-                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, paddingBottom: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                                                    className="padding-input"
-                                                />
-                                            </div>
+
+                                            {showLayoutEditor && (
+                                                <div className="accordion-content animate-fade" style={{
+                                                    padding: '16px',
+                                                    background: '#ffffff',
+                                                    borderRadius: '0 0 12px 12px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderTop: 'none',
+                                                    marginTop: '-1px'
+                                                }}>
+                                                    <div className="property-row">
+                                                        <div className="property-group">
+                                                            <label>Top Padding</label>
+                                                            <input
+                                                                type="number"
+                                                                value={content.paddingTop !== undefined ? content.paddingTop : 0}
+                                                                placeholder="0"
+                                                                onChange={(e) => updateSectionContent(selectedSectionId, { ...content, paddingTop: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                                                                className="padding-input"
+                                                            />
+                                                        </div>
+                                                        <div className="property-group">
+                                                            <label>Bottom Padding</label>
+                                                            <input
+                                                                type="number"
+                                                                value={content.paddingBottom !== undefined ? content.paddingBottom : 0}
+                                                                placeholder="0"
+                                                                onChange={(e) => updateSectionContent(selectedSectionId, { ...content, paddingBottom: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                                                                className="padding-input"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="property-row" style={{ marginBottom: '20px' }}>
+                                                        <div className="property-group">
+                                                            <label>Top Margin</label>
+                                                            <input
+                                                                type="number"
+                                                                value={content.marginTop !== undefined ? content.marginTop : 5}
+                                                                placeholder="5"
+                                                                onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginTop: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                                                                className="padding-input"
+                                                            />
+                                                        </div>
+                                                        <div className="property-group">
+                                                            <label>Bottom Margin</label>
+                                                            <input
+                                                                type="number"
+                                                                value={content.marginBottom !== undefined ? content.marginBottom : 5}
+                                                                placeholder="5"
+                                                                onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginBottom: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                                                                className="padding-input"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ height: '1px', background: '#e2e8f0', margin: '20px 0' }}></div>
+
+                                                    <div className="property-group checkbox-group" style={{ marginBottom: '12px' }}>
+                                                        <label>Background Settings</label>
+                                                        <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeBg: !content.useThemeBg })}>
+                                                            <input type="checkbox" checked={content.useThemeBg} readOnly />
+                                                            <span>Use theme color</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {!content.useThemeBg && (
+                                                        <div className="property-group animate-fade">
+                                                            <label>Custom Background Color</label>
+                                                            <DebouncedColorPicker
+                                                                value={content.bgColor}
+                                                                onChange={(val) => updateSectionContent(selectedSectionId, { ...content, bgColor: val })}
+                                                                onClear={() => updateSectionContent(selectedSectionId, { ...content, bgColor: 'transparent' })}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
-
-                                        <div className="property-row">
-                                            <div className="property-group">
-                                                <label>Top Margin</label>
-                                                <input
-                                                    type="number"
-                                                    value={content.marginTop !== undefined ? content.marginTop : 5}
-                                                    placeholder="5"
-                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginTop: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                                                    className="padding-input"
-                                                />
-                                            </div>
-                                            <div className="property-group">
-                                                <label>Bottom Margin</label>
-                                                <input
-                                                    type="number"
-                                                    value={content.marginBottom !== undefined ? content.marginBottom : 5}
-                                                    placeholder="5"
-                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginBottom: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                                                    className="padding-input"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="property-group checkbox-group">
-                                            <label>Background</label>
-                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeBg: !content.useThemeBg })}>
-                                                <input type="checkbox" checked={content.useThemeBg} readOnly />
-                                                <span>Use theme color as background</span>
-                                            </div>
-                                        </div>
-
-                                        {!content.useThemeBg && (
-                                            <div className="property-group animate-fade">
-                                                <DebouncedColorPicker
-                                                    value={content.bgColor}
-                                                    onChange={(val) => updateSectionContent(selectedSectionId, { ...content, bgColor: val })}
-                                                    onClear={() => updateSectionContent(selectedSectionId, { ...content, bgColor: 'transparent' })}
-                                                />
-                                            </div>
-
-                                        )}
 
                                         {section.type === 'rich-text' && (
                                             <div className="property-group">
@@ -1455,365 +1542,460 @@ const PageBuilder = ({ mode = 'page' }) => {
                                         {/* Modern Hero Specific */}
                                         {section.type === 'modern-hero' && (
                                             <div className="modern-hero-editor-fields animate-fade">
-                                                <div className="section-divider" style={{
-                                                    fontSize: '10px',
-                                                    fontWeight: '800',
-                                                    color: '#94a3b8',
-                                                    margin: '20px 0 15px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px'
+                                                {/* HERO CONTENT ACCORDION */}
+                                                <div className="button-accordion-wrapper" style={{
+                                                    marginBottom: '16px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    background: 'white'
                                                 }}>
-                                                    <span style={{ height: '1px', background: '#e2e8f0', flex: 1 }}></span>
-                                                    HERO CONTENT
-                                                    <span style={{ height: '1px', background: '#e2e8f0', flex: 1 }}></span>
-                                                </div>
-
-                                                <div className="property-group">
-                                                    <label>Main Title</label>
-                                                    <textarea
-                                                        value={content.title || ''}
-                                                        onChange={(e) => updateSectionContent(selectedSectionId, { ...content, title: e.target.value })}
-                                                        placeholder="Main headline"
-                                                        rows={2}
-                                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                                    />
-                                                </div>
-
-                                                <div className="property-group animate-fade">
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: content.showHighlight === false ? '0' : '8px' }}>
-                                                        <label style={{ margin: 0, cursor: 'default' }}>Highlighted Text (Rewrite From Main Title)</label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                updateSectionContent(selectedSectionId, { ...content, showHighlight: content.showHighlight === false ? true : false });
-                                                            }}
-                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: content.showHighlight === false ? '#94a3b8' : '#7c3aed', padding: '0' }}
-                                                            title={content.showHighlight === false ? "Show Highlight" : "Hide Highlight"}
-                                                        >
-                                                            {content.showHighlight === false ? <FaEyeSlash /> : <FaEye />}
-                                                        </button>
+                                                    <div
+                                                        className="accordion-header"
+                                                        onClick={() => setShowHeroContentEditor(!showHeroContentEditor)}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '12px 16px',
+                                                            background: '#f8fafc',
+                                                            cursor: 'pointer',
+                                                            borderBottom: showHeroContentEditor ? '1px solid #e2e8f0' : 'none',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div style={{ padding: '6px', background: '#eff6ff', borderRadius: '6px', color: '#2563eb', display: 'flex' }}>
+                                                                <FaEdit style={{ fontSize: '14px' }} />
+                                                            </div>
+                                                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Hero Main Content</span>
+                                                        </div>
+                                                        <FaChevronDown style={{
+                                                            fontSize: '12px',
+                                                            color: '#94a3b8',
+                                                            transform: showHeroContentEditor ? 'rotate(180deg)' : 'none',
+                                                            transition: 'transform 0.3s'
+                                                        }} />
                                                     </div>
-                                                    {content.showHighlight !== false && (
-                                                        <>
-                                                            <input
-                                                                type="text"
-                                                                value={content.highlightedText || ''}
-                                                                onChange={(e) => updateSectionContent(selectedSectionId, { ...content, highlightedText: e.target.value })}
-                                                                placeholder="Text to highlight"
-                                                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                                            />
 
-                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeHighlight: content.useThemeHighlight === false ? true : false })} style={{ margin: '12px 0 8px' }}>
-                                                                <input type="checkbox" checked={content.useThemeHighlight !== false} readOnly />
-                                                                <span>Use theme color</span>
+                                                    {showHeroContentEditor && (
+                                                        <div className="accordion-content animate-fade" style={{ padding: '16px 16px 8px' }}>
+                                                            <div className="property-group" style={{ marginBottom: '20px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                    <label style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Main Title</label>
+                                                                    <FaInfoCircle style={{ color: '#cbd5e1', fontSize: '14px' }} />
+                                                                </div>
+                                                                <textarea
+                                                                    value={content.title || ''}
+                                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, title: e.target.value })}
+                                                                    placeholder="Main headline"
+                                                                    rows={2}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '12px',
+                                                                        borderRadius: '10px',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        background: '#f8fafc',
+                                                                        fontSize: '14px',
+                                                                        color: '#1e293b',
+                                                                        transition: 'border-color 0.2s',
+                                                                        resize: 'vertical'
+                                                                    }}
+                                                                />
                                                             </div>
 
-                                                            {content.useThemeHighlight === false && (
-                                                                <DebouncedColorPicker
-                                                                    value={content.highlightColor || '#2563eb'}
-                                                                    onChange={(val) => updateSectionContent(selectedSectionId, { ...content, highlightColor: val })}
-                                                                    style={{ marginBottom: '8px' }}
-                                                                />
-                                                            )}
+                                                            <div className="property-group animate-fade" style={{ marginBottom: '20px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                                    <label style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Highlighted Text</label>
+                                                                    <div
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            updateSectionContent(selectedSectionId, { ...content, showHighlight: content.showHighlight === false ? true : false });
+                                                                        }}
+                                                                        style={{ cursor: 'pointer', color: content.showHighlight === false ? '#cbd5e1' : '#4f46e5', display: 'flex' }}
+                                                                    >
+                                                                        {content.showHighlight === false ? <FaEyeSlash style={{ fontSize: '16px' }} /> : <FaEye style={{ fontSize: '16px' }} />}
+                                                                    </div>
+                                                                </div>
 
-                                                            <small className="field-hint" style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>Highlighted text will appear in selected color</small>
-                                                        </>
+                                                                {content.showHighlight !== false && (
+                                                                    <div className="animate-fade">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={content.highlightedText || ''}
+                                                                            onChange={(e) => updateSectionContent(selectedSectionId, { ...content, highlightedText: e.target.value })}
+                                                                            placeholder="Text to highlight"
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: '12px',
+                                                                                borderRadius: '10px',
+                                                                                border: '1px solid #e2e8f0',
+                                                                                background: '#f8fafc',
+                                                                                fontSize: '14px',
+                                                                                color: '#1e293b',
+                                                                                marginBottom: '12px'
+                                                                            }}
+                                                                        />
+
+                                                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                                                            <div
+                                                                                className="custom-toggle-row"
+                                                                                onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeHighlight: content.useThemeHighlight === false ? true : false })}
+                                                                                style={{
+                                                                                    flex: 1,
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'space-between',
+                                                                                    background: '#ffffff',
+                                                                                    border: '1px solid #e2e8f0',
+                                                                                    borderRadius: '10px',
+                                                                                    padding: '8px 12px',
+                                                                                    cursor: 'pointer'
+                                                                                }}
+                                                                            >
+                                                                                <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Use theme color</span>
+                                                                                <div className={`modern-hero-toggle-switch ${content.useThemeHighlight !== false ? 'active' : ''}`}>
+                                                                                    <div className="toggle-dot"></div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {content.useThemeHighlight === false && (
+                                                                                <div className="modern-hero-color-box">
+                                                                                    <div className="color-preview" style={{ background: content.highlightColor || '#2563eb' }}></div>
+                                                                                    <span className="hex-code">
+                                                                                        {(content.highlightColor || '#2563eb').toUpperCase()}
+                                                                                    </span>
+                                                                                    <DebouncedColorPicker
+                                                                                        className="compact-picker-trigger"
+                                                                                        value={content.highlightColor || '#2563eb'}
+                                                                                        onChange={(val) => updateSectionContent(selectedSectionId, { ...content, highlightColor: val, useThemeHighlight: false })}
+                                                                                    />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <small style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px', display: 'block', fontStyle: 'italic' }}>
+                                                                            Highlighted text will appear in selected color
+                                                                        </small>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="property-group" style={{ marginBottom: '8px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                    <label style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subtitle / Description</label>
+                                                                    <FaInfoCircle style={{ color: '#cbd5e1', fontSize: '14px' }} />
+                                                                </div>
+                                                                <textarea
+                                                                    value={content.subtitle || ''}
+                                                                    onChange={(e) => updateSectionContent(selectedSectionId, { ...content, subtitle: e.target.value })}
+                                                                    placeholder="Subtitle text"
+                                                                    rows={3}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '12px',
+                                                                        borderRadius: '10px',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        background: '#f8fafc',
+                                                                        fontSize: '14px',
+                                                                        color: '#1e293b',
+                                                                        lineHeight: '1.5'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
 
-                                                <div className="property-group">
-                                                    <label>Subtitle / Description</label>
-                                                    <textarea
-                                                        value={content.subtitle || ''}
-                                                        onChange={(e) => updateSectionContent(selectedSectionId, { ...content, subtitle: e.target.value })}
-                                                        placeholder="Subtitle text"
-                                                        rows={3}
-                                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                                    />
-                                                </div>
+                                                {/* PRIMARY BUTTON ACCORDION */}
+                                                <div className="button-accordion-wrapper" style={{
+                                                    marginBottom: '16px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    background: 'white'
+                                                }}>
+                                                    <div
+                                                        className="accordion-header"
+                                                        onClick={() => setShowPrimaryBtnEditor(!showPrimaryBtnEditor)}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '12px 16px',
+                                                            background: '#f8fafc',
+                                                            cursor: 'pointer',
+                                                            borderBottom: showPrimaryBtnEditor ? '1px solid #e2e8f0' : 'none',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    updateSectionContent(selectedSectionId, { ...content, showPrimaryBtn: !content.showPrimaryBtn });
+                                                                }}
+                                                                style={{ color: content.showPrimaryBtn === false ? '#94a3b8' : '#7c3aed', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                            >
+                                                                {content.showPrimaryBtn === false ? <FaEyeSlash style={{ fontSize: '16px' }} /> : <FaEye style={{ fontSize: '16px' }} />}
+                                                            </div>
+                                                            <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIMARY BTN</span>
+                                                        </div>
+                                                        <FaChevronDown style={{
+                                                            fontSize: '12px',
+                                                            color: '#94a3b8',
+                                                            transition: 'transform 0.3s',
+                                                            transform: showPrimaryBtnEditor ? 'rotate(180deg)' : 'rotate(0deg)'
+                                                        }} />
+                                                    </div>
 
-
-                                                {/* PRIMARY BUTTON CONTAINER */}
-                                                {content.showPrimaryBtn !== false && (
-                                                    <div style={{ marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                        {/* Row 1: Button Text + Link */}
-                                                        <div className="property-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                                                            <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                    <label style={{ margin: 0, cursor: 'default' }}>Primary Button</label>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            updateSectionContent(selectedSectionId, { ...content, showPrimaryBtn: false });
-                                                                        }}
-                                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: '0' }}
-                                                                        title="Hide Button"
-                                                                    >
-                                                                        <FaEye />
-                                                                    </button>
-                                                                </div>
+                                                    {showPrimaryBtnEditor && (
+                                                        <div className="accordion-content animate-fade" style={{ padding: '20px 16px' }}>
+                                                            <div className="property-group">
+                                                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Button Text</label>
                                                                 <input
                                                                     type="text"
                                                                     value={content.primaryBtnText || ''}
                                                                     onChange={(e) => updateSectionContent(selectedSectionId, { ...content, primaryBtnText: e.target.value })}
                                                                     placeholder="Button Text"
-                                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }}
                                                                 />
                                                             </div>
-                                                            <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                <label>Primary Link</label>
+                                                            <div className="property-group">
+                                                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Primary Link</label>
                                                                 <input
                                                                     type="text"
                                                                     value={content.primaryBtnLink || ''}
                                                                     onChange={(e) => updateSectionContent(selectedSectionId, { ...content, primaryBtnLink: e.target.value })}
-                                                                    placeholder="/shop or https://..."
-                                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                                                                    placeholder="/shop"
+                                                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }}
                                                                 />
                                                             </div>
-                                                        </div>
 
-                                                        {/* Row 2: Primary Button Label */}
-                                                        <label style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '8px', display: 'block' }}>Primary Button</label>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 12px', color: '#64748b' }}>
+                                                                <FaPalette style={{ fontSize: '13px' }} />
+                                                                <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STYLE</span>
+                                                            </div>
 
-                                                        {/* Row 3: Use Theme Color Checkbox */}
-                                                        <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemePrimaryBtn: content.useThemePrimaryBtn === false ? true : false })} style={{ margin: '0 0 12px' }}>
-                                                            <input type="checkbox" checked={content.useThemePrimaryBtn !== false} readOnly />
-                                                            <span>Use theme color</span>
-                                                        </div>
-
-                                                        {/* Row 4: Background + Text Color */}
-                                                        {content.useThemePrimaryBtn === false && (
-                                                            <div className="property-row" style={{ display: 'flex', gap: '12px' }}>
-                                                                <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                    <label style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Background</label>
-                                                                    <DebouncedColorPicker
-                                                                        className="compact"
-                                                                        value={content.primaryBtnBgColor || '#2563eb'}
-                                                                        onChange={(val) => updateSectionContent(selectedSectionId, { ...content, primaryBtnBgColor: val })}
-                                                                    />
-                                                                </div>
-                                                                <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                    <label style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Text Color</label>
-                                                                    <DebouncedColorPicker
-                                                                        className="compact"
-                                                                        value={content.primaryBtnTextColor || '#ffffff'}
-                                                                        onChange={(val) => updateSectionContent(selectedSectionId, { ...content, primaryBtnTextColor: val })}
-                                                                    />
+                                                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+                                                                <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemePrimaryBtn: content.useThemePrimaryBtn === false ? true : false })} style={{ margin: 0, justifyContent: 'space-between', width: '100%' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                        <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Use theme color</span>
+                                                                    </div>
+                                                                    <div className={`modern-hero-toggle-switch ${content.useThemePrimaryBtn !== false ? 'active' : ''}`}>
+                                                                        <div className="toggle-dot"></div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                )}
 
-                                                {/* Show Primary Button if hidden */}
-                                                {content.showPrimaryBtn === false && (
-                                                    <div style={{ marginBottom: '16px' }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => updateSectionContent(selectedSectionId, { ...content, showPrimaryBtn: true })}
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '10px',
-                                                                background: '#f8fafc',
-                                                                border: '1px dashed #cbd5e1',
-                                                                borderRadius: '8px',
-                                                                color: '#64748b',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                gap: '8px'
-                                                            }}
-                                                        >
-                                                            <FaEyeSlash /> Show Primary Button
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                {/* SECONDARY BUTTON CONTAINER */}
-                                                {content.showSecondaryBtn !== false && (
-                                                    <div style={{ marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                        {/* Row 1: Button Text + Link */}
-                                                        <div className="property-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                                                            <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                    <label style={{ margin: 0, cursor: 'default' }}>Secondary Button</label>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            updateSectionContent(selectedSectionId, { ...content, showSecondaryBtn: false });
-                                                                        }}
-                                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: '0' }}
-                                                                        title="Hide Button"
-                                                                    >
-                                                                        <FaEye />
-                                                                    </button>
+                                                            {content.useThemePrimaryBtn === false && (
+                                                                <div className="property-row animate-fade" style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                                                                    <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
+                                                                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Background</label>
+                                                                        <DebouncedColorPicker
+                                                                            className="compact"
+                                                                            value={content.primaryBtnBgColor || '#2563eb'}
+                                                                            onChange={(val) => updateSectionContent(selectedSectionId, { ...content, primaryBtnBgColor: val })}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
+                                                                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Text Color</label>
+                                                                        <DebouncedColorPicker
+                                                                            className="compact"
+                                                                            value={content.primaryBtnTextColor || '#ffffff'}
+                                                                            onChange={(val) => updateSectionContent(selectedSectionId, { ...content, primaryBtnTextColor: val })}
+                                                                        />
+                                                                    </div>
                                                                 </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* SECONDARY BUTTON ACCORDION */}
+                                                <div className="button-accordion-wrapper" style={{
+                                                    marginBottom: '24px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    background: 'white'
+                                                }}>
+                                                    <div
+                                                        className="accordion-header"
+                                                        onClick={() => setShowSecondaryBtnEditor(!showSecondaryBtnEditor)}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '12px 16px',
+                                                            background: '#f8fafc',
+                                                            cursor: 'pointer',
+                                                            borderBottom: showSecondaryBtnEditor ? '1px solid #e2e8f0' : 'none',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    updateSectionContent(selectedSectionId, { ...content, showSecondaryBtn: !content.showSecondaryBtn });
+                                                                }}
+                                                                style={{ color: content.showSecondaryBtn === false ? '#94a3b8' : '#7c3aed', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                            >
+                                                                {content.showSecondaryBtn === false ? <FaEyeSlash style={{ fontSize: '16px' }} /> : <FaEye style={{ fontSize: '16px' }} />}
+                                                            </div>
+                                                            <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SECONDARY BTN</span>
+                                                        </div>
+                                                        <FaChevronDown style={{
+                                                            fontSize: '12px',
+                                                            color: '#94a3b8',
+                                                            transition: 'transform 0.3s',
+                                                            transform: showSecondaryBtnEditor ? 'rotate(180deg)' : 'rotate(0deg)'
+                                                        }} />
+                                                    </div>
+
+                                                    {showSecondaryBtnEditor && (
+                                                        <div className="accordion-content animate-fade" style={{ padding: '20px 16px' }}>
+                                                            <div className="property-group">
+                                                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Button Text</label>
                                                                 <input
                                                                     type="text"
                                                                     value={content.secondaryBtnText || ''}
                                                                     onChange={(e) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnText: e.target.value })}
                                                                     placeholder="Button Text"
-                                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }}
                                                                 />
                                                             </div>
-                                                            <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                <label>Secondary Link</label>
+                                                            <div className="property-group">
+                                                                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Secondary Link</label>
                                                                 <input
                                                                     type="text"
                                                                     value={content.secondaryBtnLink || ''}
                                                                     onChange={(e) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnLink: e.target.value })}
-                                                                    placeholder="/shop or https://..."
-                                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                                                                    placeholder="/contact"
+                                                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }}
                                                                 />
                                                             </div>
-                                                        </div>
 
-                                                        {/* Row 2: Secondary Button Label & Icon Clicker */}
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                <label style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0 }}>Secondary Button Icon</label>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '24px 0 12px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+                                                                    <div
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            updateSectionContent(selectedSectionId, { ...content, showSecondaryBtnIcon: !content.showSecondaryBtnIcon });
+                                                                        }}
+                                                                        style={{ color: content.showSecondaryBtnIcon === false ? '#94a3b8' : '#7c3aed', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                    >
+                                                                        {content.showSecondaryBtnIcon === false ? <FaEyeSlash style={{ fontSize: '16px' }} /> : <FaEye style={{ fontSize: '16px' }} />}
+                                                                    </div>
+                                                                    <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>BUTTON ICON</span>
+                                                                </div>
                                                                 <button
                                                                     type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        updateSectionContent(selectedSectionId, { ...content, showSecondaryBtnIcon: content.showSecondaryBtnIcon === false ? true : false });
-                                                                    }}
-                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: content.showSecondaryBtnIcon === false ? '#94a3b8' : '#7c3aed', padding: '0', display: 'flex', alignItems: 'center' }}
-                                                                    title={content.showSecondaryBtnIcon === false ? "Show Icon" : "Hide Icon"}
+                                                                    onClick={() => setShowSecondaryIconPicker(!showSecondaryIconPicker)}
+                                                                    style={{ background: '#f1f5f9', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', color: '#475569', cursor: 'pointer' }}
                                                                 >
-                                                                    {content.showSecondaryBtnIcon === false ? <FaEyeSlash /> : <FaEye />}
+                                                                    {showSecondaryIconPicker ? 'CLOSE' : 'CHOOSE'}
                                                                 </button>
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setShowSecondaryIconPicker(!showSecondaryIconPicker)}
-                                                                style={{
-                                                                    background: '#ffffff',
-                                                                    border: '1px solid #e2e8f0',
-                                                                    padding: '4px 12px',
-                                                                    borderRadius: '6px',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '11px',
-                                                                    color: '#64748b',
-                                                                    fontWeight: '600'
-                                                                }}
-                                                            >
-                                                                {showSecondaryIconPicker ? 'Close' : 'Change'}
-                                                            </button>
-                                                        </div>
 
-                                                        {showSecondaryIconPicker && (
-                                                            <div className="icon-picker-grid animate-fade" style={{
-                                                                display: 'grid',
-                                                                gridTemplateColumns: 'repeat(5, 1fr)',
-                                                                gap: '8px',
-                                                                background: '#ffffff',
-                                                                padding: '12px',
-                                                                borderRadius: '8px',
-                                                                border: '1px solid #e2e8f0',
-                                                                marginBottom: '16px'
-                                                            }}>
-                                                                {[
-                                                                    { icon: FaPlay, value: 'play' },
-                                                                    { icon: FaVideo, value: 'video' },
-                                                                    { icon: FaDownload, value: 'download' },
-                                                                    { icon: FaArrowAltCircleRight, value: 'arrow' },
-                                                                    { icon: FaSearch, value: 'search' },
-                                                                    { icon: FaBolt, value: 'bolt' },
-                                                                    { icon: FaStar, value: 'star' },
-                                                                    { icon: FaGlobe, value: 'globe' },
-                                                                    { icon: FaEnvelope, value: 'envelope' }
-                                                                ].map(({ icon: Icon, value }) => (
-                                                                    <div
-                                                                        key={value}
-                                                                        onClick={() => {
-                                                                            updateSectionContent(selectedSectionId, { ...content, secondaryBtnIcon: value });
-                                                                            setShowSecondaryIconPicker(false);
-                                                                        }}
-                                                                        style={{
-                                                                            padding: '10px',
-                                                                            background: (content.secondaryBtnIcon || 'play') === value ? '#7c3aed' : '#f8fafc',
-                                                                            color: (content.secondaryBtnIcon || 'play') === value ? 'white' : '#64748b',
-                                                                            borderRadius: '8px',
-                                                                            cursor: 'pointer',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            fontSize: '16px',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        className="icon-option"
-                                                                    >
-                                                                        <Icon />
+                                                            {showSecondaryIconPicker && (
+                                                                <div className="icon-picker-grid animate-fade" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                                                                    {[
+                                                                        { icon: FaPlay, value: 'play' },
+                                                                        { icon: FaVideo, value: 'video' },
+                                                                        { icon: FaDownload, value: 'download' },
+                                                                        { icon: FaArrowAltCircleRight, value: 'arrow' },
+                                                                        { icon: FaSearch, value: 'search' },
+                                                                        { icon: FaBolt, value: 'bolt' },
+                                                                        { icon: FaStar, value: 'star' },
+                                                                        { icon: FaGlobe, value: 'globe' },
+                                                                        { icon: FaEnvelope, value: 'envelope' }
+                                                                    ].map(({ icon: Icon, value }) => (
+                                                                        <div
+                                                                            key={value}
+                                                                            onClick={() => {
+                                                                                updateSectionContent(selectedSectionId, { ...content, secondaryBtnIcon: value });
+                                                                                setShowSecondaryIconPicker(false);
+                                                                            }}
+                                                                            style={{
+                                                                                padding: '10px',
+                                                                                background: (content.secondaryBtnIcon || 'play') === value ? '#7c3aed' : '#ffffff',
+                                                                                color: (content.secondaryBtnIcon || 'play') === value ? 'white' : '#64748b',
+                                                                                borderRadius: '10px',
+                                                                                cursor: 'pointer',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                fontSize: '16px',
+                                                                                transition: 'all 0.2s',
+                                                                                border: '1px solid #e2e8f0'
+                                                                            }}
+                                                                            className="icon-option"
+                                                                        >
+                                                                            <Icon />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 12px', color: '#64748b' }}>
+                                                                <FaPalette style={{ fontSize: '13px' }} />
+                                                                <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STYLE</span>
+                                                            </div>
+
+                                                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+                                                                <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeSecondaryBtn: content.useThemeSecondaryBtn === false ? true : false })} style={{ margin: 0, justifyContent: 'space-between', width: '100%' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                        <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Use theme color</span>
                                                                     </div>
-                                                                ))}
+                                                                    <div className={`modern-hero-toggle-switch ${content.useThemeSecondaryBtn !== false ? 'active' : ''}`}>
+                                                                        <div className="toggle-dot"></div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        )}
 
-                                                        {/* Row 3: Use Theme Color Checkbox */}
-                                                        <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useThemeSecondaryBtn: content.useThemeSecondaryBtn === false ? true : false })} style={{ margin: '0 0 12px' }}>
-                                                            <input type="checkbox" checked={content.useThemeSecondaryBtn !== false} readOnly />
-                                                            <span>Use theme color</span>
+                                                            {content.useThemeSecondaryBtn === false && (
+                                                                <div className="property-row animate-fade" style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                                                                    <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
+                                                                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Background</label>
+                                                                        <DebouncedColorPicker
+                                                                            className="compact"
+                                                                            value={content.secondaryBtnBgColor || '#ffffff'}
+                                                                            onChange={(val) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnBgColor: val })}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
+                                                                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Text Color</label>
+                                                                        <DebouncedColorPicker
+                                                                            className="compact"
+                                                                            value={content.secondaryBtnTextColor || '#0f172a'}
+                                                                            onChange={(val) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnTextColor: val })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
+                                                    )}
+                                                </div>
 
-                                                        {/* Row 4: Background + Text Color */}
-                                                        {content.useThemeSecondaryBtn === false && (
-                                                            <div className="property-row" style={{ display: 'flex', gap: '12px' }}>
-                                                                <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                    <label style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Background</label>
-                                                                    <DebouncedColorPicker
-                                                                        className="compact"
-                                                                        value={content.secondaryBtnBgColor || '#ffffff'}
-                                                                        onChange={(val) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnBgColor: val })}
-                                                                    />
-                                                                </div>
-                                                                <div className="property-group" style={{ flex: 1, marginBottom: 0 }}>
-                                                                    <label style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Text Color</label>
-                                                                    <DebouncedColorPicker
-                                                                        className="compact"
-                                                                        value={content.secondaryBtnTextColor || '#0f172a'}
-                                                                        onChange={(val) => updateSectionContent(selectedSectionId, { ...content, secondaryBtnTextColor: val })}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        )}
+
+
+                                                {/* CHECKLIST ITEMS */}
+                                                <div className="button-accordion-wrapper" style={{
+                                                    marginBottom: '16px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    background: 'white',
+                                                    padding: '16px'
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                        <label style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Checklist Items (Max 4)</label>
+                                                        <FaInfoCircle style={{ color: '#cbd5e1', fontSize: '14px' }} />
                                                     </div>
-                                                )}
-
-                                                {/* Show Secondary Button if hidden */}
-                                                {content.showSecondaryBtn === false && (
-                                                    <div style={{ marginBottom: '16px' }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => updateSectionContent(selectedSectionId, { ...content, showSecondaryBtn: true })}
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '10px',
-                                                                background: '#f8fafc',
-                                                                border: '1px dashed #cbd5e1',
-                                                                borderRadius: '8px',
-                                                                color: '#64748b',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                gap: '8px'
-                                                            }}
-                                                        >
-                                                            <FaEyeSlash /> Show Secondary Button
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                <div className="property-group">
-                                                    <label>Checklist Items (Max 4)</label>
                                                     {(content.checklistItems || []).map((item, idx) => (
-                                                        <div key={idx} className="checklist-input-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                                                        <div key={idx} className="checklist-input-row animate-fade" style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                                                             <input
                                                                 type="text"
                                                                 value={item}
@@ -1823,7 +2005,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                                     updateSectionContent(selectedSectionId, { ...content, checklistItems: newItems });
                                                                 }}
                                                                 placeholder={`Item ${idx + 1}`}
-                                                                style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                                                                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px' }}
                                                             />
                                                             <button
                                                                 className="remove-item-btn"
@@ -1833,9 +2015,9 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                                     const newItems = (content.checklistItems || []).filter((_, i) => i !== idx);
                                                                     updateSectionContent(selectedSectionId, { ...content, checklistItems: newItems });
                                                                 }}
-                                                                style={{ padding: '0 12px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
                                                             >
-                                                                &times;
+                                                                <FaTrash style={{ fontSize: '12px' }} />
                                                             </button>
                                                         </div>
                                                     ))}
@@ -1848,89 +2030,149 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                                 const newItems = [...(content.checklistItems || []), "New Feature"];
                                                                 updateSectionContent(selectedSectionId, { ...content, checklistItems: newItems });
                                                             }}
-                                                            style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#64748b', fontWeight: '600' }}
+                                                            style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#64748b', fontWeight: '700', marginTop: '4px' }}
                                                         >
                                                             + Add Checklist Item
                                                         </button>
                                                     )}
                                                 </div>
 
-                                                <div className="property-group">
-                                                    <label>Visual Image</label>
-                                                    <div
-                                                        className={`hero-image-dropzone ${isHeroDragging ? 'dragging' : ''}`}
-                                                        onDragOver={(e) => { e.preventDefault(); setIsHeroDragging(true); }}
-                                                        onDragLeave={() => setIsHeroDragging(false)}
-                                                        onDrop={async (e) => {
-                                                            e.preventDefault();
-                                                            setIsHeroDragging(false);
-                                                            const file = e.dataTransfer.files[0];
-                                                            if (file && file.type.startsWith('image/')) {
-                                                                const formData = new FormData();
-                                                                formData.append('image', file);
-                                                                try {
-                                                                    const res = await fetch('/api/upload', {
-                                                                        method: 'POST',
-                                                                        body: formData
-                                                                    });
-                                                                    const data = await res.json();
-                                                                    if (data.url) {
-                                                                        updateSectionContent(selectedSectionId, { ...content, imageUrl: data.url });
-                                                                    }
-                                                                } catch (err) {
-                                                                    console.error("Upload failed", err);
-                                                                }
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            border: isHeroDragging ? '2px solid #7c3aed' : '2px dashed #e2e8f0',
-                                                            borderRadius: '12px',
-                                                            padding: '24px',
-                                                            textAlign: 'center',
-                                                            background: isHeroDragging ? 'rgba(124, 58, 237, 0.05)' : '#f8fafc',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onClick={() => document.getElementById('hero-file-input').click()}
-                                                    >
-                                                        <FaUpload style={{ display: 'block', margin: '0 auto 8px', color: '#94a3b8', fontSize: '24px' }} />
-                                                        <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Drag image or <span>click to upload</span></p>
-                                                        <input
-                                                            id="hero-file-input"
-                                                            type="file"
-                                                            hidden
-                                                            onChange={async (e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    const formData = new FormData();
-                                                                    formData.append('image', file);
-                                                                    try {
-                                                                        const res = await fetch('/api/upload', {
-                                                                            method: 'POST',
-                                                                            body: formData
-                                                                        });
-                                                                        const data = await res.json();
-                                                                        if (data.url) {
-                                                                            updateSectionContent(selectedSectionId, { ...content, imageUrl: data.url });
-                                                                        }
-                                                                    } catch (err) {
-                                                                        console.error("Upload failed", err);
-                                                                    }
-                                                                }
-                                                            }}
-                                                        />
+                                                {/* IMAGE SELECTION */}
+                                                <div className="button-accordion-wrapper" style={{
+                                                    marginBottom: '16px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    background: 'white'
+                                                }}>
+                                                    <div className="accordion-header" style={{
+                                                        padding: '12px 16px',
+                                                        background: '#f8fafc',
+                                                        borderBottom: '1px solid #e2e8f0',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '10px'
+                                                    }}>
+                                                        <div style={{ padding: '6px', background: '#eff6ff', borderRadius: '6px', color: '#2563eb', display: 'flex' }}>
+                                                            <FaUpload style={{ fontSize: '14px' }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Hero Main Image</span>
                                                     </div>
-                                                    <div style={{ marginTop: '12px' }}>
-                                                        <label style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <FaLink /> Or use Image URL
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={content.imageUrl || ''}
-                                                            onChange={(e) => updateSectionContent(selectedSectionId, { ...content, imageUrl: e.target.value })}
-                                                            placeholder="https://..."
-                                                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                                                        />
+
+                                                    <div className="accordion-content" style={{ padding: '16px' }}>
+                                                        {content.imageUrl && (
+                                                            <div className="image-preview-container animate-fade" style={{ marginBottom: '12px', position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                                                                <img
+                                                                    src={resolveImageUrl(content.imageUrl, API_URL)}
+                                                                    alt="Active Visual"
+                                                                    style={{ width: '100%', height: '140px', objectFit: 'contain', display: 'block', padding: '12px' }}
+                                                                />
+                                                                <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => updateSectionContent(selectedSectionId, { ...content, imageUrl: '' })}
+                                                                        style={{
+                                                                            background: 'rgba(255, 255, 255, 0.9)',
+                                                                            border: 'none',
+                                                                            borderRadius: '50%',
+                                                                            width: '28px',
+                                                                            height: '28px',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            cursor: 'pointer',
+                                                                            color: '#ef4444',
+                                                                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                                                                            backdropFilter: 'blur(4px)',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        title="Remove Image"
+                                                                    >
+                                                                        <FaTrash style={{ fontSize: '12px' }} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {!content.imageUrl && (
+                                                            <div
+                                                                className={`hero-image-dropzone ${isHeroDragging ? 'dragging' : ''}`}
+                                                                onDragOver={(e) => { e.preventDefault(); setIsHeroDragging(true); }}
+                                                                onDragLeave={() => setIsHeroDragging(false)}
+                                                                onDrop={async (e) => {
+                                                                    e.preventDefault();
+                                                                    setIsHeroDragging(false);
+                                                                    const file = e.dataTransfer.files[0];
+                                                                    if (file && file.type.startsWith('image/')) {
+                                                                        const formData = new FormData();
+                                                                        formData.append('image', file);
+                                                                        try {
+                                                                            const res = await fetch('/api/upload', {
+                                                                                method: 'POST',
+                                                                                body: formData
+                                                                            });
+                                                                            const data = await res.json();
+                                                                            if (data.url) {
+                                                                                updateSectionContent(selectedSectionId, { ...content, imageUrl: data.url });
+                                                                            }
+                                                                        } catch (err) {
+                                                                            console.error("Upload failed", err);
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    border: isHeroDragging ? '2px solid #2563eb' : '2px dashed #e2e8f0',
+                                                                    borderRadius: '12px',
+                                                                    padding: '32px 16px',
+                                                                    textAlign: 'center',
+                                                                    background: isHeroDragging ? '#eff6ff' : '#f8fafc',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onClick={() => document.getElementById('hero-file-input').click()}
+                                                            >
+                                                                <div style={{
+                                                                    width: '48px',
+                                                                    height: '48px',
+                                                                    background: 'white',
+                                                                    borderRadius: '50%',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto 12px',
+                                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                                    color: '#2563eb'
+                                                                }}>
+                                                                    <FaUpload style={{ fontSize: '18px' }} />
+                                                                </div>
+                                                                <p style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>Click or drag to upload</p>
+                                                                <p style={{ fontSize: '11px', color: '#64748b' }}>PNG, JPG or SVG (max. 2MB)</p>
+                                                                <input
+                                                                    id="hero-file-input"
+                                                                    type="file"
+                                                                    hidden
+                                                                    onChange={async (e) => {
+                                                                        const file = e.target.files[0];
+                                                                        if (file) {
+                                                                            const formData = new FormData();
+                                                                            formData.append('image', file);
+                                                                            try {
+                                                                                const res = await fetch('/api/upload', {
+                                                                                    method: 'POST',
+                                                                                    body: formData
+                                                                                });
+                                                                                const data = await res.json();
+                                                                                if (data.url) {
+                                                                                    updateSectionContent(selectedSectionId, { ...content, imageUrl: data.url });
+                                                                                }
+                                                                            } catch (err) {
+                                                                                console.error("Upload failed", err);
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1946,7 +2188,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                         </div >
                     )
                     }
-                </aside >
+                </aside>
             </main>
 
             <SectionTemplateModal
@@ -1981,8 +2223,16 @@ const PageBuilder = ({ mode = 'page' }) => {
 
             <NavbarEditorModal
                 isOpen={isNavbarEditorOpen}
-                onClose={() => setIsNavbarEditorOpen(false)}
-                onSave={handleNavbarSave}
+                onClose={() => {
+                    setIsNavbarEditorOpen(false);
+                    setNavbarPreviewData(null); // Reset preview
+                }}
+                onSave={(data) => {
+                    handleNavbarSave();
+                    setNavbarPreviewData(null); // Reset preview
+                }}
+                onUpdate={setNavbarPreviewData}
+                siteSettings={siteSettings}
             />
 
             <FooterEditorModal
@@ -1990,7 +2240,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                 onClose={() => setIsFooterEditorOpen(false)}
                 onSave={handleFooterSave}
             />
-        </div >
+        </div>
     );
 };
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { FaBars, FaTimes } from 'react-icons/fa';
 import '../ProductStyles.css';
 import './PortfolioLayout.css'; // This file will be created next
 
@@ -12,6 +13,7 @@ applyStoreSettings();
 export const PortfolioHeader = () => {
   const [storeLogo, setStoreLogo] = useState(null);
   const [storeName, setStoreName] = useState('My Portfolio');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Load store settings from localStorage
@@ -29,16 +31,33 @@ export const PortfolioHeader = () => {
 
   return (
     <header className="portfolio-header">
-      {storeLogo ? (
-        <img src={storeLogo} alt={storeName} className="portfolio-logo-img" />
-      ) : (
-        <h1>{storeName}</h1>
-      )}
-      <nav>
-        <a href="/shop">Home</a>
-        <a href="/shop/projects">Projects</a>
-        <a href="/shop/contact">Contact</a>
-      </nav>
+      <div className="portfolio-header-container">
+        <div className="portfolio-logo" onClick={() => window.location.href = '/shop'}>
+          {storeLogo ? (
+            <img src={storeLogo} alt={storeName} className="portfolio-logo-img" />
+          ) : (
+            <h1>{storeName}</h1>
+          )}
+        </div>
+
+        <nav className="portfolio-nav-desktop">
+          <a href="/shop">Home</a>
+          <a href="/shop/projects">Projects</a>
+          <a href="/shop/contact">Contact</a>
+        </nav>
+
+        <button className="portfolio-mobile-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
+
+        <div className={`portfolio-mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
+          <nav className="portfolio-mobile-nav" onClick={e => e.stopPropagation()}>
+            <a href="/shop" onClick={() => setIsMobileMenuOpen(false)}>Home</a>
+            <a href="/shop/projects" onClick={() => setIsMobileMenuOpen(false)}>Projects</a>
+            <a href="/shop/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</a>
+          </nav>
+        </div>
+      </div>
     </header>
   );
 };

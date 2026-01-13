@@ -209,4 +209,62 @@ router.post('/verify-domain', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// @route   GET api/store-settings/navbar/public/:subdomain
+// @desc    Get navbar settings by subdomain (Public)
+// @access  Public
+router.get('/navbar/public/:subdomain', async (req, res) => {
+    try {
+        let client = req.tenantClient;
+        if (!client) {
+            client = await Client.findOne({
+                subdomain: { $regex: new RegExp(`^${req.params.subdomain}$`, 'i') }
+            });
+        }
+        if (!client) return res.status(404).json({ msg: 'Store not found' });
+        res.json(client.navbar || { layout: 'basic', showSearch: true, sticky: false, menuItems: [] });
+    } catch (err) {
+        console.error('Error fetching public navbar:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/store-settings/navbar
+// @desc    Get navbar settings
+// @access  Private
+router.get('/navbar', ensureAuthenticated, async (req, res) => {
+    try {
+        console.log('📍 GET /navbar - User:', req.user?.email, 'ClientId:', req.user?.clientId);
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const client = await Client.findById(clientId);
+        if (!client) {
+            console.log('❌ Client not found for ID:', clientId);
+            return res.status(404).json({ msg: 'Store not found' });
+        }
+
+        console.log('✅ Returning navbar for client:', client.name);
+        res.json(client.navbar || { layout: 'basic', showSearch: true, sticky: false, menuItems: [] });
+    } catch (err) {
+        console.error('Error fetching navbar:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/store-settings/navbar
+// @desc    Update navbar settings
+// @access  Private
+router.post('/navbar', ensureAuthenticated, async (req, res) => {
+    try {
+        const clientId = req.user.clientId?._id || req.user.clientId;
+        const client = await Client.findByIdAndUpdate(
+            clientId,
+            { $set: { navbar: req.body } },
+            { new: true }
+        );
+        res.json(client.navbar);
+    } catch (err) {
+        console.error('Error updating navbar:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

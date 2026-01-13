@@ -18,6 +18,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1.5rem;
 }
 
 .nexus-theme .nexus-logo {
@@ -26,99 +27,61 @@
     font-size: 1.5rem;
     cursor: pointer;
     flex-shrink: 0;
-}
-
-/* Nexus Category Dropdown */
-.nexus-theme .nexus-categories-dropdown {
-    position: relative;
-    margin-left: 2rem;
-}
-
-.nexus-theme .nexus-cat-btn {
-    background-color: #F9FAFB;
-    border: 1px solid var(--border);
-    color: var(--copy);
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
+    gap: 12px;
+    order: 1;
 }
 
-.nexus-theme .nexus-cat-btn:hover {
-    background-color: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-content);
+.nexus-theme .nexus-logo-img {
+    height: 45px;
+    width: auto;
+    object-fit: contain;
 }
 
-.nexus-theme .nexus-cat-btn svg {
-    font-size: 0.8rem;
-    transition: transform 0.2s ease;
-}
-
-.nexus-theme .nexus-cat-btn svg.rotate {
-    transform: rotate(180deg);
-}
-
-.nexus-theme .nexus-cat-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    background-color: var(--foreground);
-    min-width: 200px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border);
-    z-index: 1000;
-    padding: 8px;
-    animation: nexusFadeIn 0.2s ease-out;
-}
-
-.nexus-theme .nexus-cat-item {
-    padding: 10px 15px;
-    border-radius: 8px;
+.nexus-theme .nexus-store-name {
+    font-weight: 800;
+    font-size: 1.4rem;
+    white-space: nowrap;
     color: var(--copy);
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    text-align: left;
 }
 
-.nexus-theme .nexus-cat-item:hover {
-    background-color: var(--primary);
-    color: var(--primary-content);
-}
-
-/* Navigation Links */
-/* Nexus Nav */
-.nexus-theme .nexus-right-group {
-    display: flex;
-    align-items: center;
-    gap: 3rem;
-    margin-left: auto;
-}
-
-.nexus-theme .nexus-nav {
-    display: flex;
-    gap: 2.5rem;
-}
-
+/* Navigation & Alignment */
 .nexus-theme .nexus-nav-middle {
     display: flex;
     align-items: center;
     gap: 2rem;
-    flex: 1;
+    flex: 2;
+    padding: 0 20px;
+    order: 2;
+    transition: all 0.3s ease;
+}
+
+.nexus-theme .nexus-nav-middle.alignment-left {
+    justify-content: flex-start;
+}
+
+.nexus-theme .nexus-nav-middle.alignment-center {
     justify-content: center;
 }
 
-.nexus-theme .nexus-separator {
-    color: var(--border);
-    opacity: 0.5;
-    margin: 0 0.5rem;
+.nexus-theme .nexus-nav-middle.alignment-right {
+    justify-content: flex-end;
+}
+
+.nexus-theme .nexus-right-group {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    order: 3;
+}
+
+.nexus-theme .nexus-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-left: 1.5rem;
 }
 
 .nexus-theme .nexus-nav-link {
@@ -126,12 +89,99 @@
     text-decoration: none;
     font-weight: 500;
     font-size: 1rem;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
 }
 
 .nexus-theme .nexus-nav-link:hover {
     opacity: 0.7;
     color: var(--primary);
+}
+
+/* Dropdown Navigation Styles */
+.nexus-theme .nexus-nav-item-wrapper {
+    position: relative;
+}
+
+.nexus-theme .nexus-submenu-icon {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+}
+
+.nexus-theme .nexus-nav-item-wrapper:hover .nexus-submenu-icon {
+    transform: rotate(180deg);
+}
+
+.nexus-theme .nexus-submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    margin-top: 0.5rem;
+}
+
+.nexus-theme .nexus-nav-item-wrapper:hover>.nexus-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nexus-theme .nexus-submenu-item-wrapper {
+    position: relative;
+}
+
+.nexus-theme .nexus-submenu-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nexus-theme .nexus-submenu-link:hover {
+    background-color: #f3f4f6;
+    color: var(--primary);
+}
+
+.nexus-theme .nexus-submenu-icon.right {
+    transform: rotate(-90deg);
+    font-size: 0.7rem;
+}
+
+.nexus-theme .nexus-submenu-item-wrapper:hover .nexus-submenu-icon.right {
+    transform: rotate(0deg);
+}
+
+/* Nested submenu (third level) */
+.nexus-theme .nexus-submenu.sub-level {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-top: 0;
+    margin-left: 0.5rem;
+}
+
+.nexus-theme .nexus-submenu-item-wrapper:hover>.nexus-submenu.sub-level {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 /* Nexus Mobile Menu */
@@ -170,7 +220,7 @@
     right: -280px;
     width: 280px;
     height: 100%;
-    background: var(--background);
+    background: #f9fafb;
     box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 2rem;
@@ -348,8 +398,68 @@
     width: 180px;
     outline: none;
     font-size: 0.9rem;
+    font-size: 0.9rem;
     animation: nexusFadeIn 0.3s ease;
 }
+
+.nexus-theme .nexus-search-box {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+
+.nexus-theme .nexus-search-btn {
+    background: transparent;
+    border: none;
+    color: var(--copy-light);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.nexus-theme .nexus-search-btn:hover {
+    color: var(--primary);
+}
+
+/* Long Search / Full Width Search Mode */
+.nexus-theme .nexus-search-wrapper.long-search {
+    background: #ffffff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    padding: 0 8px;
+    width: 300px;
+    /* Wider width for long search */
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.nexus-theme .nexus-search-wrapper.long-search .nexus-search-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding-left: 35px;
+    padding-right: 12px;
+    /* Space for icon */
+    box-shadow: none;
+}
+
+.nexus-theme .nexus-search-wrapper.long-search:focus-within {
+    border-color: var(--primary, #7c3aed);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.nexus-theme .search-icon-static {
+    position: absolute;
+    left: 12px;
+    color: var(--copy-lighter, #94a3b8);
+    pointer-events: none;
+}
+
 
 @keyframes nexusFadeIn {
     from {
@@ -749,39 +859,106 @@
     }
 }
 
-/* Nexus Mobile Search Responsiveness */
+/* Default hide mobile wrapper on desktop */
+.nexus-theme .nexus-header-mobile-wrapper {
+    display: none;
+}
+
+/* Nexus Header Mobile Refinement */
 @media (max-width: 992px) {
-    .nexus-theme .nexus-search-wrapper {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background: var(--background);
-        padding: 10px 1.5rem;
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
-        z-index: 1001;
-        display: none;
-        align-items: center;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .nexus-theme .nexus-search-wrapper.open {
-        display: flex;
-    }
-
-    .nexus-theme .nexus-search-input {
-        width: 100% !important;
-        background: var(--foreground) !important;
-        border: 1px solid var(--border) !important;
-    }
-
     .nexus-theme .nexus-header {
         height: auto !important;
         min-height: 70px;
-        padding: 10px 1.5rem !important;
-        flex-wrap: wrap !important;
+        padding: 5px 0 !important;
+    }
+
+    .nexus-theme .nexus-header-container {
+        flex-wrap: nowrap !important;
+        padding: 0 1.5rem !important;
+        gap: 0 !important;
+        display: block !important;
+        /* Let children manage alignment */
+    }
+
+    /* Hide standard desktop elements on mobile */
+    .nexus-theme .nexus-header-container>.nexus-logo,
+    .nexus-theme .nexus-header-container>.nexus-right-group,
+    .nexus-theme .nexus-header-container>.nexus-mobile-toggle,
+    .nexus-theme .nexus-nav-middle,
+    .nexus-theme .nexus-search-wrapper {
+        display: none !important;
+    }
+
+    .nexus-theme .nexus-header-mobile-wrapper {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 10px 0;
+    }
+
+    .nexus-theme .nexus-header-mobile-wrapper .nexus-logo {
+        order: 1 !important;
+        margin: 0 !important;
+    }
+
+    .nexus-theme .nexus-mobile-actions {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        order: 2 !important;
+    }
+
+    .nexus-theme .nexus-mobile-actions .nexus-icon-btn {
+        padding: 8px;
+        font-size: 1.25rem;
+        background: transparent;
+        border: none;
+    }
+
+    /* Mobile Search Inside Menu */
+    .nexus-theme .nexus-mobile-search-container {
+        padding: 15px 0;
+        width: 100%;
+    }
+
+    .nexus-theme .nexus-mobile-search-box {
+        display: flex;
+        align-items: center;
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .nexus-theme .nexus-mobile-search-icon {
+        color: #9ca3af;
+        font-size: 1rem;
+    }
+
+    .nexus-theme .nexus-mobile-search-box input {
+        border: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        font-size: 1rem !important;
+        color: #374151 !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
 }
+
+/* Page Builder Previews */
+.mobile .nexus-header-mobile-wrapper,
+.tablet .nexus-header-mobile-wrapper {
+    display: flex !important;
+}
+
+.mobile .nexus-header-container>.nexus-logo,
+.mobile .nexus-header-container>.nexus-right-group,
+.mobile .nexus-nav-middle {
+    display: none !important;
+}
+
 
 /* =========================================
    PREMIUM BRAND WATERMARK & BACKGROUNDS

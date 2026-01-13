@@ -14,18 +14,29 @@
 }
 
 .portfolio-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--theme-border);
+  margin-bottom: 1rem;
+}
+
+.portfolio-header-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--theme-border);
+  position: relative;
+}
+
+.portfolio-logo {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .portfolio-header h1 {
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--theme-accent);
-  order: 2;
+  margin: 0;
 }
 
 .portfolio-logo-img {
@@ -34,30 +45,26 @@
   height: auto;
   width: auto;
   object-fit: contain;
-  order: 2;
 }
 
-.portfolio-header nav {
-  order: 1;
+.portfolio-nav-desktop {
+  display: flex;
+  gap: 1.5rem;
 }
 
-.portfolio-header nav a {
-  margin-left: 1.5rem;
+.portfolio-nav-desktop a {
   text-decoration: none;
   color: var(--theme-text-offset);
   transition: all 0.3s ease;
   position: relative;
+  font-weight: 500;
 }
 
-.portfolio-header nav a:first-child {
-  margin-left: 0;
-}
-
-.portfolio-header nav a:hover {
+.portfolio-nav-desktop a:hover {
   color: var(--theme-accent);
 }
 
-.portfolio-header nav a::after {
+.portfolio-nav-desktop a::after {
   content: '';
   position: absolute;
   bottom: -5px;
@@ -68,8 +75,66 @@
   transition: width 0.3s ease;
 }
 
-.portfolio-header nav a:hover::after {
+.portfolio-nav-desktop a:hover::after {
   width: 100%;
+}
+
+.portfolio-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--theme-text);
+  cursor: pointer;
+  z-index: 1002;
+}
+
+.portfolio-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.98);
+  z-index: 1001;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  justify-content: center;
+  align-items: center;
+}
+
+.portfolio-mobile-overlay.open {
+  display: flex;
+  opacity: 1;
+}
+
+.portfolio-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.portfolio-mobile-nav a {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .portfolio-nav-desktop {
+    display: none;
+  }
+
+  .portfolio-mobile-toggle {
+    display: block;
+  }
+
+  .portfolio-layout {
+    padding: 1rem;
+  }
 }
 
 .portfolio-content {

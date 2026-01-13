@@ -1,4 +1,12 @@
 const ensureAuthenticated = (req, res, next) => {
+    console.log('🔐 ensureAuthenticated check:', {
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        hasUser: !!req.user,
+        userEmail: req.user?.email,
+        sessionId: req.session?.sessionId,
+        userSessionId: req.user?.currentSessionId
+    });
+
     if (req.isAuthenticated && req.isAuthenticated()) {
         // Check for concurrent login validation
         // ONLY if both the session has an ID and the user record has a recorded session ID
@@ -12,6 +20,7 @@ const ensureAuthenticated = (req, res, next) => {
         }
         return next();
     }
+    console.log('❌ Authentication failed - user not authenticated');
     res.status(401).json({ msg: 'Unauthorized: Please log in to access this resource' });
 };
 

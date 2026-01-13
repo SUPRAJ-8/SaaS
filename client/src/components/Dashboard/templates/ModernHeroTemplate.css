@@ -3,6 +3,7 @@
     overflow: hidden;
     width: 100%;
     font-family: 'Outfit', sans-serif;
+    background-color: transparent !important;
 }
 
 .modern-hero-container {
@@ -15,12 +16,13 @@
     align-items: center;
     position: relative;
     z-index: 2;
+    padding: 60px;
 }
 
 
 
 .hero-content {
-    animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 1;
 }
 
 @keyframes slideInLeft {
@@ -38,21 +40,21 @@
 .hero-title {
     font-size: 64px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--copy, #0f172a);
     line-height: 1.1;
     margin-bottom: 24px;
     letter-spacing: -0.03em;
 }
 
 .hero-highlight {
-    color: var(--primary-color, #2563eb);
+    color: var(--primary-content);
     display: inline;
 }
 
 .hero-subtitle {
     font-size: 16px;
     line-height: 1.6;
-    color: #64748b;
+    color: var(--copy-lighter, #64748b);
     margin-bottom: 40px;
     max-width: 537px;
 }
@@ -65,8 +67,8 @@
 }
 
 .btn-primary-modern {
-    background: var(--primary-color, #2563eb);
-    color: var(--brand-text-color, white);
+    background: var(--primary, #2563eb);
+    color: var(--primary-content, white);
     border: none;
     padding: 16px 32px;
     border-radius: 12px;
@@ -76,18 +78,17 @@
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(var(--primary-rgb, 37, 99, 235), 0.3);
 }
 
 .btn-primary-modern:hover {
     transform: translateY(-4px);
-    background: #1d4ed8;
-    box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+    filter: brightness(0.9);
+    box-shadow: 0 20px 25px -5px rgba(var(--primary-rgb, 37, 99, 235), 0.4);
 }
 
 .btn-icon {
-    transition: transform 0.3s ease;
+    display: flex;
 }
 
 .btn-primary-modern:hover .btn-icon {
@@ -96,8 +97,8 @@
 
 .btn-secondary-modern {
     background: #ffffff;
-    color: #0f172a;
-    border: 1px solid #e2e8f0;
+    color: var(--copy, #0f172a);
+    border: 1px solid var(--border, #e2e8f0);
     padding: 16px 32px;
     border-radius: 12px;
     font-weight: 700;
@@ -106,7 +107,6 @@
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
@@ -120,8 +120,8 @@
 .play-icon-wrapper {
     width: 24px;
     height: 24px;
-    background: var(--primary-color, #2563eb);
-    color: var(--brand-text-color, white);
+    background: var(--primary, #2563eb);
+    color: var(--primary-content, white);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -152,7 +152,7 @@
 /* Visual Frame - Macbook Style */
 .hero-visual {
     position: relative;
-    animation: fadeInRight 1s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Animation removed */
 }
 
 @keyframes fadeInRight {
@@ -169,13 +169,7 @@
 
 .visual-image-wrapper {
     position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow:
-        0 20px 50px -12px rgba(0, 0, 0, 0.2),
-        0 0 0 1px rgba(0, 0, 0, 0.05);
-    background: #f8fafc;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: visible;
 }
 
 .visual-image-wrapper:hover {
@@ -186,7 +180,6 @@
     width: 100%;
     height: auto;
     display: block;
-    transition: transform 0.8s ease;
 }
 
 .visual-image-wrapper:hover img {

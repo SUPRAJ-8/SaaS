@@ -9,6 +9,7 @@ const CATEGORIES = [
     { id: 'general', name: 'General Content', icon: <FaObjectGroup /> },
     { id: 'premium', name: 'Premium Sections', icon: <FaStar />, hasSub: true },
     { id: 'product', name: 'Product Displays', icon: <FaThLarge /> },
+    { id: 'hero', name: 'Hero', icon: <FaObjectGroup /> },
     { id: 'category', name: 'CATEGORY LIST', icon: <FaImage /> },
     { id: 'content', name: 'Media & Text', icon: <FaObjectGroup /> },
     { id: 'slider', name: 'Carousels', icon: <FaLayerGroup /> },
@@ -19,8 +20,8 @@ const CATEGORIES = [
 const DEFAULT_TEMPLATES = [
     {
         id: 'modern-hero',
-        name: 'MODERN TECH HERO',
-        category: 'premium',
+        name: 'Hero section 1',
+        category: 'hero',
         image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80',
         description: 'Premium tech-style hero with dashboard preview and highlights',
         defaultContent: {

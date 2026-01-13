@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import axios from 'axios';
-import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaFileAlt, FaChevronRight, FaPlug, FaTimes, FaChartLine, FaBell } from 'react-icons/fa';
+import { FaHome, FaStore, FaUsers, FaBoxOpen, FaShoppingCart, FaExclamationCircle, FaTags, FaPalette, FaUpload, FaCog, FaFileAlt, FaChevronRight, FaPlug, FaTimes, FaChartLine, FaBell, FaImage } from 'react-icons/fa';
 import StoresModal from './StoresModal';
 import API_URL from '../../apiConfig';
 import './Sidebar.css';
@@ -95,6 +95,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           <li><NavLink to="/dashboard/products" onClick={handleNavClick}><FaBoxOpen className="nav-icon" /> Products</NavLink></li>
           <li><NavLink to="/dashboard/bulk-upload" onClick={handleNavClick}><FaUpload className="nav-icon" /> Bulk Upload</NavLink></li>
           <li><NavLink to="/dashboard/categories" onClick={handleNavClick}><FaTags className="nav-icon" /> Categories</NavLink></li>
+          <li><NavLink to="/dashboard/media" onClick={handleNavClick}><FaImage className="nav-icon" /> Media</NavLink></li>
           <li><NavLink to="/dashboard/analytics" onClick={handleNavClick}><FaChartLine className="nav-icon" /> Analytics</NavLink></li>
           <li>
             <NavLink to="/dashboard/notifications" onClick={handleNavClick}>

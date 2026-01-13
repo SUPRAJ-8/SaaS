@@ -42,7 +42,7 @@ const getApiUrl = () => {
     if (subdomain === 'app') {
       return ''; // Use proxy for app subdomain
     } else {
-      return 'http://localhost:5002';
+      return ''; // Use proxy for all localhost subdomains in dev to preserve headers
     }
   }
 

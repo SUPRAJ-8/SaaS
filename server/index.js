@@ -323,6 +323,7 @@ app.use('/api/categories', require('./routes/categories'));
 app.use('/api/seeder', require('./routes/seeder'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/media', require('./routes/media'));
 app.use('/api/super-admin', require('./routes/super-admin'));
 app.use('/api/store-settings', require('./routes/store-settings'));
 app.use('/api/client-pages', require('./routes/client-pages'));

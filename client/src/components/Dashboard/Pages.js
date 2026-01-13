@@ -69,9 +69,9 @@ const Pages = () => {
                     localStorage.setItem('site_pages', JSON.stringify(response.data));
                 } else {
                     const initialPages = [
-                        { id: 1, title: 'Home Page', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'ecommerce' },
+                        { id: 1, title: 'Home', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'ecommerce' },
                         { id: 2, title: 'Checkout', slug: 'checkout', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'ecommerce' },
-                        { id: 3, title: 'Home Page', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'nexus' },
+                        { id: 3, title: 'Home', slug: '', status: 'Active', lastModified: new Date().toISOString().split('T')[0], type: 'Core', themeId: 'nexus' },
                         { id: 4, title: 'About Us', slug: 'about', status: 'Inactive', lastModified: new Date().toISOString().split('T')[0], type: 'Custom', themeId: 'nexus' },
                     ];
                     setPages(initialPages);
@@ -114,8 +114,8 @@ const Pages = () => {
             ? newPageSlug.toLowerCase().replace(/\s+/g, '-')
             : newPageTitle.toLowerCase().replace(/\s+/g, '-')).replace(/^\//, '');
 
-        // Ensure home page logic is respected: if it's empty or /, save as /
-        if (slugToUse === '' || slugToUse === '/') slugToUse = '/';
+        // Ensure home page logic is respected: if it's empty or /, save as empty string
+        if (slugToUse === '' || slugToUse === '/') slugToUse = '';
 
         try {
             // Save to backend immediately
@@ -209,24 +209,37 @@ const Pages = () => {
             return;
         }
 
-        // Use custom domain if available
-        if (client.customDomain) {
+        const { hostname, protocol, port } = window.location;
+        const isLocalhost = hostname === 'localhost' || hostname.includes('127.0.0.1') || hostname.endsWith('.localhost');
+
+        // Use custom domain if available and NOT on localhost
+        if (client.customDomain && !isLocalhost) {
             const baseUrl = client.customDomain.startsWith('http') ? client.customDomain : `https://${client.customDomain}`;
             window.open(`${baseUrl}${slug ? `/${slug}` : '/'}`, '_blank');
             return;
         }
 
-        const { hostname, protocol, port } = window.location;
-        let baseDomain = hostname.includes('nepostore.xyz') ? 'nepostore.xyz' : 'localhost';
-        let targetProtocol = hostname.includes('nepostore.xyz') ? 'https:' : protocol;
-        let targetPort = port ? `:${port}` : (hostname.includes('nepostore.xyz') ? '' : ':3000');
+        let targetUrl = '';
+        if (isLocalhost) {
+            const isUsingSubdomain = hostname !== 'localhost' && hostname !== '127.0.0.1';
+            const targetPort = port ? `:${port}` : ':3000';
+            if (isUsingSubdomain) {
+                targetUrl = `${protocol}//${client.subdomain}.localhost${targetPort}${slug ? `/${slug}` : '/'}`;
+            } else {
+                targetUrl = `${protocol}//localhost${targetPort}${slug ? `/${slug}` : '/'}?tenant=${client.subdomain}`;
+            }
+        } else {
+            targetUrl = `https://${client.subdomain}.nepostore.xyz${slug ? `/${slug}` : '/'}`;
+        }
 
-        const shopUrl = `${targetProtocol}//${client.subdomain}.${baseDomain}${targetPort}${slug ? `/${slug}` : '/'}`;
-        window.open(shopUrl, '_blank');
+        window.open(targetUrl, '_blank');
     };
 
     const handleOpenDeleteModal = (page) => {
-        if (!page.slug || page.slug === '') {
+        const isPageHome = !page.slug || page.slug === '' || page.slug === '/' || page.slug === (page._id || page.id);
+        const homeCount = pages.filter(p => (p.themeId || 'nexus') === activeThemeId && (!p.slug || p.slug === '' || p.slug === '/' || p.slug === (p._id || p.id))).length;
+
+        if (isPageHome && homeCount <= 1) {
             toast.error('The Home page is a system requirement and cannot be deleted.');
             return;
         }
@@ -283,7 +296,7 @@ const Pages = () => {
             const payload = {
                 id: pageToRename._id || pageToRename.id,
                 title: renameTitle,
-                slug: slugToUse === '/' ? '' : slugToUse, // Normalize / to empty if needed for backend
+                slug: slugToUse === '/' ? '' : slugToUse, // Normalize home page to empty string for backend consistency
                 // Preserve other fields
                 status: pageToRename.status,
                 themeId: pageToRename.themeId
@@ -392,9 +405,10 @@ const Pages = () => {
                                                 <button onClick={(e) => { e.stopPropagation(); handleOpenRenameModal(page); }}><FaEdit /> Edit Name</button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleViewPage(page.slug); }}><FaEye /> View</button>
                                                 <button onClick={(e) => e.stopPropagation()}><FaCopy /> Duplicate</button>
-                                                {page.slug !== '' && page.slug !== '/' && page.slug !== (page._id || page.id) && (
-                                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); handleOpenDeleteModal(page); }}><FaTrash /> Delete</button>
-                                                )}
+                                                {(!(page.slug === '' || page.slug === '/' || page.slug === (page._id || page.id)) ||
+                                                    pages.filter(p => (p.themeId || 'nexus') === activeThemeId && (!p.slug || p.slug === '' || p.slug === '/' || p.slug === (page._id || page.id))).length > 1) && (
+                                                        <button className="delete-btn" onClick={(e) => { e.stopPropagation(); handleOpenDeleteModal(page); }}><FaTrash /> Delete</button>
+                                                    )}
                                             </div>
                                         </div>
                                     </td>

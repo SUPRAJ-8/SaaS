@@ -5,6 +5,9 @@ const Client = require('../models/Client');
 const { ensureAuthenticated } = require('../middleware/auth');
 
 const findOrCreateWebsite = async (clientId) => {
+    if (!clientId) {
+        throw new Error('ClientId is required for findOrCreateWebsite');
+    }
     const client = await Client.findById(clientId);
     const activeThemeId = client?.settings?.selectedThemeId || 'nexus';
 
@@ -15,35 +18,46 @@ const findOrCreateWebsite = async (clientId) => {
         website = new Website({ clientId, pages: [] });
         needsHome = true;
     } else {
-        // --- DEDUPLICATION & NORMALIZATION STEP ---
-        // Some users might have legacy data with both "" and "/" slugs.
-        // We normalize everything to "" for home page and remove duplicates.
-        const seenSlugs = new Set();
-        const uniquePages = [];
+        // --- SMART DEDUPLICATION & NORMALIZATION ---
+        const pageMap = new Map(); // themeKey -> Best version of the page
         let modified = false;
 
         for (const p of website.pages) {
-            const themeKey = `${p.themeId || 'nexus'}_${(p.slug || '').replace(/^\//, '')}`;
+            let slug = (p.slug || '').replace(/^\//, '');
+            const pId = p._id ? p._id.toString() : '';
 
-            // If we've seen this theme/slug combo before, skip it (deduplicate)
-            if (seenSlugs.has(themeKey)) {
-                console.log(`[Deduper] Removing duplicate page: ${themeKey}`);
+            // If slug is the Mongo ID, and it's the Home Page title, normalize to empty slug
+            if (slug === pId && p.title === 'Home Page') {
+                slug = '';
+                modified = true;
+            }
+
+            const themeKey = `${p.themeId || 'nexus'}_${slug}`;
+
+            if (pageMap.has(themeKey)) {
+                const existing = pageMap.get(themeKey);
+                // Keep the one with more content (more sections)
+                const existingLen = (existing.content || '[]').length;
+                const currentLen = (p.content || '[]').length;
+
+                if (currentLen > existingLen) {
+                    pageMap.set(themeKey, p);
+                }
                 modified = true;
                 continue;
             }
 
-            // Normalize the slug in the record if it has a leading slash
-            if (p.slug && p.slug.startsWith('/')) {
-                p.slug = p.slug.replace(/^\//, '');
+            // Sync normalization back to the object
+            if (p.slug !== slug) {
+                p.slug = slug;
                 modified = true;
             }
 
-            seenSlugs.add(themeKey);
-            uniquePages.push(p);
+            pageMap.set(themeKey, p);
         }
 
         if (modified) {
-            website.pages = uniquePages;
+            website.pages = Array.from(pageMap.values());
             await website.save();
         }
         // -------------------------------------------
@@ -60,7 +74,7 @@ const findOrCreateWebsite = async (clientId) => {
 
     if (needsHome) {
         website.pages.push({
-            title: 'Home Page',
+            title: 'Home',
             slug: '', // Standardized empty slug for home
             status: 'published',
             themeId: activeThemeId,

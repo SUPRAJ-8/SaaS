@@ -32,6 +32,7 @@ import SuperAdminClients from './components/Dashboard/SuperAdminClients';
 import Plugins from './components/Dashboard/Plugins';
 import Analytics from './components/Dashboard/Analytics';
 import Notifications from './components/Dashboard/Notifications';
+import Media from './components/Dashboard/Media';
 import LoginPage from './components/LoginPage';
 import GetStartedPage from './components/GetStartedPage';
 import SignupPage from './components/SignupPage';
@@ -142,6 +143,7 @@ function AppRouter() {
               <Route path="plugins" element={<Plugins />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="media" element={<Media />} />
             </Route>
             {/* Redirect root to /dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
