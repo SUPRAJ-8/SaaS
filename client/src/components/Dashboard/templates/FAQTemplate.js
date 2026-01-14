@@ -17,9 +17,9 @@ const FAQTemplate = ({ content }) => {
     // Extract spacing and background settings
     const paddingTop = config?.paddingTop !== undefined ? config.paddingTop : 0;
     const paddingBottom = config?.paddingBottom !== undefined ? config.paddingBottom : 0;
-    const marginTop = config?.marginTop !== undefined ? config.marginTop : 5;
-    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 5;
-    const useThemeBg = config?.useThemeBg || false;
+    const marginTop = config?.marginTop !== undefined ? config.marginTop : 0;
+    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 0;
+    const useThemeBg = config?.useThemeBg !== undefined ? config.useThemeBg : true;
     const bgColor = config?.bgColor || 'transparent';
 
     const sectionStyle = {
@@ -27,7 +27,7 @@ const FAQTemplate = ({ content }) => {
         paddingBottom: `${paddingBottom}px`,
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
-        backgroundColor: useThemeBg ? 'var(--theme-primary, #ffffff)' : bgColor,
+        backgroundColor: useThemeBg ? 'transparent' : bgColor,
     };
 
     return (

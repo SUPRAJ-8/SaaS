@@ -23,9 +23,9 @@ const HeroTemplate = ({ content }) => {
     // Extract spacing and background settings
     const paddingTop = config?.paddingTop !== undefined ? config.paddingTop : 0;
     const paddingBottom = config?.paddingBottom !== undefined ? config.paddingBottom : 0;
-    const marginTop = config?.marginTop !== undefined ? config.marginTop : 5;
-    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 5;
-    const useThemeBg = config?.useThemeBg || false;
+    const marginTop = config?.marginTop !== undefined ? config.marginTop : 0;
+    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 0;
+    const useThemeBg = config?.useThemeBg !== undefined ? config.useThemeBg : true;
     const bgColor = config?.bgColor || 'transparent';
 
     const resolvedBgImage = resolveImageUrl(bgImage, API_URL);
@@ -36,7 +36,7 @@ const HeroTemplate = ({ content }) => {
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
         backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${resolvedBgImage})`,
-        backgroundColor: useThemeBg ? 'var(--theme-primary, #ffffff)' : bgColor,
+        backgroundColor: useThemeBg ? 'transparent' : bgColor,
     };
 
     return (

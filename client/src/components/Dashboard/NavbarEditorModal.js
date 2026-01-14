@@ -88,8 +88,9 @@ const NavbarLivePreview = ({ layout, menuItems, settings, storeName, storeLogo, 
                 )}
 
                 <div className="nve-mockup-actions">
+                    {/* Search Logic */}
                     {settings.showSearch && !settings.longSearch && <FaSearch />}
-                    {settings.showSearch && settings.longSearch && (
+                    {settings.longSearch && (
                         <div className="nve-mockup-search-full">
                             <FaSearch className="nve-search-icon" />
                             <span>Search...</span>
@@ -854,7 +855,7 @@ const NavbarEditorModal = ({ isOpen, onClose, onSave, onUpdate, siteSettings }) 
                                             <input
                                                 type="checkbox"
                                                 checked={settings.showSearch}
-                                                onChange={(e) => setSettings({ ...settings, showSearch: e.target.checked })}
+                                                onChange={(e) => setSettings({ ...settings, showSearch: e.target.checked, longSearch: e.target.checked ? false : settings.longSearch })}
                                             />
                                             <span className="nve-slider nve-round"></span>
                                         </label>
@@ -891,7 +892,7 @@ const NavbarEditorModal = ({ isOpen, onClose, onSave, onUpdate, siteSettings }) 
                                             <input
                                                 type="checkbox"
                                                 checked={settings.longSearch}
-                                                onChange={(e) => setSettings({ ...settings, longSearch: e.target.checked })}
+                                                onChange={(e) => setSettings({ ...settings, longSearch: e.target.checked, showSearch: e.target.checked ? false : settings.showSearch })}
                                             />
                                             <span className="nve-slider nve-round"></span>
                                         </label>

@@ -55,12 +55,16 @@ router.get('/', async (req, res) => {
 
     filter.clientId = clientId;
 
-    if (section && ['Popular', 'Featured', 'None'].includes(section)) {
-      filter.section = section;
+    // If coming from shop (tenantClient exists), default to Active products only
+    if (req.tenantClient) {
+      filter.status = status || 'Active';
+    } else if (status) {
+      // For dashboard, only filter if status is provided
+      filter.status = status;
     }
 
-    if (status) {
-      filter.status = status;
+    if (section && ['Popular', 'Featured', 'None'].includes(section)) {
+      filter.section = section;
     }
 
     const products = await Product.find(filter);
@@ -81,7 +85,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       name, shortDescription, longDescription, gender,
       crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section,
       variantColors, variantSizes, samePriceForAllVariants,
-      seoTitle, seoDescription
+      seoTitle, seoDescription, handle
     } = req.body;
 
     // Validate required fields
@@ -154,7 +158,8 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       variantSizes: variantSizes ? JSON.parse(variantSizes) : [],
       samePriceForAllVariants: samePriceForAllVariants ? JSON.parse(samePriceForAllVariants) : false,
       seoTitle: seoTitle || '',
-      seoDescription: seoDescription || ''
+      seoDescription: seoDescription || '',
+      handle: handle || ''
     };
 
     const product = new Product(productData);
@@ -176,81 +181,77 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
   const {
     name, shortDescription, longDescription, gender,
     crossedPrice, sellingPrice, costPrice, quantity, category, subcategory, sku, status, section,
-    seoTitle, seoDescription
+    seoTitle, seoDescription, handle
   } = req.body;
-
-  // Build product object
-  const productFields = {};
-  if (name) productFields.name = name;
-  if (shortDescription) productFields.shortDescription = shortDescription;
-  if (longDescription) productFields.longDescription = longDescription;
-  if (gender) productFields.gender = gender;
-  if (req.body.hasVariants !== undefined) productFields.hasVariants = JSON.parse(req.body.hasVariants);
-  if (req.body.variants) productFields.variants = JSON.parse(req.body.variants);
-  if (req.body.variantColors) productFields.variantColors = JSON.parse(req.body.variantColors);
-  if (req.body.variantSizes) productFields.variantSizes = JSON.parse(req.body.variantSizes);
-  if (req.body.samePriceForAllVariants !== undefined) productFields.samePriceForAllVariants = JSON.parse(req.body.samePriceForAllVariants);
-  if (category) productFields.category = category;
-  if (subcategory !== undefined) productFields.subcategory = subcategory;
-  if (sku) productFields.sku = sku;
-  if (crossedPrice) productFields.crossedPrice = crossedPrice;
-  if (sellingPrice) productFields.sellingPrice = sellingPrice;
-  if (costPrice) productFields.costPrice = costPrice;
-  if (quantity) productFields.quantity = quantity;
-  if (status) productFields.status = status;
-  if (section !== undefined) productFields.section = section;
-  if (seoTitle !== undefined) productFields.seoTitle = seoTitle;
-  if (seoDescription !== undefined) productFields.seoDescription = seoDescription;
-  // Handle images merge (existing + new)
-  let finalImages = [];
-
-  // 1. Get existing images from the request (sent as JSON string from ProductModal)
-  if (req.body.existingImages) {
-    try {
-      const existing = typeof req.body.existingImages === 'string'
-        ? JSON.parse(req.body.existingImages)
-        : req.body.existingImages;
-      if (Array.isArray(existing)) {
-        finalImages = [...existing];
-      }
-    } catch (e) {
-      console.error('Error parsing existingImages:', e);
-      if (typeof req.body.existingImages === 'string' && req.body.existingImages.length > 0) {
-        finalImages = [req.body.existingImages];
-      }
-    }
-  }
-
-  // 2. Add newly uploaded files
-  if (req.files && req.files.length > 0) {
-    const newFiles = req.files.map(file => `/uploads/${file.filename}`);
-    finalImages = [...finalImages, ...newFiles];
-  }
-
-  // 3. Update the product fields ONLY if we have a set of images to update
-  // We use req.body.existingImages as a flag that image management was active in the UI
-  if (req.body.existingImages !== undefined || (req.files && req.files.length > 0)) {
-    productFields.images = finalImages;
-  }
-
-  console.log('Received section in request:', req.body.section);
-  console.log('FIELDS TO UPDATE:', productFields);
 
   try {
     let product = await Product.findById(req.params.id);
-
     if (!product) return res.status(404).json({ msg: 'Product not found' });
 
-    product = await Product.findByIdAndUpdate(
-      req.params.id,
-      { $set: productFields },
-      { new: true }
-    );
+    // Update basic fields if they are provided in req.body
+    const fieldsToUpdate = [
+      'name', 'shortDescription', 'longDescription', 'gender',
+      'category', 'subcategory', 'sku', 'status', 'section',
+      'seoTitle', 'seoDescription', 'handle'
+    ];
 
+    fieldsToUpdate.forEach(field => {
+      if (req.body[field] !== undefined) {
+        product[field] = req.body[field];
+      }
+    });
+
+    // Handle numeric fields separately to allow 0
+    const numericFields = ['crossedPrice', 'sellingPrice', 'costPrice', 'quantity'];
+    numericFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        product[field] = Number(req.body[field]);
+      }
+    });
+
+    // Handle Booleans
+    if (req.body.hasVariants !== undefined) {
+      product.hasVariants = req.body.hasVariants === 'true' || req.body.hasVariants === true;
+    }
+    if (req.body.samePriceForAllVariants !== undefined) {
+      product.samePriceForAllVariants = req.body.samePriceForAllVariants === 'true' || req.body.samePriceForAllVariants === true;
+    }
+
+    // Handle Arrays (Colors/Sizes)
+    if (req.body.variantColors) product.variantColors = JSON.parse(req.body.variantColors);
+    if (req.body.variantSizes) product.variantSizes = JSON.parse(req.body.variantSizes);
+
+    // Handle Variants
+    if (req.body.variants) {
+      const parsedVariants = JSON.parse(req.body.variants);
+      console.log('UPDATING VARIANTS:', JSON.stringify(parsedVariants, null, 2));
+      product.variants = parsedVariants;
+    }
+
+    // Handle Images
+    if (req.body.existingImages !== undefined || (req.files && req.files.length > 0)) {
+      let finalImages = [];
+      if (req.body.existingImages) {
+        const existing = typeof req.body.existingImages === 'string'
+          ? JSON.parse(req.body.existingImages)
+          : req.body.existingImages;
+        if (Array.isArray(existing)) finalImages = [...existing];
+      }
+      if (req.files && req.files.length > 0) {
+        const newFiles = req.files.map(file => `/uploads/${file.filename}`);
+        finalImages = [...finalImages, ...newFiles];
+      }
+      product.images = finalImages;
+    }
+
+    await product.save();
     res.json(product);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Update Error:', err);
+    if (err.code === 11000) {
+      return res.status(400).json({ msg: 'Product with this SKU already exists' });
+    }
+    res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });
 
@@ -318,7 +319,13 @@ router.post('/bulk-update-status', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', ['name']);
+    let product;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      product = await Product.findById(req.params.id).populate('category', ['name']);
+    } else {
+      product = await Product.findOne({ handle: req.params.id }).populate('category', ['name']);
+    }
+
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
@@ -327,6 +334,11 @@ router.get('/:id', async (req, res) => {
     const currentClientId = req.tenantClient?._id || req.user?.clientId;
     if (currentClientId && product.clientId.toString() !== currentClientId.toString()) {
       return res.status(403).json({ msg: 'Access denied: This product belongs to another store' });
+    }
+
+    // For shop context, only show Active products
+    if (req.tenantClient && product.status !== 'Active') {
+      return res.status(404).json({ msg: 'Product not found or currently unavailable' });
     }
 
     res.json(product);

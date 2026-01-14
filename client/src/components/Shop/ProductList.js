@@ -21,9 +21,12 @@ import DynamicSection from '../Dashboard/DynamicSection';
 const SECTION_TEMPLATES = {
   'product-grid': ProductGridTemplate,
   'product-grid-basic': ProductGridTemplate,
+  'product-grid-001': ProductGridTemplate, // New section template system
   'hero-impact': HeroTemplate,
   'hero': HeroTemplate,
+  'hero-modern': ModernHeroTemplate,
   'category-list': CategoryGridTemplate,
+  'category-grid-001': CategoryGridTemplate, // New section template system
   'faq-accordion': FAQTemplate,
   'faq': FAQTemplate,
   'rich-text': RichTextTemplate,
@@ -118,7 +121,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
-      <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link">
+      <Link to={getShopPath(`/product/${product.handle || product._id}`)} className="product-card-link">
         <div className="product-image-container">
           {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
           {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
@@ -150,14 +153,24 @@ const ProductCard = ({ product }) => {
           </div>
         </div>
       </Link>
-      <button
-        className="add-to-cart-btn-small"
-        onClick={handleAddToCart}
-        disabled={isOutOfStock}
-        style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
-      >
-        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-      </button>
+      {product.hasVariants ? (
+        <Link
+          to={getShopPath(`/product/${product.handle || product._id}`)}
+          className="add-to-cart-btn-small"
+          style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+        >
+          Select Variant
+        </Link>
+      ) : (
+        <button
+          className="add-to-cart-btn-small"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+        >
+          {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+        </button>
+      )}
     </div>
   );
 };
@@ -359,12 +372,26 @@ const ProductList = () => {
         setAllProducts(all);
         setCategories(cats || []);
 
-        // Extract available colors and sizes
+        // Extract colors and sizes
         const colors = new Set();
         const sizes = new Set();
         all.forEach(p => {
-          if (p.variantColors) p.variantColors.forEach(c => colors.add(c));
-          if (p.variantSizes) p.variantSizes.forEach(s => sizes.add(s));
+          if (p.variantColors) {
+            p.variantColors.forEach(c => {
+              if (c && typeof c === 'string') {
+                // Normalize color to Title Case to prevent duplicates like "Red" and "red"
+                const normalizedColor = c.trim().charAt(0).toUpperCase() + c.trim().slice(1).toLowerCase();
+                colors.add(normalizedColor);
+              }
+            });
+          }
+          if (p.variantSizes) {
+            p.variantSizes.forEach(s => {
+              if (s && typeof s === 'string') {
+                sizes.add(s.trim());
+              }
+            });
+          }
         });
         setAvailableColors([...colors]);
         setAvailableSizes([...sizes]);

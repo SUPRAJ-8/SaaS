@@ -8,7 +8,8 @@ const VariantSchema = new mongoose.Schema({
   costPrice: { type: Number, default: 0 },
   weight: { type: Number, default: 0 },
   quantity: { type: Number, default: 0 },
-  sku: String
+  sku: String,
+  image: String
 });
 
 const ProductSchema = new mongoose.Schema({
@@ -113,6 +114,10 @@ const ProductSchema = new mongoose.Schema({
     trim: true
   },
   seoDescription: {
+    type: String,
+    trim: true
+  },
+  handle: {
     type: String,
     trim: true
   }

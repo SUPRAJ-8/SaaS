@@ -4,8 +4,14 @@ import RichTextEditor from './RichTextEditor';
 import 'react-quill-new/dist/quill.snow.css';
 import API_URL from '../../apiConfig';
 import { resolveImageUrl } from '../../themeUtils';
+import {
+  FaInfoCircle, FaTag, FaImage, FaBullhorn, FaTimes,
+  FaCloudUploadAlt, FaTrash, FaCheckCircle, FaMinusCircle,
+  FaLink, FaSearch, FaPalette, FaCube, FaChevronDown
+} from 'react-icons/fa';
 
 const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
+  const [activeTab, setActiveTab] = useState('media');
   const [formData, setFormData] = useState({
     name: '',
     shortDescription: '',
@@ -18,6 +24,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
     category: '',
     subcategory: '',
     section: 'None',
+    status: 'Active',
     images: [],
     hasVariants: false,
     variants: [],
@@ -26,15 +33,14 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
     existingImages: [],
     samePriceForAllVariants: false,
     seoTitle: '',
-    seoDescription: ''
+    seoDescription: '',
+    handle: '',
+    sku: ''
   });
   const [categories, setCategories] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
-
-  const handleDescriptionChange = (value) => {
-    setFormData(prev => ({ ...prev, longDescription: value }));
-  };
+  const [activeImagePicker, setActiveImagePicker] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -53,17 +59,19 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
       setFormData({
         ...product,
         section: product.section || 'None',
-        images: [], // keep new uploads separate
+        images: [],
         existingImages: product.images || [],
         variantColors: product.variantColors || [],
         variantSizes: product.variantSizes || [],
         variants: product.variants || [],
         samePriceForAllVariants: product.samePriceForAllVariants || false,
         seoTitle: product.seoTitle || '',
-        seoDescription: product.seoDescription || ''
+        seoDescription: product.seoDescription || '',
+        handle: product.handle || '',
+        status: product.status || 'Active',
+        sku: product.sku || ''
       });
     } else {
-      // Reset form for new product
       setFormData({
         name: '',
         shortDescription: '',
@@ -76,16 +84,18 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
         category: '',
         subcategory: '',
         section: 'None',
+        status: 'Active',
         images: [],
         hasVariants: false,
         variants: [],
         variantColors: [],
         variantSizes: [],
-        status: 'Active',
         existingImages: [],
         samePriceForAllVariants: false,
         seoTitle: '',
-        seoDescription: ''
+        seoDescription: '',
+        handle: '',
+        sku: ''
       });
     }
   }, [product, isOpen]);
@@ -94,15 +104,29 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
     const { name, value } = e.target;
     if (name === 'category') {
       setFormData(prev => ({ ...prev, [name]: value, subcategory: '' }));
+    } else if (name === 'name' && !formData.handle) {
+      // Auto-generate handle if it's empty
+      const autoHandle = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      setFormData(prev => ({ ...prev, [name]: value, handle: autoHandle }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
+  const handleStatusChange = (status) => {
+    setFormData(prev => ({ ...prev, status }));
+  };
+
+  const handleDescriptionChange = (value) => {
+    setFormData(prev => ({ ...prev, longDescription: value }));
+  };
+
   const handleVariantChange = (index, field, value) => {
-    const updatedVariants = [...formData.variants];
-    updatedVariants[index][field] = value;
-    setFormData(prev => ({ ...prev, variants: updatedVariants }));
+    setFormData(prev => {
+      const updatedVariants = [...prev.variants];
+      updatedVariants[index] = { ...updatedVariants[index], [field]: value };
+      return { ...prev, variants: updatedVariants };
+    });
   };
 
   const handleSamePriceChange = (e) => {
@@ -134,7 +158,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
             costPrice: formData.samePriceForAllVariants ? formData.costPrice : 0,
             weight: 0,
             quantity: 0,
-            sku: ''
+            sku: '',
+            image: ''
           });
         }
       });
@@ -147,12 +172,19 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
       e.preventDefault();
       const value = e.target.value.trim();
       if (value) {
-        if (type === 'color' && !formData.variantColors.includes(value)) {
-          const newColors = [...formData.variantColors, value];
+        let formattedValue = value;
+        if (type === 'color') {
+          formattedValue = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+        } else if (type === 'size') {
+          formattedValue = value.toUpperCase();
+        }
+
+        if (type === 'color' && !formData.variantColors.includes(formattedValue)) {
+          const newColors = [...formData.variantColors, formattedValue];
           const newVariants = generateVariants(newColors, formData.variantSizes, formData.variants);
           setFormData(prev => ({ ...prev, variantColors: newColors, variants: newVariants }));
-        } else if (type === 'size' && !formData.variantSizes.includes(value)) {
-          const newSizes = [...formData.variantSizes, value];
+        } else if (type === 'size' && !formData.variantSizes.includes(formattedValue)) {
+          const newSizes = [...formData.variantSizes, formattedValue];
           const newVariants = generateVariants(formData.variantColors, newSizes, formData.variants);
           setFormData(prev => ({ ...prev, variantSizes: newSizes, variants: newVariants }));
         }
@@ -173,69 +205,85 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
     }
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Check if there are any images (either new uploads or existing)
-    const hasNewImages = formData.images && formData.images.length > 0 && formData.images.some(img => img instanceof File);
-    const hasExistingImages = formData.existingImages && formData.existingImages.length > 0;
+    const hasNewImages = formData.images?.length > 0;
+    const hasExistingImages = formData.existingImages?.length > 0;
 
     if (!hasNewImages && !hasExistingImages) {
+      setActiveTab('media');
       alert('You must upload at least one image.');
       return;
     }
 
-    if (!formData.name || formData.name.trim() === '') {
+    if (!formData.name?.trim()) {
+      setActiveTab('basic');
       alert('Product name is required.');
       return;
     }
 
-    // Ensure status is set
-    const dataToSave = {
-      ...formData,
-      status: formData.status || 'Active'
-    };
+    if (!formData.longDescription?.trim()) {
+      setActiveTab('basic');
+      alert('Product description is required.');
+      return;
+    }
 
-    onSave(dataToSave);
-  };
+    if (!formData.category) {
+      setActiveTab('basic');
+      alert('Category is required.');
+      return;
+    }
 
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
+    // SKU is now optional
+    // if (!formData.sku?.trim()) {
+    //   setActiveTab('basic');
+    //   alert('SKU is required.');
+    //   return;
+    // }
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const files = [...e.dataTransfer.files];
-    if (files && files.length > 0) {
-      if (formData.images.length + formData.existingImages.length + files.length > 10) {
-        alert('You can only upload a maximum of 10 images.');
+    if (!formData.hasVariants) {
+      if (!formData.sellingPrice) {
+        setActiveTab('pricing');
+        alert('Selling price is required.');
         return;
       }
-      setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+      if (formData.quantity === '' || formData.quantity === undefined) {
+        setActiveTab('pricing');
+        alert('Stock quantity is required.');
+        return;
+      }
+    } else {
+      // Check if variant options are added
+      if (formData.variantColors.length === 0 && formData.variantSizes.length === 0) {
+        setActiveTab('pricing');
+        alert('Please add at least one color or size variant.');
+        return;
+      }
+      // Check if variants have prices and stock if samePriceForAllVariants is false
+      if (!formData.samePriceForAllVariants) {
+        const invalidVariant = formData.variants.find(v => !v.sellingPrice || v.quantity === '' || v.quantity === undefined);
+        if (invalidVariant) {
+          setActiveTab('pricing');
+          alert(`Please fill price and stock for all variants (${invalidVariant.color}/${invalidVariant.size}).`);
+          return;
+        }
+      } else {
+        if (!formData.sellingPrice) {
+          setActiveTab('pricing');
+          alert('Selling price is required for variants.');
+          return;
+        }
+      }
     }
+
+    onSave(formData);
   };
 
   const handleFileSelect = (e) => {
     const files = [...e.target.files];
-    if (files && files.length > 0) {
-      if (formData.images.length + formData.existingImages.length + files.length > 10) {
-        alert('You can only upload a maximum of 10 images.');
+    if (files.length > 0) {
+      if ((formData.images.length + formData.existingImages.length + files.length) > 10) {
+        alert('Max 10 images allowed.');
         return;
       }
       setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
@@ -258,347 +306,656 @@ const ProductModal = ({ isOpen, onClose, product, onSave, isSaving }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="product-modal-overlay" onClick={onClose}>
-      <div className="product-modal-content animate-slide-up" onClick={e => e.stopPropagation()}>
-        <form onSubmit={handleSubmit}>
-          <div className="form-header">
-            <h3>{product ? 'Edit Product' : 'Add New Product'}</h3>
-            <button type="button" className="close-btn" onClick={onClose}>×</button>
-          </div>
+  const renderTabContent = () => {
+    const selectedCategory = categories.find(c => c._id === formData.category);
+    const hasSubcategories = selectedCategory && selectedCategory.subcategories && selectedCategory.subcategories.length > 0;
 
-          <div className="form-layout">
-            {/* Left Column */}
-            <div className="form-column-left">
-              <div className="card">
-                <h3>General Information</h3>
-                <div className="form-group">
-                  <label>Name Product</label>
-                  <input type="text" name="name" value={formData.name} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <div
-                    className="rich-text-preview"
-                    onClick={() => setIsDescriptionModalOpen(true)}
-                    style={{
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      height: '120px', // Fixed height for consistency
-                      cursor: 'pointer',
-                      background: '#fff',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      padding: '10px'
-                    }}
-                  >
-                    {formData.longDescription ? (
-                      <>
-                        <div
-                          className="ql-editor"
-                          style={{
-                            border: 'none',
-                            padding: 0,
-                            height: '100%',
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 4,
-                            WebkitBoxOrient: 'vertical',
-                            wordBreak: 'break-word'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: formData.longDescription }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: '40px',
-                          background: 'linear-gradient(transparent, #ffffff)',
-                          pointerEvents: 'none'
-                        }} />
-                      </>
-                    ) : (
-                      <div style={{ padding: '10px', color: '#999' }}>
-                        Click to add description...
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Gender</label>
-                  <select name="gender" value={formData.gender} onChange={handleInputChange}>
-                    <option value="No use">No use</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Unisex">Unisex</option>
-                  </select>
-                </div>
+    switch (activeTab) {
+      case 'basic':
+        return (
+          <div className="pm-tab-pane animate-fade-in">
+            <div className="pm-row">
+              <div className="pm-group flex-2">
+                <label>Product Name <span className="pm-required">*</span></label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Premium Leather Desk Mat"
+                />
               </div>
-
-              <div className="card">
-                <h3>Pricing And Stock</h3>
-                <div className="form-group">
-                  <div className="label-toggle">
-                    <label>Enable Product Variants</label>
-                    <label className="switch">
-                      <input type="checkbox" checked={formData.hasVariants} onChange={() => setFormData(prev => ({ ...prev, hasVariants: !prev.hasVariants }))} />
-                      <span className="slider round"></span>
-                    </label>
-                  </div>
-                </div>
-                {formData.hasVariants ? (
-                  <div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Choose Color</label>
-                        <div className="tag-input">
-                          {formData.variantColors.map(color => (
-                            <span key={color} className="tag">{color.charAt(0).toUpperCase() + color.slice(1)} <button type="button" onClick={() => removeTag(color, 'color')}>×</button></span>
-                          ))}
-                          <input type="text" placeholder="eg. Red, Green" onKeyDown={(e) => handleTagInputChange(e, 'color')} />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Choose Size</label>
-                        <div className="tag-input">
-                          {formData.variantSizes.map(size => (
-                            <span key={size} className="tag">{size.toUpperCase()} <button type="button" onClick={() => removeTag(size, 'size')}>×</button></span>
-                          ))}
-                          <input type="text" placeholder="eg. M, XL" onKeyDown={(e) => handleTagInputChange(e, 'size')} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <div className="label-toggle">
-                        <label>Same price for all variants</label>
-                        <label className="switch">
-                          <input type="checkbox" checked={formData.samePriceForAllVariants} onChange={() => setFormData(prev => ({ ...prev, samePriceForAllVariants: !prev.samePriceForAllVariants }))} />
-                          <span className="slider round"></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {formData.samePriceForAllVariants && (
-                      <div>
-                        <div className="form-row">
-                          <div className="form-group">
-                            <label className="crossed-price-label">Crossed Price</label>
-                            <input type="number" name="crossedPrice" value={formData.crossedPrice} onChange={handleSamePriceChange} />
-                          </div>
-                          <div className="form-group">
-                            <label>Selling Price</label>
-                            <input type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleSamePriceChange} />
-                          </div>
-                          <div className="form-group">
-                            <label>Cost Price</label>
-                            <input type="number" name="costPrice" value={formData.costPrice} onChange={handleSamePriceChange} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {formData.variants.length > 0 && (
-                      <div className="variants-table">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Variant</th>
-                              <th className="crossed-price-label">Crossed Price</th>
-                              <th>Selling Price</th>
-                              <th>Cost Price</th>
-                              <th>Weight</th>
-                              <th>Quantity</th>
-                              <th>SKU</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formData.variants.map((variant, index) => (
-                              <tr key={index}>
-                                <td>{variant.color}/{variant.size}</td>
-                                <td><input type="number" value={variant.crossedPrice} onChange={(e) => handleVariantChange(index, 'crossedPrice', e.target.value)} disabled={formData.samePriceForAllVariants} /></td>
-                                <td><input type="number" value={variant.sellingPrice} onChange={(e) => handleVariantChange(index, 'sellingPrice', e.target.value)} disabled={formData.samePriceForAllVariants} /></td>
-                                <td><input type="number" value={variant.costPrice} onChange={(e) => handleVariantChange(index, 'costPrice', e.target.value)} disabled={formData.samePriceForAllVariants} /></td>
-                                <td><input type="number" value={variant.weight} onChange={(e) => handleVariantChange(index, 'weight', e.target.value)} /></td>
-                                <td><input type="number" value={variant.quantity} onChange={(e) => handleVariantChange(index, 'quantity', e.target.value)} /></td>
-                                <td><input type="text" value={variant.sku} onChange={(e) => handleVariantChange(index, 'sku', e.target.value)} /></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="crossed-price-label">Crossed Price</label>
-                        <input type="number" name="crossedPrice" value={formData.crossedPrice} onChange={handleInputChange} />
-                      </div>
-                      <div className="form-group">
-                        <label>Selling Price</label>
-                        <input type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleInputChange} />
-                      </div>
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Cost Price</label>
-                        <input type="number" name="costPrice" value={formData.costPrice} onChange={handleInputChange} />
-                      </div>
-                      <div className="form-group">
-                        <label>Quantity</label>
-                        <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} />
-                      </div>
-                    </div>
-                  </div>
-                )}
+              <div className="pm-group flex-1">
+                <label>SKU</label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={formData.sku}
+                  onChange={handleInputChange}
+                  placeholder="e.g. PLD-001"
+                />
               </div>
             </div>
 
-            {/* Right Column */}
-            <div className="form-column-right">
-              <div className="card">
-                <h3>SEO & Metadata (Optional)</h3>
-                <div className="form-group">
-                  <label>SEO Title</label>
-                  <input
-                    type="text"
-                    name="seoTitle"
-                    value={formData.seoTitle}
-                    onChange={handleInputChange}
-                    placeholder="Custom Browser Title"
-                  />
-                  <small className="form-hint">If empty, product name will be used.</small>
-                </div>
-                <div className="form-group">
-                  <label>SEO Description</label>
-                  <textarea
-                    name="seoDescription"
-                    value={formData.seoDescription}
-                    onChange={handleInputChange}
-                    placeholder="Short description for Google search results"
-                    rows="3"
-                  />
-                  <small className="form-hint">If empty, product description will be used.</small>
-                </div>
-              </div>
-
-              <div className="card">
-                <h3>Upload Img</h3>
-                <div
-                  className={`image-upload-container ${isDragging ? 'dragging' : ''}`}
-                  onDragEnter={handleDragEnter}
-                  onDragLeave={handleDragLeave}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    type="file"
-                    id="file-input"
-                    multiple
-                    onChange={handleFileSelect}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="file-input" className="upload-label">
-                    <img src="https://img.icons8.com/ios/50/000000/image--v1.png" alt="upload icon" />
-                    <p>Drop your files here, or <span>Browse</span></p>
-                  </label>
-                </div>
-                <div className="image-preview">
-                  {formData.existingImages.map((image, index) => (
-                    <div key={`existing-${index}`} className="image-thumbnail">
-                      <img
-                        src={resolveImageUrl(image, API_URL)}
-                        alt={`existing ${index}`}
-                      />
-                      <button type="button" onClick={() => removeImage(index, true)}>×</button>
-                    </div>
-                  ))}
-                  {formData.images.map((image, index) => (
-                    <div key={`new-${index}`} className="image-thumbnail">
-                      <img src={URL.createObjectURL(image)} alt={`preview ${index}`} />
-                      <button type="button" onClick={() => removeImage(index)}>×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="card">
-                <h3>Status</h3>
-                <div className="form-group">
-                  <label>Product Status</label>
-                  <select name="status" value={formData.status} onChange={handleInputChange}>
-                    <option value="Active">Active</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Archived">Archived</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="card">
-                <h3>Category</h3>
-                <div className="form-group">
-                  <label>Product Category</label>
+            <div className="pm-row">
+              <div className="pm-group flex-1">
+                <label>Category <span className="pm-required">*</span></label>
+                <div className="pm-custom-select-wrapper">
                   <select name="category" value={formData.category} onChange={handleInputChange}>
-                    <option value="">Select a category</option>
+                    <option value="">Select Category</option>
                     {categories.map(cat => (
                       <option key={cat._id} value={cat._id}>{cat.name}</option>
                     ))}
                   </select>
+                  <FaChevronDown className="pm-select-icon" />
                 </div>
-                {formData.category && categories.find(c => c._id === formData.category)?.subcategories?.length > 0 && (
-                  <div className="form-group">
-                    <label>Product Sub-Category</label>
+              </div>
+              {hasSubcategories && (
+                <div className="pm-group flex-1 animate-fade-in">
+                  <label>Subcategory</label>
+                  <div className="pm-custom-select-wrapper">
                     <select name="subcategory" value={formData.subcategory} onChange={handleInputChange}>
-                      <option value="">Select a sub-category</option>
-                      {categories.find(c => c._id === formData.category).subcategories.map(sub => (
-                        <option key={sub._id || sub.name} value={sub.name}>{sub.name}</option>
+                      <option value="">Select Subcategory</option>
+                      {selectedCategory.subcategories.map(sub => (
+                        <option key={sub.name} value={sub.name}>{sub.name}</option>
                       ))}
                     </select>
+                    <FaChevronDown className="pm-select-icon" />
                   </div>
-                )}
-                {/* Only show Choose Section if Ecommerce Theme is enabled */}
-                {(localStorage.getItem('themeId') || 'ecommerce') === 'ecommerce' && (
-                  <div className="form-group">
-                    <label>Choose Section</label>
-                    <select name="section" value={formData.section} onChange={handleInputChange}>
-                      <option value="None">None</option>
-                      <option value="Popular">Popular</option>
-                      <option value="Featured">Featured</option>
-                    </select>
+                </div>
+              )}
+            </div>
+
+            <div className="pm-row">
+              <div className="pm-group flex-3">
+                <label>Description <span className="pm-required">*</span></label>
+                <div
+                  className="pm-rich-text-trigger"
+                  onClick={() => setIsDescriptionModalOpen(true)}
+                >
+                  {formData.longDescription ? (
+                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: formData.longDescription }} />
+                  ) : (
+                    <p className="pm-placeholder">Write a compelling description for your product...</p>
+                  )}
+                  <div className="pm-edit-overlay"><FaPalette /> Edit Description</div>
+                </div>
+              </div>
+              <div className="pm-group flex-2">
+                <label>Status <span className="pm-required">*</span></label>
+                <div className="pm-status-selector">
+                  <div
+                    className={`pm-status-card ${formData.status === 'Active' ? 'active green' : ''}`}
+                    onClick={() => handleStatusChange('Active')}
+                  >
+                    <div className="pm-status-indicator"></div>
+                    <div className="pm-status-info">
+                      <h4>Active</h4>
+                      <p>Visible to all customers on the store front.</p>
+                    </div>
                   </div>
-                )}
+                  <div
+                    className={`pm-status-card ${formData.status === 'Draft' ? 'active orange' : ''}`}
+                    onClick={() => handleStatusChange('Draft')}
+                  >
+                    <div className="pm-status-indicator"></div>
+                    <div className="pm-status-info">
+                      <h4>Draft</h4>
+                      <p>Hidden from the store while you work on it.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        );
 
-          <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving}>Cancel</button>
-            <button type="submit" className={`btn btn-primary ${isSaving ? 'btn-loading' : ''}`} disabled={isSaving}>
-              {isSaving ? 'Saving...' : (product ? 'Update' : 'Save')}
+      case 'pricing':
+        return (
+          <div className="pm-tab-pane animate-fade-in">
+            {!formData.hasVariants ? (
+              <div className="pm-card">
+                <div className="pm-card-header-with-action">
+                  <div className="pm-header-meta">
+                    <FaTag className="pm-header-icon" />
+                    <h4>Base Pricing</h4>
+                  </div>
+                  <div className="pm-toggle-wrapper">
+                    <span>Enable Variants</span>
+                    <label className="pm-switch">
+                      <input
+                        type="checkbox"
+                        checked={formData.hasVariants}
+                        onChange={() => setFormData(prev => ({ ...prev, hasVariants: !prev.hasVariants }))}
+                      />
+                      <span className="pm-slider"></span>
+                    </label>
+                  </div>
+                </div>
+                <div className="pm-row mt-20">
+                  <div className="pm-group flex-1">
+                    <label>Original Price</label>
+                    <div className="pm-input-with-symbol">
+                      <span className="pm-symbol">NPR</span>
+                      <input
+                        type="number"
+                        name="crossedPrice"
+                        value={formData.crossedPrice}
+                        onChange={handleInputChange}
+                        placeholder="120"
+                      />
+                    </div>
+                  </div>
+                  <div className="pm-group flex-1">
+                    <label>Sale Price <span className="pm-required">*</span></label>
+                    <div className="pm-input-with-symbol">
+                      <span className="pm-symbol">NPR</span>
+                      <input
+                        type="number"
+                        name="sellingPrice"
+                        value={formData.sellingPrice}
+                        onChange={handleInputChange}
+                        placeholder="89"
+                      />
+                    </div>
+                  </div>
+                  <div className="pm-group flex-1">
+                    <label>Cost per item</label>
+                    <div className="pm-input-with-symbol">
+                      <span className="pm-symbol">NPR</span>
+                      <input
+                        type="number"
+                        name="costPrice"
+                        value={formData.costPrice}
+                        onChange={handleInputChange}
+                        placeholder="35"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pm-section-divider"></div>
+
+                <div className="pm-row mt-20">
+                  <div className="pm-group flex-1">
+                    <label>Stock Quantity <span className="pm-required">*</span></label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={formData.quantity}
+                      onChange={handleInputChange}
+                      placeholder="100"
+                    />
+                  </div>
+                  <div className="pm-group flex-1">
+                    {/* Placeholder to keep alignment */}
+                  </div>
+                  <div className="pm-group flex-1">
+                    {/* Placeholder to keep alignment */}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="pm-card">
+                  <div className="pm-card-header-with-action">
+                    <div className="pm-header-meta">
+                      <FaPalette className="pm-header-icon" />
+                      <h4>VARIANT SETTINGS</h4>
+                    </div>
+                    <div className="pm-toggle-wrapper">
+                      <span>Enable Variants</span>
+                      <label className="pm-switch">
+                        <input
+                          type="checkbox"
+                          checked={formData.hasVariants}
+                          onChange={() => setFormData(prev => ({ ...prev, hasVariants: !prev.hasVariants }))}
+                        />
+                        <span className="pm-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pm-variants-setup">
+                    <div className="pm-row">
+                      <div className="pm-group flex-1">
+                        <label>Color Options</label>
+                        <div className="pm-tag-input">
+                          {formData.variantColors.map(color => (
+                            <span key={color} className="pm-tag">
+                              {color} <FaTimes onClick={() => removeTag(color, 'color')} />
+                            </span>
+                          ))}
+                          <input type="text" placeholder="Add color..." onKeyDown={(e) => handleTagInputChange(e, 'color')} />
+                        </div>
+                      </div>
+                      <div className="pm-group flex-1">
+                        <label>Size Options</label>
+                        <div className="pm-tag-input">
+                          {formData.variantSizes.map(size => (
+                            <span key={size} className="pm-tag">
+                              {size} <FaTimes onClick={() => removeTag(size, 'size')} />
+                            </span>
+                          ))}
+                          <input type="text" placeholder="Add size..." onKeyDown={(e) => handleTagInputChange(e, 'size')} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pm-card mt-20">
+                  <div className="pm-card-header-with-action">
+                    <div className="pm-header-meta">
+                      <FaTag className="pm-header-icon" />
+                      <h4>Pricing Strategy</h4>
+                    </div>
+                    <div className="pm-toggle-wrapper">
+                      <span>Same price for all variants</span>
+                      <label className="pm-switch">
+                        <input
+                          type="checkbox"
+                          checked={formData.samePriceForAllVariants}
+                          onChange={() => setFormData(prev => ({ ...prev, samePriceForAllVariants: !prev.samePriceForAllVariants }))}
+                        />
+                        <span className="pm-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {formData.samePriceForAllVariants && (
+                    <div className="pm-global-pricing-box animate-fade-in">
+                      <div className="pm-box-header">
+                        <FaCube /> Global Variant Price <span className="pm-badge">ENABLED</span>
+                      </div>
+                      <div className="pm-row p-20">
+                        <div className="pm-group flex-1">
+                          <label>Original Price</label>
+                          <div className="pm-input-with-symbol">
+                            <span className="pm-symbol">NPR</span>
+                            <input type="number" name="crossedPrice" value={formData.crossedPrice} onChange={handleSamePriceChange} placeholder="15000" />
+                          </div>
+                        </div>
+                        <div className="pm-group flex-1">
+                          <label>Sale Price <span className="pm-required">*</span></label>
+                          <div className="pm-input-with-symbol">
+                            <span className="pm-symbol">NPR</span>
+                            <input type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleSamePriceChange} placeholder="12000" />
+                          </div>
+                        </div>
+                        <div className="pm-group flex-1">
+                          <label>Cost per item</label>
+                          <div className="pm-input-with-symbol">
+                            <span className="pm-symbol">NPR</span>
+                            <input type="number" name="costPrice" value={formData.costPrice} onChange={handleSamePriceChange} placeholder="7500" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="pm-box-footer">
+                        <FaInfoCircle /> Global prices are currently overriding individual variant pricing.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+
+            {formData.hasVariants && formData.variants.length > 0 && (
+              <div className="pm-variants-list-table mt-20">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>IMAGE</th>
+                      <th>VARIANT</th>
+                      <th>PRICE (NPR)</th>
+                      <th>SALE PRICE (NPR) <span className="pm-required">*</span></th>
+                      <th>COST PRICE (NPR)</th>
+                      <th>STOCK <span className="pm-required">*</span></th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.variants.map((v, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          <div className="pm-variant-img-picker">
+                            {v.image ? (
+                              <div className="pm-variant-thumb-container">
+                                <img src={resolveImageUrl(v.image, API_URL)} alt="variant" />
+                                <button type="button" className="pm-remove-thumb" onClick={() => handleVariantChange(idx, 'image', '')}><FaTimes /></button>
+                              </div>
+                            ) : (
+                              <div className="pm-variant-thumb-container">
+                                <button
+                                  type="button"
+                                  className="pm-btn-select-img"
+                                  onClick={() => setActiveImagePicker(idx)}
+                                >
+                                  <FaImage />
+                                </button>
+                                {activeImagePicker === idx && (
+                                  <>
+                                    <div className="pm-picker-backdrop" onClick={() => setActiveImagePicker(null)} />
+                                    <div className={`pm-image-bubble-picker animate-scale-in ${idx >= formData.variants.length - 2 && formData.variants.length > 2 ? 'pm-picker-upward' : ''}`}>
+                                      <div className="pm-picker-header">
+                                        <span>Select Image</span>
+                                        <FaTimes onClick={() => setActiveImagePicker(null)} />
+                                      </div>
+                                      <div className="pm-picker-grid">
+                                        {formData.existingImages.length > 0 ? (
+                                          formData.existingImages.map((img, i) => (
+                                            <div
+                                              key={i}
+                                              className="pm-picker-item"
+                                              onClick={() => {
+                                                handleVariantChange(idx, 'image', img);
+                                                setActiveImagePicker(null);
+                                              }}
+                                            >
+                                              <img src={resolveImageUrl(img, API_URL)} alt={`Gallery ${i}`} />
+                                              <span className="pm-img-index">{i + 1}</span>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="pm-picker-empty">
+                                            <p>No images in gallery yet.</p>
+                                            <small>Upload images in the Media tab first.</small>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="pm-variant-name">{v.color} / {v.size}</td>
+                        <td>
+                          <div className="pm-cell-input">
+                            <span className="pm-currency">NPR</span>
+                            <input
+                              type="number"
+                              value={v.crossedPrice}
+                              onChange={(e) => handleVariantChange(idx, 'crossedPrice', e.target.value)}
+                              disabled={formData.samePriceForAllVariants}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <div className="pm-cell-input">
+                            <span className="pm-currency">NPR</span>
+                            <input
+                              type="number"
+                              value={v.sellingPrice}
+                              onChange={(e) => handleVariantChange(idx, 'sellingPrice', e.target.value)}
+                              disabled={formData.samePriceForAllVariants}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <div className="pm-cell-input">
+                            <span className="pm-currency">NPR</span>
+                            <input
+                              type="number"
+                              value={v.costPrice}
+                              onChange={(e) => handleVariantChange(idx, 'costPrice', e.target.value)}
+                              disabled={formData.samePriceForAllVariants}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="pm-stock-input"
+                            value={v.quantity}
+                            onChange={(e) => handleVariantChange(idx, 'quantity', e.target.value)}
+                          />
+                        </td>
+                        <td className="pm-actions-cell">
+                          <FaTrash className="pm-delete-row" onClick={() => { }} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'media':
+        return (
+          <div className="pm-tab-pane animate-fade-in">
+            <div className="pm-media-upload-zone"
+              onClick={() => document.getElementById('pm-media-upload').click()}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const files = [...e.dataTransfer.files];
+                if (files.length > 0) setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+              }}
+            >
+              <div className="pm-upload-content">
+                <div className="pm-upload-icon-circle">
+                  <FaCloudUploadAlt />
+                </div>
+                <h3>Drop your media here</h3>
+                <p>Drag and drop images to upload. We support JPG, PNG, and WEBP formats up to 5MB each.</p>
+                <input type="file" id="pm-media-upload" hidden multiple onChange={handleFileSelect} />
+              </div>
+            </div>
+
+            <div className="pm-media-gallery-section mt-30">
+              <div className="pm-section-header">
+                <div className="pm-header-left">
+                  <h4>PRODUCT GALLERY <span className="pm-required">*</span></h4>
+                  <p className="pm-header-desc">Manage and reorder your product images</p>
+                </div>
+                <div className="pm-helper-info">
+                  <FaInfoCircle /> First image is the main thumbnail
+                </div>
+              </div>
+              <div className="pm-gallery-grid">
+                {formData.existingImages.map((img, idx) => (
+                  <div key={`ex-${idx}`} className={`pm-gallery-item group ${idx === 0 ? 'pm-main-thumbnail' : ''}`}>
+                    <img src={resolveImageUrl(img, API_URL)} alt="product" />
+                    <div className="pm-item-actions">
+                      <button type="button" onClick={() => removeImage(idx, true)}><FaTrash /></button>
+                    </div>
+                  </div>
+                ))}
+                {formData.images.map((img, idx) => {
+                  const isMain = formData.existingImages.length === 0 && idx === 0;
+                  return (
+                    <div key={`new-${idx}`} className={`pm-gallery-item group ${isMain ? 'pm-main-thumbnail' : ''}`}>
+                      <img src={URL.createObjectURL(img)} alt="product" />
+                      <div className="pm-item-actions">
+                        <button type="button" onClick={() => removeImage(idx)}><FaTrash /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'seo':
+        return (
+          <div className="pm-tab-pane animate-fade-in">
+            <div className="pm-seo-preview-card">
+              <div className="pm-preview-header">
+                SEARCH ENGINE LISTING PREVIEW <FaInfoCircle title="This is how your product will appear in Google search results." style={{ cursor: 'help' }} />
+              </div>
+              <div className="pm-preview-content">
+                <div className="pm-preview-url">yourstore.com › products › {formData.handle || 'product-slug'}</div>
+                <div className="pm-preview-title">{formData.seoTitle || formData.name || 'Product Name'} | {categories.find(c => c._id === formData.category)?.name || 'Store'}</div>
+                <div className="pm-preview-desc">
+                  {formData.seoDescription || (formData.longDescription ? formData.longDescription.replace(/<[^>]*>/g, '').substring(0, 160) : 'Add a meta description to improve your search ranking. This description is what appears under your page title in search results.')}
+                </div>
+              </div>
+            </div>
+
+            <div className="pm-card mt-20">
+              <div className="pm-group">
+                <div className="pm-label-with-hint">
+                  <label>Page Title</label>
+                  <FaInfoCircle title="A catchy title helps you rank higher and get more clicks. Keep it under 60 characters." style={{ cursor: 'help' }} />
+                </div>
+                <input
+                  type="text"
+                  name="seoTitle"
+                  value={formData.seoTitle}
+                  onChange={handleInputChange}
+                  placeholder="Premium Leather Desk Mat | Quality Shop"
+                />
+                <div className="pm-input-footer">
+                  <span>Keep it between 50-60 characters for best results.</span>
+                  <span className={formData.seoTitle.length > 60 ? 'error' : ''}>{formData.seoTitle.length} / 60</span>
+                </div>
+              </div>
+
+              <div className="pm-group mt-20">
+                <div className="pm-label-with-hint">
+                  <label>Meta Description</label>
+                  <FaInfoCircle title="The meta description is a brief summary of your product. It influence whether people click your link in search results." style={{ cursor: 'help' }} />
+                </div>
+                <textarea
+                  name="seoDescription"
+                  value={formData.seoDescription}
+                  onChange={handleInputChange}
+                  rows="4"
+                  placeholder="Handcrafted top-grain leather desk mat designed for ultimate comfort and elegance..."
+                />
+                <div className="pm-input-footer">
+                  <span>Recommended length is around 150-160 characters.</span>
+                  <span className={formData.seoDescription.length > 160 ? 'error' : ''}>{formData.seoDescription.length} / 160</span>
+                </div>
+              </div>
+
+              <div className="pm-group mt-20">
+                <div className="pm-label-with-hint">
+                  <label>URL Handle</label>
+                  <FaInfoCircle title="This is the web address for your product. It should be unique and contain keywords." style={{ cursor: 'help' }} />
+                </div>
+                <div className="pm-url-input-group">
+                  <span className="pm-prefix">/products/</span>
+                  <input
+                    type="text"
+                    name="handle"
+                    value={formData.handle}
+                    onChange={handleInputChange}
+                    placeholder="premium-leather-desk-mat"
+                  />
+                  <button
+                    type="button"
+                    className="pm-btn-copy"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/products/${formData.handle}`);
+                      alert('Product link copied to clipboard!');
+                    }}
+                    title="Copy product link"
+                  >
+                    <FaLink />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="pm-overlay" onClick={onClose}>
+      <div className="pm-modal animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="pm-top-bar">
+          <div className="pm-title-area">
+            <div className="pm-title-icon">
+              <FaCube />
+            </div>
+            <div className="pm-title-text">
+              <h3>{product ? 'Edit Product' : 'Add Product'}</h3>
+              <p>Managing: {formData.name || 'New Item'}</p>
+            </div>
+          </div>
+          <button className="pm-close-icon" onClick={onClose}><FaTimes /></button>
+        </div>
+
+        <nav className="pm-tabs">
+          <button
+            className={`pm-tab-btn ${activeTab === 'media' ? 'active' : ''}`}
+            onClick={() => setActiveTab('media')}
+          >
+            <FaImage /> Media
+          </button>
+          <button
+            className={`pm-tab-btn ${activeTab === 'basic' ? 'active' : ''}`}
+            onClick={() => setActiveTab('basic')}
+          >
+            <FaInfoCircle /> Basic Info
+          </button>
+          <button
+            className={`pm-tab-btn ${activeTab === 'pricing' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pricing')}
+          >
+            <FaTag /> Pricing & Inventory
+          </button>
+          <button
+            className={`pm-tab-btn ${activeTab === 'seo' ? 'active' : ''}`}
+            onClick={() => setActiveTab('seo')}
+          >
+            <FaBullhorn /> Marketing (SEO)
+          </button>
+        </nav>
+
+        <div className="pm-body">
+          {renderTabContent()}
+        </div>
+
+        <div className="pm-footer">
+          <div className="pm-footer-left">
+          </div>
+          <div className="pm-footer-right">
+            <button type="button" onClick={onClose} className="pm-btn-discard">Discard Changes</button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className={`pm-btn-save ${isSaving ? 'loading' : ''}`}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : (product ? 'Update Product' : 'Save Product')}
             </button>
           </div>
-        </form>
-      </div>
-      {isDescriptionModalOpen && (
-        <div className="rich-text-modal-overlay" onClick={() => setIsDescriptionModalOpen(false)}>
-          <div className="rich-text-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Edit Description</h3>
-              <button className="close-btn" onClick={() => setIsDescriptionModalOpen(false)}>×</button>
-            </div>
-            <RichTextEditor
-              value={formData.longDescription}
-              onChange={handleDescriptionChange}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-            />
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={() => setIsDescriptionModalOpen(false)}>Done</button>
+        </div>
+
+        {isDescriptionModalOpen && (
+          <div className="pm-rt-modal-overlay" onClick={() => setIsDescriptionModalOpen(false)}>
+            <div className="pm-rt-modal-content" onClick={e => e.stopPropagation()}>
+              <div className="pm-rt-modal-header">
+                <h3>Rich Product Description</h3>
+                <button onClick={() => setIsDescriptionModalOpen(false)}><FaTimes /></button>
+              </div>
+              <div className="pm-rt-editor-body">
+                <RichTextEditor
+                  value={formData.longDescription}
+                  onChange={handleDescriptionChange}
+                />
+              </div>
+              <div className="pm-rt-modal-footer">
+                <button className="pm-btn-save" onClick={() => setIsDescriptionModalOpen(false)}>Apply Changes</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

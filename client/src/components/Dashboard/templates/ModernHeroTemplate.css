@@ -3,7 +3,7 @@
     overflow: hidden;
     width: 100%;
     font-family: 'Outfit', sans-serif;
-    background-color: transparent !important;
+    /* background-color: transparent !important; Removed to allow custom bg */
 }
 
 .modern-hero-container {
@@ -37,33 +37,43 @@
     }
 }
 
-.hero-title {
-    font-size: 64px;
+.modern-hero-template .hero-title {
+    font-size: 40px;
+    text-align: left;
     font-weight: 800;
     color: var(--copy, #0f172a);
-    line-height: 1.1;
-    margin-bottom: 24px;
-    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    /* Reduced from 24px */
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.hero-highlight {
+.modern-hero-template .hero-highlight {
     color: var(--primary-content);
     display: inline;
+    position: relative;
+    font-weight: 900;
 }
 
-.hero-subtitle {
-    font-size: 16px;
+.modern-hero-template .hero-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.125rem);
+    /* Responsive: 16px - 18px */
     line-height: 1.6;
+    text-align: left;
     color: var(--copy-lighter, #64748b);
-    margin-bottom: 40px;
-    max-width: 537px;
+    margin-bottom: 24px;
+    /* Increased slightly to separate from actions, but balanced */
+    max-width: 600px;
+    font-weight: 400;
 }
 
 .hero-actions {
     display: flex;
     gap: 20px;
-    margin-bottom: 40px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
+
 }
 
 .btn-primary-modern {
@@ -191,8 +201,10 @@
     .modern-hero-container {
         grid-template-columns: 1fr;
         padding-top: 40px;
-        text-align: center;
-        gap: 60px;
+        text-align: left;
+        /* Aligned left */
+        gap: 40px;
+        /* Reduced gap */
     }
 
     .hero-title {
@@ -200,19 +212,19 @@
     }
 
     .hero-subtitle {
-        margin-left: auto;
-        margin-right: auto;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .hero-actions {
-        justify-content: center;
+        justify-content: flex-start;
+        /* Aligned left */
     }
 
     .hero-checklist {
-        justify-content: center;
+        justify-content: flex-start;
+        /* Aligned left */
     }
-
-
 }
 
 @media (max-width: 640px) {

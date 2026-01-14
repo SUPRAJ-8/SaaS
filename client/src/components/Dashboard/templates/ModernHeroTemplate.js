@@ -49,7 +49,7 @@ const ModernHeroTemplate = ({ content }) => {
         paddingBottom: `${paddingBottom}px`,
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
-        background: useThemeBg ? 'var(--background-color, var(--theme-bg, #ffffff))' : bgColor
+        background: useThemeBg ? 'transparent' : bgColor
     };
 
     // Split title to highlight specific part - Case insensitive and robust

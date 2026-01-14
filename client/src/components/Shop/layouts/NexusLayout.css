@@ -194,6 +194,7 @@
     cursor: pointer;
     z-index: 1002;
     margin-left: 15px;
+    margin-top: 10px;
 }
 
 .nexus-theme .nexus-mobile-overlay {
@@ -503,6 +504,10 @@
 
 .nexus-theme .dynamic-section-wrapper {
     margin: 20px 0;
+}
+
+.nexus-theme .dynamic-section-wrapper:first-child {
+    margin-top: 0;
 }
 
 
@@ -861,7 +866,7 @@
 
 /* Default hide mobile wrapper on desktop */
 .nexus-theme .nexus-header-mobile-wrapper {
-    display: none;
+    display: none !important;
 }
 
 /* Nexus Header Mobile Refinement */
@@ -947,16 +952,29 @@
     }
 }
 
-/* Page Builder Previews */
-.mobile .nexus-header-mobile-wrapper,
-.tablet .nexus-header-mobile-wrapper {
+/* Page Builder Previews - Strengthened Selectors */
+.builder-canvas-container.mobile .nexus-theme .nexus-header-mobile-wrapper,
+.builder-canvas-container.tablet .nexus-theme .nexus-header-mobile-wrapper {
     display: flex !important;
+    width: 100%;
 }
 
-.mobile .nexus-header-container>.nexus-logo,
-.mobile .nexus-header-container>.nexus-right-group,
-.mobile .nexus-nav-middle {
+.builder-canvas-container.mobile .nexus-theme .nexus-header-container>.nexus-logo,
+.builder-canvas-container.mobile .nexus-theme .nexus-header-container>.nexus-right-group,
+.builder-canvas-container.mobile .nexus-theme .nexus-nav-middle,
+.builder-canvas-container.mobile .nexus-theme .nexus-search-wrapper,
+.builder-canvas-container.tablet .nexus-theme .nexus-header-container>.nexus-logo,
+.builder-canvas-container.tablet .nexus-theme .nexus-header-container>.nexus-right-group,
+.builder-canvas-container.tablet .nexus-theme .nexus-nav-middle,
+.builder-canvas-container.tablet .nexus-theme .nexus-search-wrapper {
     display: none !important;
+}
+
+/* Force container layout for mobile in builder */
+.builder-canvas-container.mobile .nexus-theme .nexus-header-container,
+.builder-canvas-container.tablet .nexus-theme .nexus-header-container {
+    display: block !important;
+    padding: 10px 1rem !important;
 }
 
 
@@ -1046,4 +1064,36 @@
     .nexus-theme .nexus-premium-heading {
         font-size: 2.5rem;
     }
+}
+
+
+.nexus-theme .nexus-search-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--copy, #000);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.nexus-theme .nexus-search-toggle-btn:hover {
+    color: var(--primary);
+}
+
+.nexus-theme .nexus-search-wrapper.compact-search {
+    border: none;
+    /* Default no border for icon only */
+    background: transparent;
+    padding: 0;
+}
+
+.nexus-theme .nexus-search-wrapper.compact-search.expanded {
+    background: var(--foreground, #1a1b1e);
+    border: 1px solid var(--border, #373a40);
+    padding: 0 4px 0 0;
+    animation: nexusFadeIn 0.2s ease;
 }

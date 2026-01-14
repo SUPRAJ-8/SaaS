@@ -55,6 +55,15 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
     const rawBrand = siteSettings?.brandName?.trim();
     const rawStore = siteSettings?.storeName?.trim();
 
+    const slugify = (text) => {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+    };
+
     let storeName = rawBrand || rawStore || '';
     let storeLogo = siteSettings?.logo;
 
@@ -372,7 +381,12 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
                                     <div className="nexus-mobile-categories">
                                         <h3>Categories</h3>
                                         {categories.map(cat => (
-                                            <a key={cat._id} href={getShopPath(`/category/${cat._id}`)} onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat._id}`)); setIsMobileMenuOpen(false); }}>{cat.name}</a>
+                                            <React.Fragment key={cat._id}>
+                                                <a href={getShopPath(`/category/${cat.slug || slugify(cat.name)}`)} onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat.slug || slugify(cat.name)}`)); setIsMobileMenuOpen(false); }}>{cat.name}</a>
+                                                {cat.subcategories && cat.subcategories.length > 0 && cat.subcategories.map(sub => (
+                                                    <a key={sub._id || sub.name} className="mobile-sub-link" href={getShopPath(`/category/${cat.slug || slugify(cat.name)}?sub=${sub.name}`)} onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat.slug || slugify(cat.name)}?sub=${sub.name}`)); setIsMobileMenuOpen(false); }}>— {sub.name}</a>
+                                                ))}
+                                            </React.Fragment>
                                         ))}
                                     </div>
                                 </>
@@ -433,7 +447,31 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
                                 <a href={getShopPath('/products')} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath('/products')); }}>Products</a>
                                 <span className="nexus-separator">|</span>
                                 {categories.slice(0, 5).map(cat => (
-                                    <a key={cat._id} href={getShopPath(`/category/${cat._id}`)} className="nexus-nav-link" onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat._id}`)); }}>{cat.name}</a>
+                                    <div key={cat._id} className="nexus-nav-item-wrapper">
+                                        <a
+                                            href={getShopPath(`/category/${cat.slug || slugify(cat.name)}`)}
+                                            className="nexus-nav-link"
+                                            onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat.slug || slugify(cat.name)}`)); }}
+                                        >
+                                            {cat.name}
+                                            {cat.subcategories && cat.subcategories.length > 0 && <FaChevronDown className="nexus-submenu-icon" />}
+                                        </a>
+                                        {cat.subcategories && cat.subcategories.length > 0 && (
+                                            <div className="nexus-submenu">
+                                                {cat.subcategories.map(sub => (
+                                                    <div key={sub._id || sub.name} className="nexus-submenu-item-wrapper">
+                                                        <a
+                                                            href={getShopPath(`/category/${cat.slug || slugify(cat.name)}?sub=${sub.name}`)}
+                                                            className="nexus-submenu-link"
+                                                            onClick={(e) => { e.preventDefault(); navigate(getShopPath(`/category/${cat.slug || slugify(cat.name)}?sub=${sub.name}`)); }}
+                                                        >
+                                                            {sub.name}
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </>
                         ) : (
@@ -449,27 +487,39 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
 
                 {/* Desktop Right Group */}
                 <div className="nexus-right-group">
-                    {effectiveSettings.showSearch && (
-                        <div className={`nexus-search-wrapper ${effectiveSettings.longSearch ? 'long-search' : ''}`}>
-                            <div className="nexus-search-box">
-                                {effectiveSettings.longSearch && <FaSearch className="search-icon-static" />}
-                                <input
-                                    type="text"
-                                    className="nexus-search-input"
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    // Make sure it expands on focus if needed
-                                    onFocus={() => setIsSearchOpen(true)}
-                                    onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
-                                    onKeyDown={handleSearchSubmit}
-                                />
-                                {!effectiveSettings.longSearch && (
-                                    <button className="nexus-search-btn" onClick={(e) => handleSearchSubmit({ key: 'Enter' })}>
-                                        <FaSearch />
-                                    </button>
-                                )}
-                            </div>
+                    {(effectiveSettings.showSearch || effectiveSettings.longSearch) && (
+                        <div className={`nexus-search-wrapper ${effectiveSettings.longSearch ? 'long-search' : 'compact-search'} ${isSearchOpen ? 'expanded' : ''}`}>
+                            {/* Standard Icon-Only Mode (Collapsed) */}
+                            {!effectiveSettings.longSearch && !isSearchOpen && (
+                                <button className="nexus-search-toggle-btn" onClick={() => setIsSearchOpen(true)}>
+                                    <FaSearch />
+                                </button>
+                            )}
+
+                            {/* Input Mode (Expanded or Full Width) */}
+                            {(effectiveSettings.longSearch || isSearchOpen) && (
+                                <div className="nexus-search-box">
+                                    {effectiveSettings.longSearch && <FaSearch className="search-icon-static" />}
+                                    <input
+                                        type="text"
+                                        className="nexus-search-input"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        autoFocus={!effectiveSettings.longSearch} // Auto focus when expanding
+                                        onFocus={() => setIsSearchOpen(true)}
+                                        onBlur={() => setTimeout(() => {
+                                            if (!searchQuery) setIsSearchOpen(false);
+                                        }, 200)}
+                                        onKeyDown={handleSearchSubmit}
+                                    />
+                                    {!effectiveSettings.longSearch && (
+                                        <button className="nexus-search-btn" onClick={(e) => handleSearchSubmit({ key: 'Enter' })}>
+                                            <FaSearch />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 

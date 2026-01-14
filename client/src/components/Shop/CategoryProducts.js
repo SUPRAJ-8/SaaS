@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { FaTh, FaThLarge, FaChevronRight, FaRegHeart, FaHeart, FaFilter, FaStar, FaBoxOpen } from 'react-icons/fa';
@@ -83,7 +83,7 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className="ecommerce-product-card">
-            <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link">
+            <Link to={getShopPath(`/ product / ${product._id} `)} className="product-card-link">
                 <div className="product-image-container">
                     {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
                     <button className="wishlist-btn" onClick={toggleWishlist}>
@@ -99,11 +99,11 @@ const ProductCard = ({ product }) => {
                     <div className="product-price-actions">
                         <div className="price-container">
                             <span className="product-price">
-                                {currency.position === 'before' ? `${currency.symbol} ${Number(product.sellingPrice || 0).toLocaleString()}` : `${Number(product.sellingPrice || 0).toLocaleString()} ${currency.symbol}`}
+                                {currency.position === 'before' ? `${currency.symbol} ${Number(product.sellingPrice || 0).toLocaleString()} ` : `${Number(product.sellingPrice || 0).toLocaleString()} ${currency.symbol} `}
                             </span>
                             {product.crossedPrice > 0 &&
                                 <span className="original-price">
-                                    {currency.position === 'before' ? `${currency.symbol} ${Number(product.crossedPrice).toLocaleString()}` : `${Number(product.crossedPrice).toLocaleString()} ${currency.symbol}`}
+                                    {currency.position === 'before' ? `${currency.symbol} ${Number(product.crossedPrice).toLocaleString()} ` : `${Number(product.crossedPrice).toLocaleString()} ${currency.symbol} `}
                                 </span>
                             }
                         </div>
@@ -114,7 +114,11 @@ const ProductCard = ({ product }) => {
                     </div>
                 </div>
             </Link>
-            <button className="add-to-cart-btn-small" onClick={handleAddToCart}>Add to Cart</button>
+            {product.hasVariants ? (
+                <Link to={getShopPath(`/ product / ${product.handle || product._id} `)} className="add-to-cart-btn-small" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>Select Variant</Link>
+            ) : (
+                <button className="add-to-cart-btn-small" onClick={handleAddToCart}>Add to Cart</button>
+            )}
         </div>
     );
 };
@@ -122,6 +126,7 @@ const ProductCard = ({ product }) => {
 const CategoryProducts = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [products, setProducts] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -130,6 +135,15 @@ const CategoryProducts = () => {
     const [pageNotFound, setPageNotFound] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const slugify = (text) => {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+    };
 
     // Filter states (matching ProductList.js)
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -156,12 +170,18 @@ const CategoryProducts = () => {
                 }
 
                 // Fetch categories
-                const catRes = await axios.get(`${API_URL}/api/categories`, config);
+                const catRes = await axios.get(`${API_URL} /api/categories`, config);
                 const allCats = catRes.data;
                 console.log('📡 [CategoryProducts] Fetched categories:', allCats.length);
                 setCategories(allCats);
-                const foundCat = allCats.find(c => c._id === id);
-                console.log('🔍 [CategoryProducts] Current Category ID:', id, 'Found:', foundCat?.name);
+
+                const foundCat = allCats.find(c =>
+                    c._id === id ||
+                    c.slug === id ||
+                    slugify(c.name) === id
+                );
+
+                console.log('🔍 [CategoryProducts] Current Category ID/Slug:', id, 'Found:', foundCat?.name);
                 setCategory(foundCat);
 
                 // Fetch all products to extract variants and filter
@@ -173,29 +193,64 @@ const CategoryProducts = () => {
                 const colors = new Set();
                 const sizes = new Set();
                 productsData.forEach(p => {
-                    if (p.variantColors) p.variantColors.forEach(c => colors.add(c));
-                    if (p.variantSizes) p.variantSizes.forEach(s => sizes.add(s));
+                    if (p.variantColors) {
+                        p.variantColors.forEach(c => {
+                            if (c && typeof c === 'string') {
+                                const normalizedColor = c.trim().charAt(0).toUpperCase() + c.trim().slice(1).toLowerCase();
+                                colors.add(normalizedColor);
+                            }
+                        });
+                    }
+                    if (p.variantSizes) {
+                        p.variantSizes.forEach(s => {
+                            if (s && typeof s === 'string') {
+                                sizes.add(s.trim());
+                            }
+                        });
+                    }
                 });
                 setAvailableColors([...colors]);
                 setAvailableSizes([...sizes]);
 
+                // Subcategory Selection Logic (Slug-aware)
+                const searchParams = new URLSearchParams(location.search);
+                const subParam = searchParams.get('sub');
+                if (subParam && subParam !== 'all') {
+                    const effectiveCat = foundCat || category;
+
+                    if (effectiveCat && effectiveCat.subcategories) {
+                        const matchedSub = effectiveCat.subcategories.find(s =>
+                            slugify(s.name) === subParam || s.name === subParam
+                        );
+                        if (matchedSub) {
+                            setSelectedSubcategory(matchedSub.name);
+                        } else {
+                            setSelectedSubcategory(subParam);
+                        }
+                    } else {
+                        setSelectedSubcategory(subParam);
+                    }
+                } else {
+                    setSelectedSubcategory('all');
+                }
+
+                setLoading(false);
             } catch (err) {
-                console.error('Error fetching category products:', err);
-                setError('Failed to load products.');
-            } finally {
+                console.error('Error fetching data:', err);
+                setError('Failed to load products');
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [id]);
+    }, [id, location.search]); // Run when ID or URL params change
 
     const filteredProducts = allProducts.filter(product => {
         // Category constraint (fixed for this page)
         const productCategoryId = product.category?._id || product.category;
-        const targetCategoryId = id;
+        const targetCategoryId = category?._id; // Use the resolved category's ID
 
-        if (productCategoryId !== targetCategoryId && (!category || productCategoryId !== category.name)) {
+        if (!targetCategoryId || productCategoryId !== targetCategoryId) {
             return false;
         }
 
@@ -288,17 +343,20 @@ const CategoryProducts = () => {
                                     {categories.map(cat => (
                                         <React.Fragment key={cat._id}>
                                             <li
-                                                className={id === cat._id ? 'active' : ''}
-                                                onClick={() => navigate(getShopPath(`/category/${cat._id}`))}
+                                                className={(category?._id === cat._id) ? 'active' : ''}
+                                                onClick={() => navigate(getShopPath(`/ category / ${cat.slug || slugify(cat.name)} `))}
                                             >
                                                 {cat.name}
                                             </li>
                                             {/* Subcategories for active category */}
-                                            {id === cat._id && cat.subcategories && cat.subcategories.length > 0 && (
+                                            {(category?._id === cat._id) && cat.subcategories && cat.subcategories.length > 0 && (
                                                 <ul className="subcategories-list">
                                                     <li
                                                         className={selectedSubcategory === 'all' ? 'active-sub' : ''}
-                                                        onClick={(e) => { e.stopPropagation(); setSelectedSubcategory('all'); }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(getShopPath(`/ category / ${cat.slug || slugify(cat.name)} `));
+                                                        }}
                                                     >
                                                         — All {cat.name}
                                                     </li>
@@ -306,7 +364,10 @@ const CategoryProducts = () => {
                                                         <li
                                                             key={sub.name}
                                                             className={selectedSubcategory === sub.name ? 'active-sub' : ''}
-                                                            onClick={(e) => { e.stopPropagation(); setSelectedSubcategory(sub.name); }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(getShopPath(`/ category / ${cat.slug || slugify(cat.name)}?sub = ${slugify(sub.name)} `));
+                                                            }}
                                                         >
                                                             — {sub.name}
                                                         </li>

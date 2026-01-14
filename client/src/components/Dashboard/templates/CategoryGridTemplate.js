@@ -1,31 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import API_URL from '../../../apiConfig';
-import { getShopPath, resolveImageUrl } from '../../../themeUtils';
+import { getShopPath, resolveImageUrl, getTenantId } from '../../../themeUtils';
 import './CategoryGridTemplate.css';
 
 const CategoryGridTemplate = ({ content }) => {
     const [categories, setCategories] = useState([]);
     const location = useLocation();
     const isBuilder = location.pathname.includes('/dashboard/page-builder');
-    const config = typeof content === 'string' ? JSON.parse(content) : content;
+
+    // Parse content safely
+    const config = typeof content === 'string' ? (content.trim() ? JSON.parse(content) : {}) : (content || {});
     const title = config?.title || 'Shop by Category';
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('/api/categories');
-                const data = await response.json();
-                setCategories(data);
+                const tenantId = getTenantId();
+                const config = {
+                    withCredentials: true
+                };
+
+                if (tenantId) {
+                    config.headers = { 'x-subdomain': tenantId };
+                }
+
+                const response = await axios.get(`${API_URL}/api/categories`, config);
+                setCategories(response.data);
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                // Mock
-                setCategories([
-                    { _id: '1', name: 'Electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80' },
-                    { _id: '2', name: 'Apparel', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80' },
-                    { _id: '3', name: 'Home Decor', image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80' },
-                    { _id: '4', name: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80' }
-                ]);
+                // Mock fallback only if fetch fails significantly
+                if (categories.length === 0) {
+                    setCategories([
+                        { _id: '1', name: 'Electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80' },
+                        { _id: '2', name: 'Apparel', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80' },
+                        { _id: '3', name: 'Home Decor', image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80' },
+                        { _id: '4', name: 'Accessories', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80' }
+                    ]);
+                }
             }
         };
         fetchCategories();
@@ -34,9 +47,9 @@ const CategoryGridTemplate = ({ content }) => {
     // Extract spacing and background settings
     const paddingTop = config?.paddingTop !== undefined ? config.paddingTop : 0;
     const paddingBottom = config?.paddingBottom !== undefined ? config.paddingBottom : 0;
-    const marginTop = config?.marginTop !== undefined ? config.marginTop : 5;
-    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 5;
-    const useThemeBg = config?.useThemeBg || false;
+    const marginTop = config?.marginTop !== undefined ? config.marginTop : 0;
+    const marginBottom = config?.marginBottom !== undefined ? config.marginBottom : 0;
+    const useThemeBg = config?.useThemeBg !== undefined ? config.useThemeBg : true;
     const bgColor = config?.bgColor || 'transparent';
 
     const sectionStyle = {
@@ -44,7 +57,7 @@ const CategoryGridTemplate = ({ content }) => {
         paddingBottom: `${paddingBottom}px`,
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
-        backgroundColor: useThemeBg ? 'var(--theme-primary, #ffffff)' : bgColor,
+        backgroundColor: useThemeBg ? 'transparent' : bgColor,
     };
 
     return (

@@ -33,7 +33,10 @@ const DEFAULT_TEMPLATES = [
             checklistItems: ["No credit card required", "14-day free trial"],
             imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
             paddingTop: 80,
-            paddingBottom: 80
+            paddingBottom: 80,
+            marginTop: 0,
+            marginBottom: 0,
+            useThemeBg: true
         }
     },
     {
@@ -42,7 +45,7 @@ const DEFAULT_TEMPLATES = [
         category: 'content',
         image: 'https://images.unsplash.com/photo-1557821552-17105176677c?w=500&q=80',
         description: 'Large impact headline with description and CTAs',
-        defaultContent: { title: 'Make an impact with your headline', subtitle: 'Loram ipsum dolor sit amet, consectetur adipiscing elit.', button1: 'Shop Now', button2: 'Learn More', marginTop: 5, marginBottom: 5 }
+        defaultContent: { title: 'Make an impact with your headline', subtitle: 'Loram ipsum dolor sit amet, consectetur adipiscing elit.', button1: 'Shop Now', button2: 'Learn More', marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'full-image',
@@ -50,7 +53,7 @@ const DEFAULT_TEMPLATES = [
         category: 'banner',
         image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80',
         description: 'Full width background image section',
-        defaultContent: { imageUrl: '', marginTop: 5, marginBottom: 5 }
+        defaultContent: { imageUrl: '', marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'infinite-slider',
@@ -58,7 +61,7 @@ const DEFAULT_TEMPLATES = [
         category: 'slider',
         image: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&q=80',
         description: 'Smooth scrolling image carousel',
-        defaultContent: { items: [], marginTop: 5, marginBottom: 5 }
+        defaultContent: { items: [], marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'rich-text',
@@ -66,7 +69,7 @@ const DEFAULT_TEMPLATES = [
         category: 'general',
         image: '/templets/rich-text.png',
         description: 'Rich text editor content area',
-        defaultContent: { html: '<h1>Welcome to rich text editor</h1>', marginTop: 5, marginBottom: 5 }
+        defaultContent: { html: '<h1>Welcome to rich text editor</h1>', marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'product-grid',
@@ -74,7 +77,7 @@ const DEFAULT_TEMPLATES = [
         category: 'product',
         image: '/templets/product-grid.png',
         description: 'Standard product display grid',
-        defaultContent: { title: 'Add title', limit: 8, selectedProductIds: [], marginTop: 5, marginBottom: 5 }
+        defaultContent: { title: 'Add title', limit: 8, selectedProductIds: [], marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'category-list',
@@ -82,7 +85,7 @@ const DEFAULT_TEMPLATES = [
         category: 'category',
         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
         description: 'Discover by category',
-        defaultContent: { title: 'Shop by Category', marginTop: 5, marginBottom: 5 }
+        defaultContent: { title: 'Shop by Category', marginTop: 0, marginBottom: 0, useThemeBg: true }
     },
     {
         id: 'faq-accordion',
@@ -90,7 +93,7 @@ const DEFAULT_TEMPLATES = [
         category: 'faq',
         image: 'https://images.unsplash.com/photo-1544717297-fa154da0979a?w=500&q=80',
         description: 'Collapsible questions',
-        defaultContent: { title: 'FAQ', marginTop: 5, marginBottom: 5 }
+        defaultContent: { title: 'FAQ', marginTop: 0, marginBottom: 0, useThemeBg: true }
     }
 ];
 

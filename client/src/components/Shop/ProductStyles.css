@@ -440,11 +440,7 @@
   transform: scale(1.05);
 }
 
-/* Checked State */
-.checkbox-item input:checked~.checkmark {
-  background-color: #111;
-  border-color: #111;
-}
+
 
 /* Checkmark Indicator */
 .checkbox-item .checkmark:after {
@@ -809,7 +805,7 @@
 
 .reset-filter-link {
   font-size: 13px;
-  color: #7c3aed;
+  color: var(--primary-content);
   /* Purple */
   text-transform: none;
   font-weight: 500;
@@ -829,7 +825,7 @@
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
-  margin-bottom: 0px !important;
+  margin: 5px 0 !important;
 }
 
 /* Round Checkboxes with Tick */
@@ -840,24 +836,24 @@
 .round-checkbox .checkmark:after {
   content: "" !important;
   position: absolute !important;
-  display: block;
-  /* Ensure it is displayed when checked */
-  left: 7px !important;
-  top: 1px !important;
-  width: 2px !important;
-  height: 10px !important;
-  border: solid white !important;
+  display: none !important;
+  left: 6px !important;
+  top: 2px !important;
+  width: 4px !important;
+  height: 9px !important;
+  border: solid var(--primary-content) !important;
   border-width: 0 2px 2px 0 !important;
   transform: rotate(45deg) !important;
   border-radius: 0 !important;
   background: transparent !important;
-  color: var(--primary-color) !important;
 }
 
 .round-checkbox input:checked~.checkmark {
-  background-color: rgba(var(--primary-color-rgb), 0.1) !important;
-  /* Purple active */
   border-color: var(--primary-color) !important;
+}
+
+.round-checkbox input:checked~.checkmark:after {
+  display: block !important;
 }
 
 /* Category List Styling (Pill/Box Style) */

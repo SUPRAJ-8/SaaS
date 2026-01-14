@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaFire, FaStar, FaHeart, FaRegHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaArrowRight } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatchCart } from '../../Shop/CartProvider';
+import { getProducts } from '../../../services/productService';
 import API_URL from '../../../apiConfig';
 import { getShopPath, resolveImageUrl } from '../../../themeUtils';
 import './ProductGridTemplate.css';
@@ -40,7 +41,7 @@ const ProductGridTemplate = ({ content }) => {
     }, []);
 
     // Parse content if it's a string
-    const config = typeof content === 'string' ? JSON.parse(content) : content;
+    const config = typeof content === 'string' ? (content.trim() ? JSON.parse(content) : {}) : (content || {});
 
     // Destructure config with defaults
     const {
@@ -55,20 +56,20 @@ const ProductGridTemplate = ({ content }) => {
         showExploreMore = true,
         paddingTop = 0,
         paddingBottom = 0,
-        marginTop = 5,
-        marginBottom = 5,
-        useThemeBg = false,
+        marginTop = 0,
+        marginBottom = 0,
+        useThemeBg = true,
         bgColor = 'transparent',
         selectedProductIds = []
-    } = config || {};
+    } = config;
 
     const IconComponent = ICON_MAP[iconType] || FaFire;
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await fetch('/api/products');
-                const data = await response.json();
+                // Use the standardized productService to handle tenant headers
+                const data = await getProducts();
 
                 // If specific products are selected, filter and sort them to match the selection order
                 if (selectedProductIds && selectedProductIds.length > 0) {
@@ -291,14 +292,25 @@ const ProductCardItem = ({ product, currency, isBuilder, dispatch }) => {
                     </div>
                 </div>
             </Link>
-            <button
-                className="add-to-cart-btn-small"
-                onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
-            >
-                {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
-            </button>
+            {product.hasVariants ? (
+                <Link
+                    to={getShopPath(`/product/${product._id}`)}
+                    className="add-to-cart-btn-small"
+                    style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                    onClick={(e) => isBuilder && e.preventDefault()}
+                >
+                    Select Variant
+                </Link>
+            ) : (
+                <button
+                    className="add-to-cart-btn-small"
+                    onClick={handleAddToCart}
+                    disabled={isOutOfStock}
+                    style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+                >
+                    {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
+                </button>
+            )}
         </div>
     );
 };

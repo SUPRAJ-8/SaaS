@@ -46,6 +46,19 @@ const ProductDetail = () => {
   const [isAutoChangePaused, setIsAutoChangePaused] = useState(false);
 
   useEffect(() => {
+    if (product && selectedColor && product.hasVariants) {
+      // Find a variant with this color that has an image
+      const colorVariant = product.variants.find(v => v.color === selectedColor && v.image);
+      if (colorVariant && colorVariant.image) {
+        const imgIndex = product.images.findIndex(img => img === colorVariant.image);
+        if (imgIndex !== -1) {
+          setSelectedImage(imgIndex);
+        }
+      }
+    }
+  }, [selectedColor, product]);
+
+  useEffect(() => {
     let interval;
     if (product && product.images && product.images.length > 1 && !isAutoChangePaused) {
       interval = setInterval(() => {
@@ -171,14 +184,15 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
+    const itemPrice = selectedVariant && selectedVariant.sellingPrice ? selectedVariant.sellingPrice : product.sellingPrice;
     const cartItem = {
       id: product._id,
       name: product.name,
-      price: product.sellingPrice,
-      image: `${API_URL}${product.images[0]}`,
+      price: itemPrice,
+      image: product.images && product.images.length > 0 ? `${API_URL}${product.images[0]}` : '',
       quantity: quantity,
       variant: selectedVariant
-        ? `Variant: ${selectedVariant.color.charAt(0).toUpperCase() + selectedVariant.color.slice(1)}/${selectedVariant.size.toUpperCase()}`
+        ? `Variant: ${selectedVariant.color?.charAt(0).toUpperCase() + selectedVariant.color?.slice(1)}/${selectedVariant.size?.toUpperCase()}`
         : null
     };
     dispatch({ type: 'ADD_ITEM', payload: cartItem });
@@ -207,6 +221,20 @@ const ProductDetail = () => {
     });
   };
 
+  const { originalPrice, sellingPrice, discount } = useMemo(() => {
+    if (!product) return { originalPrice: 0, sellingPrice: 0, discount: 0 };
+    let original = product.crossedPrice || 0;
+    let selling = product.sellingPrice || 0;
+
+    if (product.hasVariants && selectedVariant) {
+      if (selectedVariant.sellingPrice) selling = selectedVariant.sellingPrice;
+      if (selectedVariant.crossedPrice) original = selectedVariant.crossedPrice;
+    }
+
+    const disc = original > selling ? Math.round(((original - selling) / original) * 100) : 0;
+    return { originalPrice: original, sellingPrice: selling, discount: disc };
+  }, [product, selectedVariant]);
+
   if (loading) {
     return <p>Loading product...</p>;
   }
@@ -218,10 +246,6 @@ const ProductDetail = () => {
   if (!product) {
     return <NotFound />;
   }
-
-  const originalPrice = product.crossedPrice || 0;
-  const sellingPrice = product.sellingPrice || 0;
-  const discount = originalPrice > 0 ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
 
   const processDescription = (html) => {
     if (!html) return '';

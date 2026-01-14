@@ -267,15 +267,7 @@
     margin-right: 0;
 }
 
-.builder-canvas {
-    background: white;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    min-height: 100%;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-}
+/* .builder-canvas moved to responsive section */
 
 .builder-canvas .ecommerce-header {
     position: static !important;
@@ -443,10 +435,24 @@
 
 .builder-canvas-container.tablet .builder-canvas {
     width: 768px;
+    max-width: 100%;
 }
 
 .builder-canvas-container.mobile .builder-canvas {
     width: 375px;
+    max-width: 100%;
+}
+
+.builder-canvas {
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    min-height: 100%;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smooth transition */
 }
 
 .canvas-placeholder {

@@ -29,10 +29,27 @@ const CategorySchema = new mongoose.Schema({
     description: String,
     itemCount: { type: Number, default: 0 }
   }],
+  slug: {
+    type: String,
+    required: true
+  },
   date: {
     type: Date,
     default: Date.now
   }
+});
+
+// Pre-save hook to generate slug from name
+CategorySchema.pre('validate', function (next) {
+  if (this.name && !this.slug) {
+    this.slug = this.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  next();
 });
 
 // Compound index to ensure category name is unique only for a specific store/client
