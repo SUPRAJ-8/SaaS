@@ -57,6 +57,9 @@ const CollectionShowcase = ({ content = {} }) => {
 
         showGallery = true,
         showCta = true,
+        showCollectionTitle = true,
+        showDescription = true,
+        showFeatureList = true,
         useProductDescription = true,
 
         // Product/Category selection
@@ -263,23 +266,25 @@ const CollectionShowcase = ({ content = {} }) => {
                 </div>
 
                 <div className={styles.textContent}>
-                    <div className={styles.collectionTitleBox}>
-                        <span
-                            className={styles.collectionTitle}
-                            style={{
-                                backgroundColor: isLightBg ? lightAccentColor : 'rgba(255,255,255,0.08)',
-                                color: isLightBg ? effectiveAccentColor : 'var(--primary-color)',
-                                borderColor: lightAccentColor
-                            }}
-                        >
-                            {resolvedCollectionTitle}
-                        </span>
-                    </div>
+                    {showCollectionTitle && (
+                        <div className={styles.collectionTitleBox}>
+                            <span
+                                className={styles.collectionTitle}
+                                style={{
+                                    backgroundColor: isLightBg ? lightAccentColor : 'rgba(255,255,255,0.08)',
+                                    color: isLightBg ? effectiveAccentColor : 'var(--primary-color)',
+                                    borderColor: lightAccentColor
+                                }}
+                            >
+                                {resolvedCollectionTitle}
+                            </span>
+                        </div>
+                    )}
                     <h3 className={styles.productName} style={{ color: useBrandTextColor ? 'var(--primary-content)' : (customTextColor || (isLightBg ? 'var(--primary-content)' : '#ffffff')) }}>
                         {resolvedProductName}
                     </h3>
 
-                    {resolvedDescription && (
+                    {showDescription && resolvedDescription && (
                         <div
                             className={styles.description}
                             style={{
@@ -292,16 +297,18 @@ const CollectionShowcase = ({ content = {} }) => {
                         </div>
                     )}
 
-                    <div className={styles.featureList}>
-                        {featuresWithIcons.map((feature, index) => (
-                            <div key={index} className={styles.featureItem} style={{ color: isLightBg ? effectiveAccentColor : 'var(--primary-color)' }}>
-                                <span className={styles.featureIcon} style={{ color: useBrandTextColor ? 'var(--primary-content)' : (customTextColor || (isLightBg ? 'var(--primary-content)' : '#ffffff')) }}>
-                                    {feature.icon || <FaChevronRight size={12} />}
-                                </span>
-                                <span style={{ fontWeight: '500' }}>{feature.text}</span>
-                            </div>
-                        ))}
-                    </div>
+                    {showFeatureList && (
+                        <div className={styles.featureList}>
+                            {featuresWithIcons.map((feature, index) => (
+                                <div key={index} className={styles.featureItem} style={{ color: isLightBg ? effectiveAccentColor : 'var(--primary-color)' }}>
+                                    <span className={styles.featureIcon} style={{ color: useBrandTextColor ? 'var(--primary-content)' : (customTextColor || (isLightBg ? 'var(--primary-content)' : '#ffffff')) }}>
+                                        {feature.icon || <FaChevronRight size={12} />}
+                                    </span>
+                                    <span style={{ fontWeight: '500' }}>{feature.text}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {showCta && (
                         <button

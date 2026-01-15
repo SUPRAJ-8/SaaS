@@ -698,9 +698,7 @@
     color: #1f2937;
 }
 
-.animate-fade {
-    opacity: 1;
-}
+
 
 
 /* Configuration Overlay */
@@ -1203,6 +1201,8 @@
 
 .animate-fade {
     animation: animate-fade 0.4s ease forwards;
+    opacity: 1;
+    margin-top: 12px;
 }
 
 /* Rich Text Modal Overlay */

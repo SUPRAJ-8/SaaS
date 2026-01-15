@@ -184,15 +184,33 @@
         "label": "Display Options"
     },
     {
-        "key": "showGallery",
+        "key": "showCollectionTitle",
         "type": "boolean",
-        "label": "Show Gallery Section",
+        "label": "Show Collection Title",
+        "default": true
+    },
+    {
+        "key": "showDescription",
+        "type": "boolean",
+        "label": "Show Description",
+        "default": true
+    },
+    {
+        "key": "showFeatureList",
+        "type": "boolean",
+        "label": "Show Featured List",
         "default": true
     },
     {
         "key": "showCta",
         "type": "boolean",
         "label": "Show CTA Button",
+        "default": true
+    },
+    {
+        "key": "showGallery",
+        "type": "boolean",
+        "label": "Show Gallery Section",
         "default": true
     },
     {

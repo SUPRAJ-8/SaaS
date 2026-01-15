@@ -286,6 +286,7 @@ const PageBuilder = ({ mode = 'page' }) => {
     const [showCollectionFeaturesEditor, setShowCollectionFeaturesEditor] = useState(false);
     const [showCollectionGalleryEditor, setShowCollectionGalleryEditor] = useState(false);
     const [showCollectionStyleEditor, setShowCollectionStyleEditor] = useState(false);
+    const [showCollectionDisplayEditor, setShowCollectionDisplayEditor] = useState(true);
     const [showFeatureIconPicker, setShowFeatureIconPicker] = useState(null);
 
     const [confirmationModal, setConfirmationModal] = useState({
@@ -2198,6 +2199,38 @@ const PageBuilder = ({ mode = 'page' }) => {
                                         {/* Collection Showcase Editor */}
                                         {section.type === 'collection-showcase' && (
                                             <div className="collection-editor animate-fade">
+                                                {/* 0. DISPLAY OPTIONS */}
+                                                <div className="button-accordion-wrapper" style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionDisplayEditor(!showCollectionDisplayEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionDisplayEditor ? '1px solid #e2e8f0' : 'none' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Display Options</span>
+                                                        <FaChevronDown style={{ transform: showCollectionDisplayEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                    </div>
+                                                    {showCollectionDisplayEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showCollectionTitle: content.showCollectionTitle !== false ? false : true })} style={{ marginBottom: '10px', justifyContent: 'space-between' }}>
+                                                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>Show Collection Title</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showCollectionTitle !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showDescription: content.showDescription !== false ? false : true })} style={{ marginBottom: '10px', justifyContent: 'space-between' }}>
+                                                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>Show Description</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showDescription !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showFeatureList: content.showFeatureList !== false ? false : true })} style={{ marginBottom: '10px', justifyContent: 'space-between' }}>
+                                                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>Show Featured List</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showFeatureList !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showCta: content.showCta !== false ? false : true })} style={{ marginBottom: '10px', justifyContent: 'space-between' }}>
+                                                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>Show CTA Button</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showCta !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showGallery: content.showGallery !== false ? false : true })} style={{ marginBottom: '0', justifyContent: 'space-between' }}>
+                                                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>Show Gallery Section</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showGallery !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 {/* 1. DESCRIPTION */}
                                                 <div className="button-accordion-wrapper" style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
                                                     <div className="accordion-header" onClick={() => setShowCollectionHeroEditor(!showCollectionHeroEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionHeroEditor ? '1px solid #e2e8f0' : 'none' }}>
@@ -2525,26 +2558,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                     )}
                                                 </div>
 
-                                                {/* 4. DISPLAY OPTIONS */}
-                                                <div className="button-accordion-wrapper" style={{ marginTop: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
-                                                    <div className="accordion-header" onClick={() => setShowCollectionGalleryEditor(!showCollectionGalleryEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Display Options</span>
-                                                        <FaChevronDown style={{ transform: showCollectionGalleryEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                                                    </div>
-                                                    {showCollectionGalleryEditor && (
-                                                        <div className="accordion-content" style={{ padding: '16px' }}>
-                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showGallery: !content.showGallery })} style={{ margin: '0 0 12px', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
-                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Show Gallery Section</span>
-                                                                <div className={`modern-hero-toggle-switch ${content.showGallery !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
-                                                            </div>
 
-                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showCta: !content.showCta })} style={{ margin: '0', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
-                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Show CTA Button</span>
-                                                                <div className={`modern-hero-toggle-switch ${content.showCta !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </div>
                                         )}
 

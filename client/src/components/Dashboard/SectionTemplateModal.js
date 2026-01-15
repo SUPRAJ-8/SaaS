@@ -97,9 +97,9 @@ const DEFAULT_TEMPLATES = [
     },
     {
         id: 'collection-showcase',
-        name: 'Collection Showcase',
-        category: 'hero',
-        image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&q=80',
+        name: 'Produtcs Showcase',
+        category: 'product',
+        image: '/templets/products-showcase.png',
         description: 'Premium product showcase with gallery (Dark Mode)',
         defaultContent: {
             collectionTitle: "AUTUMN COLLECTION",
