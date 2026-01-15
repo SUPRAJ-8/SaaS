@@ -1,0 +1,213 @@
+[
+    {
+        "type": "header",
+        "label": "Hero Section"
+    },
+    {
+        "key": "collectionTitle",
+        "type": "text",
+        "label": "Collection Title",
+        "default": "AUTUMN COLLECTION"
+    },
+    {
+        "key": "productName",
+        "type": "text",
+        "label": "Product Name",
+        "default": "Signature Hoodie"
+    },
+    {
+        "key": "description",
+        "type": "textarea",
+        "label": "Description",
+        "default": "Experience ultimate comfort with our signature heavyweight organic cotton hoodie, designed for an oversized fit and sustainable longevity."
+    },
+    {
+        "key": "useProductDescription",
+        "type": "boolean",
+        "label": "Use Product Description",
+        "default": true
+    },
+    {
+        "key": "heroImage",
+        "type": "image",
+        "label": "Hero Image",
+        "default": ""
+    },
+    {
+        "key": "feature1",
+        "type": "text",
+        "label": "Feature 1",
+        "default": "100% Organic Egyptian Cotton"
+    },
+    {
+        "key": "feature2",
+        "type": "text",
+        "label": "Feature 2",
+        "default": "Signature Oversized Fit"
+    },
+    {
+        "key": "feature3",
+        "type": "text",
+        "label": "Feature 3",
+        "default": "Sustainable Low-Impact Dye"
+    },
+    {
+        "key": "feature4",
+        "type": "text",
+        "label": "Feature 4",
+        "default": "Heavyweight 450 GSM Fabric"
+    },
+    {
+        "key": "ctaText",
+        "type": "text",
+        "label": "CTA Button Text",
+        "default": "Product Details"
+    },
+    {
+        "key": "ctaLink",
+        "type": "text",
+        "label": "CTA Link",
+        "default": "/collections/autumn"
+    },
+    {
+        "type": "header",
+        "label": "Gallery Section"
+    },
+    {
+        "key": "galleryTitle",
+        "type": "text",
+        "label": "Gallery Section Title",
+        "default": "CURATED GALLERY"
+    },
+    {
+        "key": "galleryImage1",
+        "type": "image",
+        "label": "Gallery Item 1 Image",
+        "default": ""
+    },
+    {
+        "key": "galleryTitle1",
+        "type": "text",
+        "label": "Gallery Item 1 Title",
+        "default": "Teal Hoodie"
+    },
+    {
+        "key": "gallerySubtitle1",
+        "type": "text",
+        "label": "Gallery Item 1 Subtitle",
+        "default": "ESSENTIALS SERIES"
+    },
+    {
+        "key": "galleryImage2",
+        "type": "image",
+        "label": "Gallery Item 2 Image",
+        "default": ""
+    },
+    {
+        "key": "galleryTitle2",
+        "type": "text",
+        "label": "Gallery Item 2 Title",
+        "default": "Heather Grey Hoodie"
+    },
+    {
+        "key": "gallerySubtitle2",
+        "type": "text",
+        "label": "Gallery Item 2 Subtitle",
+        "default": "CLASSIC CORE"
+    },
+    {
+        "key": "galleryImage3",
+        "type": "image",
+        "label": "Gallery Item 3 Image",
+        "default": ""
+    },
+    {
+        "key": "galleryTitle3",
+        "type": "text",
+        "label": "Gallery Item 3 Title",
+        "default": "Classic White Hoodie"
+    },
+    {
+        "key": "gallerySubtitle3",
+        "type": "text",
+        "label": "Gallery Item 3 Subtitle",
+        "default": "PURE ORGANIC"
+    },
+    {
+        "key": "galleryImage4",
+        "type": "image",
+        "label": "Gallery Item 4 Image",
+        "default": ""
+    },
+    {
+        "key": "galleryTitle4",
+        "type": "text",
+        "label": "Gallery Item 4 Title",
+        "default": "Sage Green Hoodie"
+    },
+    {
+        "key": "gallerySubtitle4",
+        "type": "text",
+        "label": "Gallery Item 4 Subtitle",
+        "default": "NATURE INSPIRED"
+    },
+    {
+        "type": "header",
+        "label": "Styling"
+    },
+    {
+        "key": "bgColor",
+        "type": "color",
+        "label": "Background Color",
+        "default": "transparent"
+    },
+    {
+        "key": "useThemeBg",
+        "type": "boolean",
+        "label": "Use Theme Background",
+        "default": true
+    },
+    {
+        "key": "useBrandColor",
+        "type": "boolean",
+        "label": "Use Brand Color",
+        "default": true
+    },
+    {
+        "key": "accentColor",
+        "type": "color",
+        "label": "Accent Color (if brand color disabled)",
+        "default": "#ef233c"
+    },
+    {
+        "type": "header",
+        "label": "Display Options"
+    },
+    {
+        "key": "showGallery",
+        "type": "boolean",
+        "label": "Show Gallery Section",
+        "default": true
+    },
+    {
+        "key": "showCta",
+        "type": "boolean",
+        "label": "Show CTA Button",
+        "default": true
+    },
+    {
+        "key": "sourceType",
+        "type": "hidden",
+        "default": "products"
+    },
+    {
+        "key": "selectedProductIds",
+        "type": "hidden",
+        "default": []
+    },
+    {
+        "key": "selectedCategoryId",
+        "type": "hidden",
+        "default": null
+    }
+]

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope, FaCheck, FaChevronDown, FaPalette, FaInfoCircle } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaDesktop, FaMobileAlt, FaTabletAlt, FaUndo, FaRedo, FaEdit, FaCopy, FaTrash, FaGripVertical, FaTimes, FaFire, FaStar, FaHeart, FaShoppingCart, FaTag, FaGift, FaBolt, FaRocket, FaGem, FaCrown, FaBoxOpen, FaUpload, FaLink, FaPlay, FaVideo, FaDownload, FaArrowAltCircleRight, FaSearch, FaGlobe, FaEnvelope, FaCheck, FaChevronDown, FaPalette, FaInfoCircle, FaPlus, FaLeaf, FaTshirt, FaTint, FaWeightHanging, FaUtensils, FaHome, FaMobile, FaLaptop, FaShippingFast, FaShieldAlt, FaThumbsUp, FaClock } from 'react-icons/fa';
 import './PageBuilder.css';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -28,6 +28,7 @@ import FAQTemplate from './templates/FAQTemplate';
 import RichTextTemplate from './templates/RichTextTemplate';
 import RichTextEditor from './RichTextEditor';
 import ModernHeroTemplate from './templates/ModernHeroTemplate';
+import CollectionShowcase from '../../section-templates/collection-showcase/CollectionShowcase';
 
 const SECTION_TEMPLATES = {
     'product-grid': ProductGridTemplate,
@@ -38,7 +39,8 @@ const SECTION_TEMPLATES = {
     'faq-accordion': FAQTemplate,
     'faq': FAQTemplate,
     'rich-text': RichTextTemplate,
-    'modern-hero': ModernHeroTemplate
+    'modern-hero': ModernHeroTemplate,
+    'collection-showcase': CollectionShowcase
 };
 
 // Lazy load theme components to ensure only active theme CSS is built/loaded
@@ -267,6 +269,7 @@ const PageBuilder = ({ mode = 'page' }) => {
     const [targetSectionIndex, setTargetSectionIndex] = useState(0);
     const [selectedSectionId, setSelectedSectionId] = useState(null);
     const [availableProducts, setAvailableProducts] = useState([]);
+    const [availableCategories, setAvailableCategories] = useState([]);
     const [showSavedNotification, setShowSavedNotification] = useState(false);
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showProductModal, setShowProductModal] = useState(false);
@@ -276,6 +279,15 @@ const PageBuilder = ({ mode = 'page' }) => {
     const [showHeroContentEditor, setShowHeroContentEditor] = useState(true);
     const [showPrimaryBtnEditor, setShowPrimaryBtnEditor] = useState(false);
     const [showSecondaryBtnEditor, setShowSecondaryBtnEditor] = useState(false);
+
+    // Collection Showcase Editor States
+    const [showCollectionHeroEditor, setShowCollectionHeroEditor] = useState(true);
+    const [showCollectionContentEditor, setShowCollectionContentEditor] = useState(false);
+    const [showCollectionFeaturesEditor, setShowCollectionFeaturesEditor] = useState(false);
+    const [showCollectionGalleryEditor, setShowCollectionGalleryEditor] = useState(false);
+    const [showCollectionStyleEditor, setShowCollectionStyleEditor] = useState(false);
+    const [showFeatureIconPicker, setShowFeatureIconPicker] = useState(null);
+
     const [confirmationModal, setConfirmationModal] = useState({
         isOpen: false,
         title: '',
@@ -729,16 +741,21 @@ const PageBuilder = ({ mode = 'page' }) => {
     };
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchStoreData = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/products`);
-                const data = await response.json();
-                setAvailableProducts(data);
+                const [prodRes, catRes] = await Promise.all([
+                    fetch(`${API_URL}/api/products`),
+                    fetch(`${API_URL}/api/categories`)
+                ]);
+                const prods = await prodRes.json();
+                const cats = await catRes.json();
+                setAvailableProducts(prods);
+                setAvailableCategories(cats);
             } catch (err) {
-                console.error("Failed to fetch products:", err);
+                console.error("Failed to fetch store data:", err);
             }
         };
-        fetchProducts();
+        fetchStoreData();
     }, []);
 
     // Close icon picker when clicking outside
@@ -1310,7 +1327,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                                             </>
                                         )}
 
-                                        {section.type !== 'rich-text' && section.type !== 'modern-hero' && (
+                                        {section.type !== 'rich-text' && section.type !== 'modern-hero' && section.type !== 'collection-showcase' && (
                                             <>
                                                 <div className="property-row">
                                                     <div className="property-group flex-1">
@@ -1403,8 +1420,8 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                             <label>Top Margin</label>
                                                             <input
                                                                 type="number"
-                                                                value={content.marginTop !== undefined ? content.marginTop : 5}
-                                                                placeholder="5"
+                                                                value={content.marginTop !== undefined ? content.marginTop : 0}
+                                                                placeholder="0"
                                                                 onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginTop: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
                                                                 className="padding-input"
                                                             />
@@ -1413,8 +1430,8 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                             <label>Bottom Margin</label>
                                                             <input
                                                                 type="number"
-                                                                value={content.marginBottom !== undefined ? content.marginBottom : 5}
-                                                                placeholder="5"
+                                                                value={content.marginBottom !== undefined ? content.marginBottom : 0}
+                                                                placeholder="0"
                                                                 onChange={(e) => updateSectionContent(selectedSectionId, { ...content, marginBottom: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
                                                                 className="padding-input"
                                                             />
@@ -1492,7 +1509,7 @@ const PageBuilder = ({ mode = 'page' }) => {
                                         )}
 
                                         {/* Show Product Selection only for relevant sections */}
-                                        {section.type !== 'rich-text' && section.type !== 'modern-hero' && section.type !== 'hero' && section.type !== 'hero-impact' && section.type !== 'faq' && section.type !== 'faq-accordion' && (
+                                        {section.type !== 'rich-text' && section.type !== 'modern-hero' && section.type !== 'collection-showcase' && section.type !== 'hero' && section.type !== 'hero-impact' && section.type !== 'faq' && section.type !== 'faq-accordion' && (
                                             <div className="property-group">
                                                 <label>Content</label>
                                                 <button
@@ -1514,10 +1531,10 @@ const PageBuilder = ({ mode = 'page' }) => {
                                                     }}
                                                 >
                                                     <FaBoxOpen />
-                                                    Select Products ({content.selectedProductIds ? content.selectedProductIds.length : 0})
+                                                    {content.sourceType === 'categories' ? 'Select Content (Category)' : `Select Products (${content.selectedProductIds ? content.selectedProductIds.length : 0})`}
                                                 </button>
 
-                                                {content.selectedProductIds && content.selectedProductIds.length > 0 && (
+                                                {content.sourceType !== 'categories' && content.selectedProductIds && content.selectedProductIds.length > 0 && (
                                                     <div className="selected-products-summary" style={{ marginTop: '12px' }}>
                                                         <DndContext
                                                             sensors={sensors}
@@ -2178,6 +2195,359 @@ const PageBuilder = ({ mode = 'page' }) => {
                                             </div>
                                         )}
 
+                                        {/* Collection Showcase Editor */}
+                                        {section.type === 'collection-showcase' && (
+                                            <div className="collection-editor animate-fade">
+                                                {/* 1. DESCRIPTION */}
+                                                <div className="button-accordion-wrapper" style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionHeroEditor(!showCollectionHeroEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionHeroEditor ? '1px solid #e2e8f0' : 'none' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Description</span>
+                                                        <FaChevronDown style={{ transform: showCollectionHeroEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                    </div>
+                                                    {showCollectionHeroEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useProductDescription: content.useProductDescription !== false ? false : true })} style={{ margin: '0 0 15px', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Use Product Description</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.useProductDescription !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+
+                                                            {content.useProductDescription !== false ? (
+                                                                <div className="property-group" style={{ marginBottom: '0', animation: 'slideDown 0.3s ease' }}>
+                                                                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Product Description Preview</label>
+                                                                    <div style={{
+                                                                        padding: '12px',
+                                                                        borderRadius: '8px',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        background: '#f8fafc',
+                                                                        fontSize: '13px',
+                                                                        lineHeight: '1.5',
+                                                                        color: '#64748b',
+                                                                        fontStyle: 'italic',
+                                                                        minHeight: '60px',
+                                                                        maxHeight: '120px',
+                                                                        overflow: 'hidden',
+                                                                        display: '-webkit-box',
+                                                                        WebkitLineClamp: 4,
+                                                                        WebkitBoxOrient: 'vertical'
+                                                                    }}>
+                                                                        {(() => {
+                                                                            const firstId = content.selectedProductIds?.[0];
+                                                                            const prod = availableProducts.find(p => String(p._id) === String(firstId));
+                                                                            const rawText = (prod?.longDescription || prod?.shortDescription || "");
+                                                                            // Strip HTML for the preview box if it's too messy
+                                                                            const cleanText = rawText.replace(/<[^>]*>?/gm, '');
+                                                                            return cleanText || (firstId ? "No description found for this product." : "Select a product in 'Project/Product Selection' to see its description here.");
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="property-group" style={{ marginBottom: '0', animation: 'slideDown 0.3s ease' }}>
+                                                                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Custom Description</label>
+                                                                    <textarea
+                                                                        value={content.description || ''}
+                                                                        onChange={(e) => updateSectionContent(selectedSectionId, { ...content, description: e.target.value })}
+                                                                        rows={4}
+                                                                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', lineHeight: '1.5', resize: 'vertical' }}
+                                                                        placeholder="Enter your custom description here..."
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* 2. CONTENT SELECTION */}
+                                                <div className="button-accordion-wrapper" style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionContentEditor(!showCollectionContentEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionContentEditor ? '1px solid #e2e8f0' : 'none' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Project/Product Selection</span>
+                                                        <FaChevronDown style={{ transform: showCollectionContentEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                    </div>
+                                                    {showCollectionContentEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            <button
+                                                                className="btn-primary"
+                                                                onClick={() => setShowProductModal(true)}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    gap: '10px',
+                                                                    padding: '10px',
+                                                                    background: '#7c3aed',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: '600',
+                                                                    marginBottom: (content.selectedProductIds?.length > 0 || content.selectedCategoryId) ? '12px' : '0'
+                                                                }}
+                                                            >
+                                                                <FaBoxOpen />
+                                                                {content.sourceType === 'categories' ? 'Select Content (Category)' : `Select Products (${content.selectedProductIds ? content.selectedProductIds.length : 0})`}
+                                                            </button>
+
+                                                            {/* Selected Items Summary */}
+                                                            {content.sourceType === 'categories' ? (
+                                                                content.selectedCategoryId && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                        <div style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                                            Category: {availableCategories.find(c => String(c._id) === String(content.selectedCategoryId))?.name || 'Loading...'}
+                                                                        </div>
+                                                                        {availableProducts
+                                                                            .filter(p => {
+                                                                                const pCatId = p.category?._id || p.category;
+                                                                                return String(pCatId) === String(content.selectedCategoryId);
+                                                                            })
+                                                                            .map(product => (
+                                                                                <div key={product._id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', color: '#1f2937' }}>
+                                                                                    <FaGripVertical style={{ color: '#94a3b8', fontSize: '14px' }} />
+                                                                                    <span style={{ fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                        {product.name}
+                                                                                    </span>
+                                                                                </div>
+                                                                            ))
+                                                                        }
+                                                                        {availableProducts.filter(p => String(p.category?._id || p.category) === String(content.selectedCategoryId)).length === 0 && (
+                                                                            <div style={{ padding: '10px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' }}>No products found in this category.</div>
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            ) : (
+                                                                <DndContext
+                                                                    sensors={sensors}
+                                                                    collisionDetection={closestCenter}
+                                                                    onDragEnd={(event) => {
+                                                                        const { active, over } = event;
+                                                                        if (!over || active.id === over.id) return;
+
+                                                                        const oldIndex = content.selectedProductIds.indexOf(active.id);
+                                                                        const newIndex = content.selectedProductIds.indexOf(over.id);
+
+                                                                        if (oldIndex !== -1 && newIndex !== -1) {
+                                                                            const newIds = arrayMove(content.selectedProductIds, oldIndex, newIndex);
+                                                                            updateSectionContent(selectedSectionId, { ...content, selectedProductIds: newIds });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <SortableContext
+                                                                        items={content.selectedProductIds || []}
+                                                                        strategy={verticalListSortingStrategy}
+                                                                    >
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                            {(content.selectedProductIds || []).map((pid) => (
+                                                                                <SortableProductItem
+                                                                                    key={pid}
+                                                                                    id={pid}
+                                                                                    product={availableProducts.find(p => String(p._id) === String(pid))}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    </SortableContext>
+                                                                </DndContext>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* 2. FEATURES */}
+                                                <div className="button-accordion-wrapper" style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionFeaturesEditor(!showCollectionFeaturesEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionFeaturesEditor ? '1px solid #e2e8f0' : 'none' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Features List</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            {showCollectionFeaturesEditor && (content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f)).length < 4 && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const currentFeatures = content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f);
+                                                                        updateSectionContent(selectedSectionId, { ...content, features: [...currentFeatures, ""], feature1: "", feature2: "", feature3: "", feature4: "" });
+                                                                    }}
+                                                                    style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: '4px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                                >
+                                                                    <FaPlus size={12} />
+                                                                </button>
+                                                            )}
+                                                            <FaChevronDown style={{ transform: showCollectionFeaturesEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                        </div>
+                                                    </div>
+                                                    {showCollectionFeaturesEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            {(content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f)).map((feat, idx) => (
+                                                                <div key={idx} className="property-group animate-fade" style={{ marginBottom: '12px', position: 'relative' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <label style={{ fontSize: '11px', margin: 0 }}>Feature {idx + 1}</label>
+                                                                            <button
+                                                                                onClick={() => setShowFeatureIconPicker(showFeatureIconPicker === idx ? null : idx)}
+                                                                                style={{
+                                                                                    background: '#f1f5f9',
+                                                                                    border: '1px solid #e2e8f0',
+                                                                                    padding: '2px 8px',
+                                                                                    borderRadius: '4px',
+                                                                                    fontSize: '10px',
+                                                                                    cursor: 'pointer',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '4px'
+                                                                                }}
+                                                                            >
+                                                                                {(() => {
+                                                                                    const iconName = (content.featureIcons || [])[idx] || 'leaf';
+                                                                                    const Icons = {
+                                                                                        leaf: FaLeaf, tshirt: FaTshirt, tint: FaTint, weight: FaWeightHanging,
+                                                                                        fire: FaFire, star: FaStar, heart: FaHeart, cart: FaShoppingCart,
+                                                                                        bolt: FaBolt, tag: FaTag, check: FaCheck, shield: FaShieldAlt,
+                                                                                        shipping: FaShippingFast, thumbs: FaThumbsUp, clock: FaClock,
+                                                                                        mobile: FaMobile, labtop: FaLaptop, home: FaHome, utensils: FaUtensils
+                                                                                    };
+                                                                                    const IconComp = Icons[iconName] || FaLeaf;
+                                                                                    return <><IconComp size={10} /> Change</>;
+                                                                                })()}
+                                                                            </button>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const currentFeatures = content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f);
+                                                                                const currentIcons = content.featureIcons || [];
+                                                                                const updatedFeatures = currentFeatures.filter((_, i) => i !== idx);
+                                                                                const updatedIcons = currentIcons.filter((_, i) => i !== idx);
+                                                                                updateSectionContent(selectedSectionId, { ...content, features: updatedFeatures, featureIcons: updatedIcons, feature1: "", feature2: "", feature3: "", feature4: "" });
+                                                                            }}
+                                                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 4px' }}
+                                                                        >
+                                                                            <FaTrash size={12} />
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {showFeatureIconPicker === idx && (
+                                                                        <div className="icon-picker-grid animate-fade" style={{
+                                                                            display: 'grid',
+                                                                            gridTemplateColumns: 'repeat(5, 1fr)',
+                                                                            gap: '6px',
+                                                                            background: '#f8fafc',
+                                                                            padding: '10px',
+                                                                            borderRadius: '8px',
+                                                                            border: '1px solid #e2e8f0',
+                                                                            marginBottom: '10px'
+                                                                        }}>
+                                                                            {[
+                                                                                { icon: FaLeaf, val: 'leaf' }, { icon: FaTshirt, val: 'tshirt' }, { icon: FaTint, val: 'tint' }, { icon: FaWeightHanging, val: 'weight' },
+                                                                                { icon: FaFire, val: 'fire' }, { icon: FaStar, val: 'star' }, { icon: FaHeart, val: 'heart' }, { icon: FaShoppingCart, val: 'cart' },
+                                                                                { icon: FaBolt, val: 'bolt' }, { icon: FaTag, val: 'tag' }, { icon: FaCheck, val: 'check' }, { icon: FaShieldAlt, val: 'shield' },
+                                                                                { icon: FaShippingFast, val: 'shipping' }, { icon: FaThumbsUp, val: 'thumbs' }, { icon: FaClock, val: 'clock' },
+                                                                                { icon: FaMobile, val: 'mobile' }, { icon: FaLaptop, val: 'labtop' }, { icon: FaHome, val: 'home' }, { icon: FaUtensils, val: 'utensils' }
+                                                                            ].map((item, i) => (
+                                                                                <div
+                                                                                    key={i}
+                                                                                    onClick={() => {
+                                                                                        const currentIcons = [...(content.featureIcons || [])];
+                                                                                        while (currentIcons.length <= idx) currentIcons.push('leaf');
+                                                                                        currentIcons[idx] = item.val;
+                                                                                        updateSectionContent(selectedSectionId, { ...content, featureIcons: currentIcons });
+                                                                                        setShowFeatureIconPicker(null);
+                                                                                    }}
+                                                                                    style={{
+                                                                                        padding: '8px',
+                                                                                        background: ((content.featureIcons || [])[idx] || 'leaf') === item.val ? '#7c3aed' : 'white',
+                                                                                        color: ((content.featureIcons || [])[idx] || 'leaf') === item.val ? 'white' : '#64748b',
+                                                                                        borderRadius: '6px',
+                                                                                        cursor: 'pointer',
+                                                                                        display: 'flex',
+                                                                                        justifyContent: 'center',
+                                                                                        border: '1px solid #e2e8f0'
+                                                                                    }}
+                                                                                >
+                                                                                    <item.icon size={14} />
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <input
+                                                                        type="text"
+                                                                        value={feat || ''}
+                                                                        onChange={(e) => {
+                                                                            const currentFeatures = content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f);
+                                                                            const updated = [...currentFeatures];
+                                                                            updated[idx] = e.target.value;
+                                                                            updateSectionContent(selectedSectionId, { ...content, features: updated, feature1: "", feature2: "", feature3: "", feature4: "" });
+                                                                        }}
+                                                                        placeholder={`Enter feature ${idx + 1}...`}
+                                                                        className="full-width-input"
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                            {(content.features || [content.feature1, content.feature2, content.feature3, content.feature4].filter(f => f)).length === 0 && (
+                                                                <div style={{ textAlign: 'center', padding: '10px', color: '#94a3b8', fontSize: '13px', fontStyle: 'italic' }}>
+                                                                    No features added. Click + to add one.
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* 3. STYLING */}
+                                                <div className="button-accordion-wrapper" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionStyleEditor(!showCollectionStyleEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: showCollectionStyleEditor ? '1px solid #e2e8f0' : 'none' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Styling</span>
+                                                        <FaChevronDown style={{ transform: showCollectionStyleEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                    </div>
+                                                    {showCollectionStyleEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            <div style={{ marginBottom: '12px' }}>
+                                                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>BRANDING SETTINGS</label>
+                                                            </div>
+
+                                                            {/* Brand Accent Color */}
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useBrandColor: content.useBrandColor === false ? true : false })} style={{ margin: '0 0 10px', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Use Brand Color</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.useBrandColor !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+
+                                                            {content.useBrandColor === false && (
+                                                                <div style={{ marginBottom: '15px' }}>
+                                                                    <DebouncedColorPicker value={content.accentColor || '#ef233c'} onChange={(val) => updateSectionContent(selectedSectionId, { ...content, accentColor: val })} />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Brand Text Color */}
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, useBrandTextColor: !content.useBrandTextColor })} style={{ margin: '15px 0 10px', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Use Brand Color for Text</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.useBrandTextColor ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+
+                                                            {content.useBrandTextColor === false && (
+                                                                <div style={{ marginBottom: '15px' }}>
+                                                                    <DebouncedColorPicker value={content.customTextColor || '#1e293b'} onChange={(val) => updateSectionContent(selectedSectionId, { ...content, customTextColor: val })} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* 4. DISPLAY OPTIONS */}
+                                                <div className="button-accordion-wrapper" style={{ marginTop: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
+                                                    <div className="accordion-header" onClick={() => setShowCollectionGalleryEditor(!showCollectionGalleryEditor)} style={{ padding: '12px 16px', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Display Options</span>
+                                                        <FaChevronDown style={{ transform: showCollectionGalleryEditor ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                                    </div>
+                                                    {showCollectionGalleryEditor && (
+                                                        <div className="accordion-content" style={{ padding: '16px' }}>
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showGallery: !content.showGallery })} style={{ margin: '0 0 12px', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
+                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Show Gallery Section</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showGallery !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+
+                                                            <div className="checkbox-standard" onClick={() => updateSectionContent(selectedSectionId, { ...content, showCta: !content.showCta })} style={{ margin: '0', justifyContent: 'space-between', width: '100%', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
+                                                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px' }}>Show CTA Button</span>
+                                                                <div className={`modern-hero-toggle-switch ${content.showCta !== false ? 'active' : ''}`}><div className="toggle-dot"></div></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
                                     </>
                                 );
                             })()}
@@ -2210,12 +2580,27 @@ const PageBuilder = ({ mode = 'page' }) => {
                         return [];
                     }
                 })()}
-                onSave={(ids) => {
+                initialCategoryId={(() => {
+                    const s = sections.find(sec => sec.id === selectedSectionId);
+                    if (!s) return null;
+                    try { return JSON.parse(s.content).selectedCategoryId || null; } catch (e) { return null; }
+                })()}
+                initialSourceType={(() => {
+                    const s = sections.find(sec => sec.id === selectedSectionId);
+                    if (!s) return 'products';
+                    try { return JSON.parse(s.content).sourceType || 'products'; } catch (e) { return 'products'; }
+                })()}
+                onSave={(ids, categoryId, sourceType) => {
                     if (selectedSectionId) {
                         const s = sections.find(sec => sec.id === selectedSectionId);
                         if (s) {
                             const c = JSON.parse(s.content);
-                            updateSectionContent(selectedSectionId, { ...c, selectedProductIds: ids });
+                            updateSectionContent(selectedSectionId, {
+                                ...c,
+                                selectedProductIds: ids,
+                                selectedCategoryId: categoryId,
+                                sourceType: sourceType || 'products'
+                            });
                         }
                     }
                 }}

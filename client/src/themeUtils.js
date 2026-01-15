@@ -59,6 +59,7 @@ export const applyStoreSettings = (providedSettings = null) => {
                 document.documentElement.style.setProperty('--primary-color', primary);
                 document.documentElement.style.setProperty('--primary', primary);
                 document.documentElement.style.setProperty('--primary-color-rgb', primaryRgb);
+                document.documentElement.style.setProperty('--primary-light', `rgba(${primaryRgb}, 0.15)`);
 
                 // Common layout mappings
                 document.documentElement.style.setProperty('--theme-primary', primary);

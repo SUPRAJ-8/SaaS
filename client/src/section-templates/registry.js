@@ -2,12 +2,14 @@
 // Pre-registered React components (NOT uploaded dynamically)
 
 import HeroModern from './hero-modern/Hero';
+import CollectionShowcase from './collection-showcase/CollectionShowcase';
 // import ProductGrid001 from './product-grid-001/ProductGrid';
 // import CategoryGrid001 from './category-grid-001/CategoryGrid';
 // import Footer001 from './footer-001/Footer';
 
 // Import schemas
 import heroSchema from './hero-modern/schema.json';
+import collectionShowcaseSchema from './collection-showcase/schema.json';
 // import productGridSchema from './product-grid-001/schema.json';
 // import categoryGridSchema from './category-grid-001/schema.json';
 // import footerSchema from './footer-001/schema.json';
@@ -30,6 +32,13 @@ export const SECTION_REGISTRY = {
         schema: heroSchema,
         preview: '/previews/hero-modern.png',
         category: 'Hero'
+    },
+    'collection-showcase': {
+        id: 'collection-showcase',
+        component: CollectionShowcase,
+        schema: collectionShowcaseSchema,
+        preview: '/previews/collection-showcase.png',
+        category: 'Showcase'
     }
     // TODO: Add these when components are created
     // 'product-grid-001': {

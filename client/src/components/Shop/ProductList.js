@@ -15,6 +15,7 @@ import CategoryGridTemplate from '../Dashboard/templates/CategoryGridTemplate';
 import FAQTemplate from '../Dashboard/templates/FAQTemplate';
 import RichTextTemplate from '../Dashboard/templates/RichTextTemplate';
 import ModernHeroTemplate from '../Dashboard/templates/ModernHeroTemplate';
+import CollectionShowcase from '../../section-templates/collection-showcase/CollectionShowcase';
 import NotFound from '../../pages/NotFound';
 import DynamicSection from '../Dashboard/DynamicSection';
 
@@ -30,7 +31,8 @@ const SECTION_TEMPLATES = {
   'faq-accordion': FAQTemplate,
   'faq': FAQTemplate,
   'rich-text': RichTextTemplate,
-  'modern-hero': ModernHeroTemplate
+  'modern-hero': ModernHeroTemplate,
+  'collection-showcase': CollectionShowcase
 };
 
 const ProductCard = ({ product }) => {
@@ -523,12 +525,57 @@ const ProductList = () => {
 
   return (
     <div className={`product-list-page ${isDynamicTheme ? 'dynamic-theme' : ''}`}>
-      {(activeThemeId === 'ecommerce' && !slug) && (
+      {(!slug) && (
         <>
-          <ProductSection title="Popular Products" icon={<FaFire />} products={popularProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
-          <ProductSection title="Featured Products" icon={<FaStar />} products={featuredProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
-          <RecentlyViewedSection products={recentlyViewedProducts} />
-          <ProductSection title="All Products" icon={<FaTh />} products={allProducts} loading={loading} error={error} />
+          {/* Theme Specific Hardcoded Content (Fallback) */}
+          {(activeThemeId === 'ecommerce' && dynamicSections.length === 0) && (
+            <>
+              <ProductSection title="Popular Products" icon={<FaFire />} products={popularProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
+              <ProductSection title="Featured Products" icon={<FaStar />} products={featuredProducts} loading={loading} error={error} showExploreAll={true} exploreLink={getShopPath('/products')} />
+              <RecentlyViewedSection products={recentlyViewedProducts} />
+              <ProductSection title="All Products" icon={<FaTh />} products={allProducts} loading={loading} error={error} />
+            </>
+          )}
+
+          {/* Dynamic Content (Priority) */}
+          {dynamicSections.length > 0 && (
+            <div className="nexus-dynamic-content">
+              {dynamicSections.map((section, index) => {
+                // 1. Handle New Dynamic Builder Sections
+                if (section.type === 'dynamic' || section.templateData?.structure) {
+                  let content = {};
+                  try {
+                    content = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+                  } catch (e) { console.error("Error parsing section content:", e); }
+
+                  return (
+                    <div key={section.id || index} className="dynamic-section-wrapper">
+                      <DynamicSection
+                        structure={section.templateData?.structure}
+                        content={content}
+                        styles={section.templateData?.styles}
+                      />
+                    </div>
+                  );
+                }
+
+                // 2. Handle Legacy/Static Templates
+                const TemplateComponent = SECTION_TEMPLATES[section.type];
+                if (!TemplateComponent) return null;
+
+                let staticContent = {};
+                try {
+                  staticContent = typeof section.content === 'string' ? JSON.parse(section.content) : section.content;
+                } catch (e) { staticContent = section.content; }
+
+                return (
+                  <div key={section.id || index} className="dynamic-section-wrapper">
+                    <TemplateComponent content={staticContent} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
@@ -744,7 +791,7 @@ const ProductList = () => {
         )}
 
       {/* Custom Dynamic Content (rendered if sections were found for this slug) */}
-      {(slug !== 'products' && dynamicSections.length > 0) && (
+      {(slug && slug !== 'products' && dynamicSections.length > 0) && (
         <div className="nexus-dynamic-content">
           {dynamicSections.length > 0 && (
             dynamicSections.map((section, index) => {

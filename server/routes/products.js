@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const Product = require('../models/Product');
 const { ensureAuthenticated } = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.resolve(__dirname, '..', 'uploads');
@@ -67,7 +68,7 @@ router.get('/', async (req, res) => {
       filter.section = section;
     }
 
-    const products = await Product.find(filter);
+    const products = await Product.find(filter).populate('category', 'name');
     res.json(products);
   } catch (err) {
     console.error(err.message);

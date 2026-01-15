@@ -60,6 +60,8 @@ const ProductGridTemplate = ({ content }) => {
         marginBottom = 0,
         useThemeBg = true,
         bgColor = 'transparent',
+        sourceType = 'products', // 'products' or 'categories'
+        selectedCategoryId = null,
         selectedProductIds = []
     } = config;
 
@@ -71,8 +73,15 @@ const ProductGridTemplate = ({ content }) => {
                 // Use the standardized productService to handle tenant headers
                 const data = await getProducts();
 
+                if (sourceType === 'categories' && selectedCategoryId) {
+                    const filtered = data.filter(p => {
+                        const pCatId = p.category && (typeof p.category === 'object' ? p.category._id : p.category);
+                        return pCatId === selectedCategoryId;
+                    });
+                    setProducts(filtered);
+                }
                 // If specific products are selected, filter and sort them to match the selection order
-                if (selectedProductIds && selectedProductIds.length > 0) {
+                else if (sourceType !== 'categories' && selectedProductIds && selectedProductIds.length > 0) {
                     const sortedProducts = selectedProductIds
                         .map(id => data.find(p => p._id === id))
                         .filter(product => product !== undefined); // Remove any that weren't found
@@ -90,19 +99,19 @@ const ProductGridTemplate = ({ content }) => {
         };
 
         fetchProducts();
-    }, [JSON.stringify(selectedProductIds)]); // Re-fetch/filter if selection changes
+    }, [JSON.stringify(selectedProductIds), selectedCategoryId, sourceType]); // Re-fetch/filter if selection changes
 
     const containerStyle = {
         paddingTop: `${paddingTop}px`,
         paddingBottom: `${paddingBottom}px`,
         marginTop: `${marginTop}px`,
         marginBottom: `${marginBottom}px`,
-        background: useThemeBg ? 'var(--theme-bg, #ffffff)' : bgColor
+        background: useThemeBg ? '#f9fafb' : bgColor
     };
 
     const iconStyle = {
-        background: useThemeIconBg ? 'var(--theme-primary, #7c3aed)' : iconBgColor,
-        color: useThemeIconBg ? 'white' : (iconColor || (iconBgColor === 'transparent' ? 'var(--theme-primary, #7c3aed)' : 'white'))
+        background: useThemeIconBg ? 'var(--primary-color, #ef4444)' : iconBgColor,
+        color: useThemeIconBg ? 'white' : (iconColor || (iconBgColor === 'transparent' ? 'var(--primary-content)' : 'white'))
     };
 
     if (loading) {

@@ -94,6 +94,35 @@ const DEFAULT_TEMPLATES = [
         image: 'https://images.unsplash.com/photo-1544717297-fa154da0979a?w=500&q=80',
         description: 'Collapsible questions',
         defaultContent: { title: 'FAQ', marginTop: 0, marginBottom: 0, useThemeBg: true }
+    },
+    {
+        id: 'collection-showcase',
+        name: 'Collection Showcase',
+        category: 'hero',
+        image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&q=80',
+        description: 'Premium product showcase with gallery (Dark Mode)',
+        defaultContent: {
+            collectionTitle: "AUTUMN COLLECTION",
+            productName: "Signature Hoodie",
+            feature1: "100% Organic Egyptian Cotton",
+            feature2: "Signature Oversized Fit",
+            feature3: "Sustainable Low-Impact Dye",
+            feature4: "Heavyweight 450 GSM Fabric",
+            ctaText: "Product Details",
+            ctaLink: "/collections/autumn",
+            galleryTitle: "CURATED GALLERY",
+            galleryTitle1: "Teal Hoodie",
+            gallerySubtitle1: "ESSENTIALS SERIES",
+            galleryTitle2: "Heather Grey Hoodie",
+            gallerySubtitle2: "CLASSIC CORE",
+            galleryTitle3: "Classic White Hoodie",
+            gallerySubtitle3: "PURE ORGANIC",
+            galleryTitle4: "Sage Green Hoodie",
+            gallerySubtitle4: "NATURE INSPIRED",
+            bgColor: "transparent",
+            accentColor: "#ef233c",
+            useThemeBg: true
+        }
     }
 ];
 
