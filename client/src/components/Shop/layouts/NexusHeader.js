@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes, FaRegHeart } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes, FaRegHeart, FaHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../CartProvider';
 import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
@@ -421,7 +421,7 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
                         {effectiveSettings.showIcons && (
                             <>
                                 <button className="nexus-icon-btn nexus-wishlist-btn" onClick={() => navigate(getShopPath('/wishlist'))}>
-                                    <FaRegHeart />
+                                    {wishlistCount > 0 ? <FaHeart style={{ color: '#ef4444' }} /> : <FaRegHeart />}
                                     {wishlistCount > 0 && <span className="nexus-cart-badge">{wishlistCount}</span>}
                                 </button>
                                 <button className="nexus-icon-btn nexus-cart-btn" onClick={() => setIsCartOpen(true)}>
@@ -526,7 +526,7 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
                     {effectiveSettings.showIcons && (
                         <div className="nexus-actions-group">
                             <button className="nexus-icon-btn nexus-wishlist-btn" onClick={() => navigate(getShopPath('/wishlist'))}>
-                                <FaRegHeart />
+                                {wishlistCount > 0 ? <FaHeart style={{ color: '#ef4444' }} /> : <FaRegHeart />}
                                 {wishlistCount > 0 && <span className="nexus-cart-badge">{wishlistCount}</span>}
                             </button>
                             <button className="nexus-icon-btn nexus-cart-btn" onClick={() => setIsCartOpen(true)}>

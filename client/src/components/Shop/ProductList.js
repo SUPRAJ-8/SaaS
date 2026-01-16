@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useDispatchCart } from './CartProvider';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen } from 'react-icons/fa';
+import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen, FaFilter, FaShoppingCart } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import axios from 'axios';
 import { getShopPath, resolveImageUrl, getTenantId } from '../../themeUtils';
@@ -122,23 +122,29 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
-      <Link to={getShopPath(`/product/${product.handle || product._id}`)} className="product-card-link">
-        <div className="product-image-container">
-          {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
-          {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
-          <button className="wishlist-btn" onClick={toggleWishlist}>
-            {isWishlisted ? <FaHeart style={{ color: 'red' }} /> : <FaRegHeart />}
-          </button>
+    <div className={`ecommerce-product-card group ${isOutOfStock ? 'out-of-stock' : ''}`}>
+      <div className="product-image-container">
+        {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
+        {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
+        <button className={`wishlist-btn ${isWishlisted ? 'active' : ''}`} onClick={toggleWishlist}>
+          {isWishlisted ? <FaHeart style={{ color: '#ef4444' }} /> : <FaRegHeart />}
+        </button>
+        <Link to={getShopPath(`/product/${product.handle || product._id}`)}>
           <img
             src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
             alt={product.name}
           />
-        </div>
-        <div className="product-details">
-          <h3>{product.name}</h3>
-          <div className="product-price-actions">
-            <div className="price-container">
+        </Link>
+      </div>
+
+      <div className="product-card-content">
+        <Link to={getShopPath(`/product/${product.handle || product._id}`)} className="product-card-link">
+          <div className="product-header-row">
+            <h3>{product.name}</h3>
+          </div>
+
+          <div className="price-row">
+            <div className="price-group">
               <span className="product-price">
                 {currency.position === 'before' ? `${currency.symbol} ${Number(product.sellingPrice || 0).toLocaleString()}` : `${Number(product.sellingPrice || 0).toLocaleString()} ${currency.symbol}`}
               </span>
@@ -153,26 +159,30 @@ const ProductCard = ({ product }) => {
               <span className="rating-value">{(product.rating || 4.5).toFixed(1)}</span>
             </div>
           </div>
-        </div>
-      </Link>
-      {product.hasVariants ? (
-        <Link
-          to={getShopPath(`/product/${product.handle || product._id}`)}
-          className="add-to-cart-btn-small"
-          style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
-        >
-          Select Variant
         </Link>
-      ) : (
-        <button
-          className="add-to-cart-btn-small"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
-        >
-          {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-        </button>
-      )}
+
+        {product.hasVariants ? (
+          <Link
+            to={getShopPath(`/product/${product.handle || product._id}`)}
+            className="add-to-cart-btn-small variant-btn"
+            style={{ textDecoration: 'none' }}
+          >
+            Select Variant
+          </Link>
+        ) : (
+          <button
+            className="add-to-cart-btn-small"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+          >
+            {isOutOfStock ? 'Out of Stock' : (
+              <>
+                <FaShoppingCart size={14} /> Add to Cart
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -279,6 +289,7 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [pageNotFound, setPageNotFound] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const resetFilters = (e) => {
     if (e) e.preventDefault();
@@ -615,9 +626,11 @@ const ProductList = () => {
               </div>
             </div>
 
+            {/* Mobile Filter Toggle */}
+
             <div className="shop-page-content-layout">
               {/* Sidebar */}
-              <div className="shop-sidebar">
+              <div className={`shop-sidebar ${showMobileFilters ? 'mobile-visible' : ''}`}>
                 <div className="filters-container">
                   <div className="filter-header">
                     <h3>Filter By <span onClick={resetFilters} className="reset-filter-link" style={{ cursor: 'pointer' }}>Reset All</span></h3>
@@ -784,6 +797,12 @@ const ProductList = () => {
                     </div>
                   </div>
                 )}
+                <button
+                  className="mobile-filter-toggle"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                >
+                  <FaFilter /> {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+                </button>
                 <ProductSection title="All Products" icon={<FaTh />} products={sortedProducts} loading={loading} error={error} hideHeader={true} />
               </div>
             </div>

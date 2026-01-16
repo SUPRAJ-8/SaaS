@@ -503,11 +503,7 @@
 /* Product card styles are now in ProductStyles.css and shared across all themes */
 
 .nexus-theme .dynamic-section-wrapper {
-    margin: 20px 0;
-}
-
-.nexus-theme .dynamic-section-wrapper:first-child {
-    margin-top: 0;
+    margin: 0;
 }
 
 

@@ -82,22 +82,28 @@ const ProductCard = ({ product }) => {
     };
 
     return (
-        <div className="ecommerce-product-card">
-            <Link to={getShopPath(`/ product / ${product._id} `)} className="product-card-link">
-                <div className="product-image-container">
-                    {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
-                    <button className="wishlist-btn" onClick={toggleWishlist}>
-                        {isWishlisted ? <FaHeart style={{ color: 'red' }} /> : <FaRegHeart />}
-                    </button>
+        <div className="ecommerce-product-card group">
+            <div className="product-image-container">
+                {discount > 0 && <div className="discount-badge">{discount}% OFF</div>}
+                <button className={`wishlist-btn ${isWishlisted ? 'active' : ''}`} onClick={toggleWishlist}>
+                    {isWishlisted ? <FaHeart style={{ color: '#ef4444' }} /> : <FaRegHeart />}
+                </button>
+                <Link to={getShopPath(`/product/${product.handle || product._id}`)}>
                     <img
                         src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
                         alt={product.name}
                     />
-                </div>
-                <div className="product-details">
-                    <h3>{product.name}</h3>
-                    <div className="product-price-actions">
-                        <div className="price-container">
+                </Link>
+            </div>
+
+            <div className="product-card-content">
+                <Link to={getShopPath(`/product/${product.handle || product._id}`)} className="product-card-link">
+                    <div className="product-header-row">
+                        <h3>{product.name}</h3>
+                    </div>
+
+                    <div className="price-row">
+                        <div className="price-group">
                             <span className="product-price">
                                 {currency.position === 'before' ? `${currency.symbol} ${Number(product.sellingPrice || 0).toLocaleString()} ` : `${Number(product.sellingPrice || 0).toLocaleString()} ${currency.symbol} `}
                             </span>
@@ -112,13 +118,22 @@ const ProductCard = ({ product }) => {
                             <span className="rating-value">{(product.rating || 4.5).toFixed(1)}</span>
                         </div>
                     </div>
-                </div>
-            </Link>
-            {product.hasVariants ? (
-                <Link to={getShopPath(`/ product / ${product.handle || product._id} `)} className="add-to-cart-btn-small" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>Select Variant</Link>
-            ) : (
-                <button className="add-to-cart-btn-small" onClick={handleAddToCart}>Add to Cart</button>
-            )}
+                </Link>
+
+                {product.hasVariants ? (
+                    <Link
+                        to={getShopPath(`/product/${product.handle || product._id}`)}
+                        className="add-to-cart-btn-small variant-btn"
+                        style={{ textDecoration: 'none' }}
+                    >
+                        Select Variant
+                    </Link>
+                ) : (
+                    <button className="add-to-cart-btn-small" onClick={handleAddToCart}>
+                        Add to Cart
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
@@ -135,6 +150,7 @@ const CategoryProducts = () => {
     const [pageNotFound, setPageNotFound] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const slugify = (text) => {
         return text.toString().toLowerCase()
@@ -325,9 +341,11 @@ const CategoryProducts = () => {
                     </div>
                 </div>
 
+                {/* Mobile Filter Toggle */}
+
                 <div className="shop-page-content-layout">
                     {/* Sidebar */}
-                    <div className="shop-sidebar">
+                    <div className={`shop-sidebar ${showMobileFilters ? 'mobile-visible' : ''}`}>
                         <div className="filters-container">
                             <div className="filter-header">
                                 <h3>FILTER BY:</h3>
@@ -499,6 +517,13 @@ const CategoryProducts = () => {
                                 </div>
                             </div>
                         )}
+
+                        <button
+                            className="mobile-filter-toggle"
+                            onClick={() => setShowMobileFilters(!showMobileFilters)}
+                        >
+                            <FaFilter /> {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+                        </button>
 
                         <div className="product-grid-container">
                             <div className="ecommerce-product-grid">

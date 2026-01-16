@@ -394,7 +394,16 @@ const ProductDetail = () => {
             <div className="product-options-header">
               {product.hasVariants && <span>Choose Options</span>}
               <div className="options-right">
-                {product.hasVariants && <a href="#" className="size-guide">Size Guide</a>}
+                {product.hasVariants && (
+                  <a href="#" className="size-guide">
+                    <img
+                      src="https://www.clipartmax.com/png/small/151-1511601_nike-air-max-1-trainers-blur-blur-light-orewood-hers-size-guide.png "
+                      alt="Size Guide"
+                      className="size-guide-icon"
+                    />
+                    Size Guide
+                  </a>
+                )}
                 <div className="quantity-selector">
                   <span>Quantity</span>
                   <div className="quantity-control">

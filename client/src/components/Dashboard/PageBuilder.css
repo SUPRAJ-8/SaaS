@@ -326,9 +326,9 @@
 .builder-section {
     min-height: 100px;
     position: relative;
-    padding: 20px 0;
+    padding: 0;
     margin: 60px 0 20px 0;
-    background: white;
+    background: transparent;
     border: 1px dashed #e2e8f0;
     overflow: visible;
 }
@@ -758,9 +758,9 @@
 .builder-section {
     min-height: 100px;
     position: relative;
-    padding: 20px 0;
+    padding: 0;
     margin: 60px 0 20px 0;
-    background: white;
+    background: transparent;
     transition: all 0.2s ease;
     border: 1px dashed #e2e8f0;
     overflow: visible;
@@ -775,7 +775,7 @@
     border-color: #7c3aed !important;
     border-style: solid !important;
     box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
-    background: white !important;
+    background: transparent !important;
     margin-top: 4px;
     margin-bottom: 12px;
 }

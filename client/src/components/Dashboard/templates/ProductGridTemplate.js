@@ -272,23 +272,29 @@ const ProductCardItem = ({ product, currency, isBuilder, dispatch }) => {
         : null;
 
     return (
-        <div className={`ecommerce-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}>
-            <Link to={getShopPath(`/product/${product._id}`)} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
-                <div className="product-image-container">
-                    {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
-                    {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
-                    <button className="wishlist-btn" onClick={toggleWishlist}>
-                        {isWishlisted ? <FaHeart size={14} style={{ color: 'red' }} /> : <FaRegHeart size={14} />}
-                    </button>
+        <div className={`ecommerce-product-card group ${isOutOfStock ? 'out-of-stock' : ''}`}>
+            <div className="product-image-container">
+                {discount > 0 && !isOutOfStock && <div className="discount-badge">{discount}% OFF</div>}
+                {isOutOfStock && <div className="out-of-stock-badge">OUT OF STOCK</div>}
+                <button className={`wishlist-btn ${isWishlisted ? 'active' : ''}`} onClick={toggleWishlist}>
+                    {isWishlisted ? <FaHeart size={14} style={{ color: '#ef4444' }} /> : <FaRegHeart size={14} />}
+                </button>
+                <Link to={getShopPath(`/product/${product.handle || product._id}`)} onClick={(e) => isBuilder && e.preventDefault()}>
                     <img
                         src={resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'}
                         alt={product.name}
                     />
-                </div>
-                <div className="product-details">
-                    <h3>{product.name}</h3>
-                    <div className="product-price-actions">
-                        <div className="price-container">
+                </Link>
+            </div>
+
+            <div className="product-card-content">
+                <Link to={getShopPath(`/product/${product.handle || product._id}`)} className="product-card-link" onClick={(e) => isBuilder && e.preventDefault()}>
+                    <div className="product-header-row">
+                        <h3>{product.name}</h3>
+                    </div>
+
+                    <div className="price-row">
+                        <div className="price-group">
                             <span className="product-price">{priceDisplay}</span>
                             {crossedPriceDisplay && (
                                 <span className="original-price">{crossedPriceDisplay}</span>
@@ -299,27 +305,32 @@ const ProductCardItem = ({ product, currency, isBuilder, dispatch }) => {
                             <span className="rating-value">{product.rating || '4.5'}</span>
                         </div>
                     </div>
-                </div>
-            </Link>
-            {product.hasVariants ? (
-                <Link
-                    to={getShopPath(`/product/${product._id}`)}
-                    className="add-to-cart-btn-small"
-                    style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
-                    onClick={(e) => isBuilder && e.preventDefault()}
-                >
-                    Select Variant
                 </Link>
-            ) : (
-                <button
-                    className="add-to-cart-btn-small"
-                    onClick={handleAddToCart}
-                    disabled={isOutOfStock}
-                    style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
-                >
-                    {isOutOfStock ? 'Out of Stock' : 'Add To Cart'}
-                </button>
-            )}
+
+                {product.hasVariants ? (
+                    <Link
+                        to={getShopPath(`/product/${product.handle || product._id}`)}
+                        className="add-to-cart-btn-small variant-btn"
+                        style={{ display: 'flex', textAlign: 'center', textDecoration: 'none', justifyContent: 'center' }}
+                        onClick={(e) => isBuilder && e.preventDefault()}
+                    >
+                        Select Variant
+                    </Link>
+                ) : (
+                    <button
+                        className="add-to-cart-btn-small"
+                        onClick={handleAddToCart}
+                        disabled={isOutOfStock}
+                        style={isOutOfStock ? { cursor: 'not-allowed', opacity: 0.6, backgroundColor: '#9ca3af', borderColor: '#9ca3af' } : {}}
+                    >
+                        {isOutOfStock ? 'Out of Stock' : (
+                            <>
+                                <FaShoppingCart size={14} /> Add to Cart
+                            </>
+                        )}
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
