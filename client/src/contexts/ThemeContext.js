@@ -9,8 +9,6 @@ export const ThemeProvider = ({ children }) => {
   const { siteSettings } = useContext(SiteSettingsContext);
 
   const [themeId, setThemeId] = useState(() => {
-    // Get stored theme from localStorage as initial fallback
-    let storedId = localStorage.getItem('themeId') || 'nexus';
     // Migration: ensure everything defaults to nexus
     return 'nexus';
   });
