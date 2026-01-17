@@ -32,21 +32,18 @@ const CollectionShowcase = ({ content = {} }) => {
 
         galleryTitle = "CURATED GALLERY",
 
-        galleryImage1,
-        galleryTitle1 = "Teal Hoodie",
-        gallerySubtitle1 = "ESSENTIALS SERIES",
-
-        galleryImage2,
-        galleryTitle2 = "Heather Grey Hoodie",
-        gallerySubtitle2 = "CLASSIC CORE",
-
-        galleryImage3,
-        galleryTitle3 = "Classic White Hoodie",
-        gallerySubtitle3 = "PURE ORGANIC",
-
-        galleryImage4,
-        galleryTitle4 = "Sage Green Hoodie",
-        gallerySubtitle4 = "NATURE INSPIRED",
+        // galleryImage1, - Removed unused
+        // galleryTitle1 = "Teal Hoodie",
+        // gallerySubtitle1 = "ESSENTIALS SERIES",
+        // galleryImage2,
+        // galleryTitle2 = "Heather Grey Hoodie",
+        // gallerySubtitle2 = "CLASSIC CORE",
+        // galleryImage3,
+        // galleryTitle3 = "Classic White Hoodie",
+        // gallerySubtitle3 = "PURE ORGANIC",
+        // galleryImage4,
+        // galleryTitle4 = "Sage Green Hoodie",
+        // gallerySubtitle4 = "NATURE INSPIRED",
 
         bgColor = "transparent",
         accentColor = "#ef233c",
@@ -60,13 +57,15 @@ const CollectionShowcase = ({ content = {} }) => {
         showCollectionTitle = true,
         showDescription = true,
         showFeatureList = true,
-        useProductDescription = true,
+        // useProductDescription = true, - Removed unused
 
         // Product/Category selection
         sourceType = 'products',
         selectedProductIds = [],
         selectedCategoryId = null
     } = content;
+
+    const selectedProductIdsStr = JSON.stringify(selectedProductIds);
 
     // Fetch products based on selection
     useEffect(() => {
@@ -100,7 +99,8 @@ const CollectionShowcase = ({ content = {} }) => {
         };
 
         fetchProductsData();
-    }, [sourceType, selectedCategoryId, JSON.stringify(selectedProductIds)]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sourceType, selectedCategoryId, selectedProductIdsStr]);
 
     // Resolve hero image or use fallback
     const firstProduct = products.length > 0 ? products[0] : null;
@@ -165,7 +165,7 @@ const CollectionShowcase = ({ content = {} }) => {
         : ctaLink;
 
     const effectiveAccentColor = useBrandColor ? 'var(--primary)' : accentColor;
-    const effectiveButtonTextColor = useBrandColor ? 'var(--primary-content)' : '#ffffff';
+    // const effectiveButtonTextColor = useBrandColor ? 'var(--primary-content)' : '#ffffff'; // Removed unused
     const effectiveBgColor = useThemeBg ? '#f9fafb' : bgColor;
     const isLightBg = useThemeBg || (bgColor && (bgColor.toLowerCase() === '#ffffff' || bgColor.toLowerCase() === '#f9fafb'));
 
