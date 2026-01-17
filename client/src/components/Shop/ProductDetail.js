@@ -44,6 +44,7 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [zoomStyle, setZoomStyle] = useState({});
   const [isAutoChangePaused, setIsAutoChangePaused] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     if (product && selectedColor && product.hasVariants) {
@@ -177,13 +178,13 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
-    // First, add the item to the cart
-    handleAddToCart();
+    // First, add the item to the cart WITHOUT opening the side panel
+    handleAddToCart(false);
     // Then, navigate to checkout
     navigate(getShopPath('/checkout'));
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (shouldOpenCart = true) => {
     const itemPrice = selectedVariant && selectedVariant.sellingPrice ? selectedVariant.sellingPrice : product.sellingPrice;
     const cartItem = {
       id: product._id,
@@ -197,14 +198,17 @@ const ProductDetail = () => {
     };
     dispatch({ type: 'ADD_ITEM', payload: cartItem });
 
-    // Open cart panel after adding
-    setTimeout(() => {
-      window.dispatchEvent(new Event('openCartPanel'));
-    }, 100);
+    // Open cart panel after adding if requested
+    if (shouldOpenCart) {
+      setTimeout(() => {
+        window.dispatchEvent(new Event('openCartPanel'));
+      }, 100);
+    }
   };
 
   /* ZOOM LOGIC HANDLERS */
   const handleMouseMove = (e) => {
+    if (window.innerWidth <= 768) return; // Disable zoom on mobile
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
     const x = ((e.pageX - left - window.scrollX) / width) * 100;
     const y = ((e.pageY - top - window.scrollY) / height) * 100;
@@ -215,6 +219,7 @@ const ProductDetail = () => {
   };
 
   const handleMouseLeave = () => {
+    if (window.innerWidth <= 768) return; // Disable zoom on mobile
     setZoomStyle({
       transformOrigin: 'center center',
       transform: 'scale(1)'
@@ -489,12 +494,22 @@ const ProductDetail = () => {
           <div className="tab-content">
             {activeTab === 'description' && (
               <div className="description-content">
-                {product.longDescription ? (
-                  <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: processDescription(product.longDescription) }} />
-                ) : (
-                  <div style={{ whiteSpace: 'pre-line' }}>
-                    {product.shortDescription || 'No description available.'}
-                  </div>
+                <div className={`description-text-wrapper ${isDescriptionExpanded ? 'expanded' : 'collapsed'}`}>
+                  {product.longDescription ? (
+                    <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: processDescription(product.longDescription) }} />
+                  ) : (
+                    <div style={{ whiteSpace: 'pre-line' }}>
+                      {product.shortDescription || 'No description available.'}
+                    </div>
+                  )}
+                </div>
+                {(product.longDescription || (product.shortDescription && product.shortDescription.length > 200)) && (
+                  <button
+                    className="read-more-btn"
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  >
+                    {isDescriptionExpanded ? 'Read Less' : 'Read More'}
+                  </button>
                 )}
               </div>
             )}

@@ -28,7 +28,7 @@ const FALLBACK_REGIONS = [
   "Surkhet (Birendranagar)"
 ];
 
-const AddressForm = ({ addressData, onAddressChange }) => {
+const AddressForm = ({ addressData, onAddressChange, errors = {} }) => {
   const [regions, setRegions] = useState(FALLBACK_REGIONS);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +75,7 @@ const AddressForm = ({ addressData, onAddressChange }) => {
             value={addressData.city}
             onChange={handleInputChange}
             required
-            className="full-width-select"
+            className={`full-width-select ${errors.city ? 'error-input' : ''}`}
             disabled={loading}
           >
             <option value="">{loading ? 'Loading regions...' : 'Select City / District'}</option>
@@ -83,6 +83,7 @@ const AddressForm = ({ addressData, onAddressChange }) => {
               <option key={region} value={region}>{region}</option>
             ))}
           </select>
+          {errors.city && <span className="error-text">Please select your city</span>}
         </div>
 
         <div className="form-group">
@@ -95,7 +96,9 @@ const AddressForm = ({ addressData, onAddressChange }) => {
             onChange={handleInputChange}
             placeholder="eg: Street Name, Tole, House No."
             required
+            className={errors.landmark ? 'error-input' : ''}
           />
+          {errors.landmark && <span className="error-text">Please enter your address</span>}
         </div>
 
         <div className="form-group">

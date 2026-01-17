@@ -1,6 +1,6 @@
 .order-tracking-container {
     padding: 60px 20px;
-    background-color: #f0f4ff;
+    background-color: #f9fafb;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -286,7 +286,7 @@ div.status-tag.order-cancelled,
 
 .stepper-line-bg {
     position: absolute;
-    top: 42px;
+    top: 35px;
     /* Centered: 20px padding + 22px (half of 44px circle) */
     left: 100px;
     /* Centered: 40px section padding + 60px (half of 120px step) */
@@ -298,13 +298,13 @@ div.status-tag.order-cancelled,
 
 .stepper-progress-fill {
     position: absolute;
-    top: 42px;
+    top: 35px;
     left: 100px;
     right: 100px;
     width: 0;
     height: 2px;
-    background: #06b6d4;
-    /* Color from your image */
+    background: #16a34a;
+    /* Updated to Green */
     z-index: 2;
     transition: all 0.5s ease;
 }
@@ -365,8 +365,8 @@ div.status-tag.order-cancelled,
 
 .track-step.current .step-circle {
     background: var(--primary-color, #9333ea);
-    color: #fff;
-    box-shadow: 0 0 0 5px rgba(147, 51, 234, 0.15);
+    color: var(--primary-content);
+    box-shadow: 0 0 0 5px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .step-text-content {
@@ -381,7 +381,7 @@ div.status-tag.order-cancelled,
 }
 
 .track-step.active .step-name {
-    color: var(--primary);
+    color: black;
 }
 
 .step-timestamp {
@@ -688,9 +688,9 @@ div.status-tag.order-cancelled,
 }
 
 .timeline-step.completed .timeline-circle {
-    background: #ede9fe;
-    border-color: var(--primary);
-    color: var(--primary);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: black;
+    color: var(--primary-content);
 }
 
 .timeline-step.completed .timeline-circle.cancelled {
@@ -736,7 +736,7 @@ div.status-tag.order-cancelled,
 }
 
 .timeline-connector.completed {
-    background: #9333ea;
+    background: #16a34a;
 }
 
 /* Responsive */
@@ -819,7 +819,7 @@ div.status-tag.order-cancelled,
 
     /* Active vertical line color */
     .timeline-step.completed.connector-active:not(:last-child)::after {
-        background: #9333ea;
+        background: red;
     }
 
     .timeline-circle {
@@ -840,19 +840,23 @@ div.status-tag.order-cancelled,
     }
 
     .stepper-line-bg {
+        position: absolute;
+        /* ← ADD THIS! Critical for positioning */
         display: flex;
-        left: 40px !important;
-        transform: translateX(-50%);
-        top: 50px !important;
-        bottom: 50px !important;
+        flex-direction: column;
+        /* ← ADD THIS for vertical orientation */
+        left: 35px;
+        top: 50px;
+        bottom: 50px;
         width: 2px;
-        background: #e5e7eb !important;
+        background: #e5e7eb;
         z-index: 1;
+        height: auto;
     }
 
     .stepper-progress-fill {
         display: block !important;
-        left: 40px !important;
+        left: 35px !important;
         transform: translateX(-50%);
         top: 50px !important;
         width: 2px;

@@ -79,6 +79,11 @@ const ProductCard = ({ product }) => {
             image: resolveImageUrl(product.images && product.images.length > 0 ? product.images[0] : null, API_URL) || 'https://via.placeholder.com/300'
         };
         dispatch({ type: 'ADD_ITEM', payload: cartItem });
+
+        // Open cart panel after adding
+        setTimeout(() => {
+            window.dispatchEvent(new Event('openCartPanel'));
+        }, 100);
     };
 
     return (

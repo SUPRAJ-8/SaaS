@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { FaSearch, FaShoppingCart, FaChevronDown, FaBars, FaTimes, FaRegHeart, FaHeart } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../CartProvider';
 import { SiteSettingsContext } from '../../../contexts/SiteSettingsContext';
 import { getShopPath } from '../../../themeUtils';
@@ -11,6 +11,7 @@ import './NexusLayout.css';
 
 const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { siteSettings: contextSiteSettings } = useContext(SiteSettingsContext);
 
     // Prioritize props (from builder) -> context (from shop) -> local fallback
@@ -430,9 +431,12 @@ const NexusHeader = ({ previewSettings, siteSettings: propSiteSettings }) => {
                                 </button>
                             </>
                         )}
-                        <button className="nexus-mobile-toggle" onClick={toggleMobileMenu}>
-                            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-                        </button>
+                        {/* Hide hamburger if cart is open or on checkout page */}
+                        {!isCartOpen && !location.pathname.includes('/checkout') && (
+                            <button className="nexus-mobile-toggle" onClick={toggleMobileMenu}>
+                                {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+                            </button>
+                        )}
                     </div>
                 </div>
 

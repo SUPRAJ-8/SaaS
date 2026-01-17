@@ -14,6 +14,7 @@
 }
 
 .address-form label {
+  text-align: left;
   font-weight: 500;
   margin-bottom: 8px;
   font-size: 14px;
@@ -25,8 +26,9 @@
 .address-form select,
 .address-form textarea {
   width: 100%;
+  max-width: 100%;
   padding: 10px 14px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--primary-color);
   border-radius: 8px;
   font-size: 14px;
   background-color: white;
@@ -39,8 +41,8 @@
 .address-form select:focus,
 .address-form textarea:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .address-form select {
@@ -55,4 +57,23 @@
 
 .required-asterisk {
   color: #ef4444;
+}
+
+/* Error Styles */
+.error-input {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.error-input:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+  text-align: left;
 }

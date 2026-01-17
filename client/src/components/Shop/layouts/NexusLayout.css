@@ -731,17 +731,17 @@
 }
 
 .nexus-theme input:hover {
-    border-color: var(--border);
+    border-color: var(--primary-content);
 }
 
 .nexus-theme input:focus {
-    border-color: var(--primary);
+    border-color: var(--primary-content);
     outline: none;
     box-shadow: 0 0 0 3px rgba(88, 102, 242, 0.1);
 }
 
 .nexus-theme input.error {
-    border-color: var(--error);
+    border-color: red;
 }
 
 .nexus-theme label {

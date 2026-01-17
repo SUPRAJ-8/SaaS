@@ -5,7 +5,7 @@
   width: 100%;
   max-width: 600px;
   margin: 20px auto;
-  font-family: sans-serif;
+
 }
 
 .step-item {
@@ -69,5 +69,24 @@
 }
 
 .step-connector.completed {
-  background-color: var(--primary-color);
+  background-color: green;
+}
+
+@media (max-width: 600px) {
+  .step-label {
+    display: none;
+    /* Hide labels on very small screens to save space */
+  }
+
+  .step-connector.completed {}
+
+  .step-connector {
+    margin: 0 10px;
+    padding: 0;
+  }
+
+  .stepper-container {
+    margin: 10px 0px;
+    padding: 15px 15px 0;
+  }
 }

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useDispatchCart } from './CartProvider';
 import { getProducts } from '../../services/productService';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen, FaFilter, FaShoppingCart } from 'react-icons/fa';
+import { FaRegHeart, FaHeart, FaFire, FaStar, FaTh, FaClock, FaChevronRight, FaPaintBrush, FaBoxOpen, FaFilter, FaShoppingCart, FaInfoCircle } from 'react-icons/fa';
 import API_URL from '../../apiConfig';
 import axios from 'axios';
 import { getShopPath, resolveImageUrl, getTenantId } from '../../themeUtils';
@@ -187,7 +187,7 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const ProductSection = ({ title, icon, products, loading, error, showExploreAll = false, exploreLink = "/", hideHeader = false }) => {
+const ProductSection = ({ title, icon, products, loading, error, showExploreAll = false, exploreLink = "/", hideHeader = false, onReset }) => {
   const words = title.split(' ');
   const lastWord = words.pop();
   const firstPart = words.join(' ');
@@ -219,10 +219,12 @@ const ProductSection = ({ title, icon, products, loading, error, showExploreAll 
             </div>
             <div className="empty-content">
               <h3>Oops! It's empty here.</h3>
-              <p>We couldn't find any {title.toLowerCase()} right now. Try adjusting your filters or explore our latest drops.</p>
-              <button className="explore-new-btn" onClick={() => window.location.href = getShopPath('/products')}>
-                Explore New Arrivals
-              </button>
+              <p>We couldn't find any products matching those filters. Try clearing them to see everything.</p>
+              {onReset && (
+                <button className="explore-new-btn" onClick={onReset}>
+                  Show All Products
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -291,6 +293,17 @@ const ProductList = () => {
   const [pageNotFound, setPageNotFound] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  useEffect(() => {
+    if (showMobileFilters) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showMobileFilters]);
+
   const resetFilters = (e) => {
     if (e) e.preventDefault();
     setSelectedCategory('all');
@@ -350,7 +363,47 @@ const ProductList = () => {
     return true;
   });
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const getActiveFilters = () => {
+    const filters = [];
+    if (selectedCategory !== 'all') {
+      const cat = categories.find(c => c._id === selectedCategory);
+      if (cat) filters.push({ type: 'category', label: cat.name });
+    }
+    if (selectedSubcategory !== 'all') {
+      filters.push({ type: 'subcategory', label: selectedSubcategory });
+    }
+    selectedColors.forEach(color => filters.push({ type: 'color', label: color, value: color }));
+    selectedSizes.forEach(size => filters.push({ type: 'size', label: size, value: size }));
+    if (priceRange.min || priceRange.max) {
+      let label = 'Price: ';
+      if (priceRange.min && priceRange.max) label += `${priceRange.min}-${priceRange.max}`;
+      else if (priceRange.min) label += `>${priceRange.min}`;
+      else label += `<${priceRange.max}`;
+      filters.push({ type: 'price', label });
+    }
+    if (stockStatus !== 'all') {
+      filters.push({ type: 'stock', label: stockStatus === 'inStock' ? 'In Stock' : 'Out of Stock' });
+    }
+    return filters;
+  };
+
+  const removeFilter = (filter) => {
+    if (filter.type === 'category') {
+      setSelectedCategory('all');
+      setSelectedSubcategory('all');
+    }
+    if (filter.type === 'subcategory') setSelectedSubcategory('all');
+    if (filter.type === 'color') setSelectedColors(prev => prev.filter(c => c !== filter.value));
+    if (filter.type === 'size') setSelectedSizes(prev => prev.filter(s => s !== filter.value));
+    if (filter.type === 'price') setPriceRange({ min: '', max: '' });
+    if (filter.type === 'stock') setStockStatus('all');
+  };
+
+  const activeFilters = getActiveFilters();
+  const noMatchesFound = activeFilters.length > 0 && filteredProducts.length === 0;
+  const displayProducts = noMatchesFound ? allProducts : filteredProducts;
+
+  const sortedProducts = [...displayProducts].sort((a, b) => {
     if (sortBy === 'price-low') return a.sellingPrice - b.sellingPrice;
     if (sortBy === 'price-high') return b.sellingPrice - a.sellingPrice;
     if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
@@ -535,7 +588,8 @@ const ProductList = () => {
   }
 
   return (
-    <div className={`product-list-page ${isDynamicTheme ? 'dynamic-theme' : ''}`}>
+    <div className={`product-list-page ${isDynamicTheme ? 'dynamic-theme' : ''} ${showMobileFilters ? 'filter-open' : ''}`}>
+      {showMobileFilters && <div className="mobile-filter-overlay" onClick={() => setShowMobileFilters(false)}></div>}
       {(!slug) && (
         <>
           {/* Theme Specific Hardcoded Content (Fallback) */}
@@ -633,7 +687,9 @@ const ProductList = () => {
               <div className={`shop-sidebar ${showMobileFilters ? 'mobile-visible' : ''}`}>
                 <div className="filters-container">
                   <div className="filter-header">
-                    <h3>Filter By <span onClick={resetFilters} className="reset-filter-link" style={{ cursor: 'pointer' }}>Reset All</span></h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <h3>Filter By <span onClick={resetFilters} className="reset-filter-link" style={{ cursor: 'pointer', fontSize: '12px', marginLeft: '10px' }}>Reset All</span></h3>
+                    </div>
                   </div>
 
 
@@ -803,7 +859,32 @@ const ProductList = () => {
                 >
                   <FaFilter /> {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
                 </button>
-                <ProductSection title="All Products" icon={<FaTh />} products={sortedProducts} loading={loading} error={error} hideHeader={true} />
+
+                {activeFilters.length > 0 && (
+                  <>
+                    <div className="active-filters-container">
+                      <div className="active-filters-header-row">
+                        <span className="active-filters-label">Active Filters:</span>
+                        <div className="active-filters-list">
+                          {activeFilters.map((filter, idx) => (
+                            <div key={idx} className="filter-chip-premium" onClick={() => removeFilter(filter)}>
+                              <span className="chip-text">{filter.label}</span>
+                              <span className="chip-close-icon">×</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <button className="clear-all-link" onClick={resetFilters}>Clear All</button>
+                    </div>
+                    {noMatchesFound && (
+                      <div className="no-matches-banner">
+                        <FaInfoCircle className="banner-icon" />
+                        <p><strong>No products match your filters.</strong> Showing all available products below.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+                <ProductSection title="All Products" icon={<FaTh />} products={sortedProducts} loading={loading} error={error} hideHeader={true} onReset={resetFilters} />
               </div>
             </div>
           </div>
